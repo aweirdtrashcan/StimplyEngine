@@ -381,21 +381,24 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 	);
 	transforms.MVP = DirectX::XMMatrixTranspose(transforms.model * camMat * projMat);
 
-	static DirectX::XMVECTOR lightPos = DirectX::XMVectorSet(0.0f, DirectX::XMConvertToRadians(2.0f), DirectX::XMConvertToRadians(1.0f), 0.0f);
+	struct PixelCBuf
+	{
+		DirectX::XMFLOAT3 pos;
+		float padding;
+	};
+
+	static PixelCBuf lightPos =
+	{
+		{ 0.0f, DirectX::XMConvertToRadians(2.0f), DirectX::XMConvertToRadians(1.0f) },
+		0.0f
+	};
 
 	if (ImGui::Begin("Light Pos"))
 	{
-		float f = DirectX::XMVectorGetX(lightPos);
-		ImGui::SliderAngle("Light X", &f, -180.f, 180.f);
-		lightPos = DirectX::XMVectorSetX(lightPos, f);
-
-		f = DirectX::XMVectorGetY(lightPos);
-		ImGui::SliderAngle("Light Y", &f, -180.f, 180.f);
-		lightPos = DirectX::XMVectorSetY(lightPos, f);
-
-		f = DirectX::XMVectorGetZ(lightPos);
-		ImGui::SliderAngle("Light Z", &f, -180.f, 180.f);
-		lightPos = DirectX::XMVectorSetZ(lightPos, f);
+		ImGui::SliderAngle("Light X", &lightPos.pos.x, -180.f, 180.f);
+		ImGui::SliderAngle("Light Y", &lightPos.pos.y, -180.f, 180.f);
+		ImGui::SliderAngle("Light Z", &lightPos.pos.z, -180.f, 180.f);
+		ImGui::End();
 	}
 
 	D3D11_MAPPED_SUBRESOURCE msr{};
@@ -418,7 +421,6 @@ bool DirectX11Renderer::EndFrame(float deltaTime)
 {
 	if (m_IsResizing) return true;
 	m_Context->DrawIndexed(indicesCount, 0u, 0u);
-	ImGui::End();
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	UINT presentFlags = syncInterval != 0 ? 0u : DXGI_PRESENT_ALLOW_TEARING;

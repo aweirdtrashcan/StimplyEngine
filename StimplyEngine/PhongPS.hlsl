@@ -1,6 +1,7 @@
 cbuffer CBufs
 {
-    float4 lightPos;
+    float3 lightPos;
+    float padding;
 };
 
 static const float intensity = 1.0f;
@@ -12,6 +13,6 @@ float4 main(float3 col : Color, float3 normal : Normal, float3 worldPos : Pos) :
     const float3 ambient = col * 0.15f;
     const float lenghtToLight = length(distanceToLight);
     const float3 lightToSurfaceAngle = distanceToLight / lenghtToLight;
-    const float finalCol = lightColor * max(0.0f, dot(lightToSurfaceAngle, normal));
-    return float4(saturate((finalCol + ambient) * col), 1.0f);
+    const float3 finalCol = col * max(0.0f, dot(lightToSurfaceAngle, normal));
+    return float4(saturate(finalCol + ambient), 1.0f);
 }
