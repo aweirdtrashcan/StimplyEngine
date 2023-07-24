@@ -1,0 +1,204 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Exceptions">
+      <UniqueIdentifier>{1ae903c6-a0a8-412b-bf83-45eea427613c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{2120c221-4795-46f3-8122-40b758996ef4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Header Files">
+      <UniqueIdentifier>{d5712da4-f23a-4a89-9d0b-1519429447a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Source Files">
+      <UniqueIdentifier>{9379f6ff-3003-4fa0-bf39-b1a2145c02df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Shaders">
+      <UniqueIdentifier>{7b4a012a-a7f3-49c0-becc-e9c52a5d4352}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Source Files\DirectX11">
+      <UniqueIdentifier>{ad28aa17-95c8-4304-abc6-e65dd4e04363}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imgui">
+      <UniqueIdentifier>{f0056ecc-007d-459f-8410-c0f5cdff3117}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Shaders\DirectX11">
+      <UniqueIdentifier>{8cc3ee4c-d345-4cf7-81bb-6a55d5e0ba7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Header Files\DirectX11">
+      <UniqueIdentifier>{9df9215a-e1b6-4e1d-bad2-6e585de79276}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Application.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stfafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Keyboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Renderer\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\imgui\imgui.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\imgui\backends\imgui_impl_dx12.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\imgui\backends\imgui_impl_win32.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\imgui\imgui_demo.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\imgui\imgui_draw.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\imgui\imgui_widgets.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\imgui\imgui_tables.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectX11Renderer.cpp">
+      <Filter>Renderer\Source Files\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="Surface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GDIPlusManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ThirdParty\imgui\backends\imgui_impl_dx11.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Application.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Window.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineException.h">
+      <Filter>Exceptions</Filter>
+    </ClInclude>
+    <ClInclude Include="includes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineGlobals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Keyboard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineMacros.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StimplyMemory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h">
+      <Filter>Renderer\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\imgui\imgui.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\imgui\backends\imgui_impl_dx12.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\imgui\backends\imgui_impl_win32.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\imgui\imconfig.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\imgui\imgui_internal.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\imgui\imstb_rectpack.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\imgui\imstb_textedit.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\imgui\imstb_truetype.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectX11Renderer.h">
+      <Filter>Renderer\Header Files\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="Surface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GDIPlusManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ThirdParty\imgui\backends\imgui_impl_dx11.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="EngineTypes.inl">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\ThirdParty\imgui\.editorconfig">
+      <Filter>imgui</Filter>
+    </None>
+    <None Include="..\ThirdParty\imgui\.gitattributes">
+      <Filter>imgui</Filter>
+    </None>
+    <None Include="..\ThirdParty\imgui\.gitignore">
+      <Filter>imgui</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\ThirdParty\imgui\LICENSE.txt">
+      <Filter>imgui</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="VertexShader.hlsl">
+      <Filter>Renderer\Shaders\DirectX11</Filter>
+    </FxCompile>
+    <FxCompile Include="PixelShader.hlsl">
+      <Filter>Renderer\Shaders\DirectX11</Filter>
+    </FxCompile>
+    <FxCompile Include="PhongPS.hlsl">
+      <Filter>Renderer\Shaders\DirectX11</Filter>
+    </FxCompile>
+    <FxCompile Include="PhongVS.hlsl">
+      <Filter>Renderer\Shaders\DirectX11</Filter>
+    </FxCompile>
+  </ItemGroup>
+</Project>
