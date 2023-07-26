@@ -102,11 +102,11 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 		DirectX::XMFLOAT3 normal;
 	};
 
-	m_Context->OMSetRenderTargets(1u, m_RTV.GetAddressOf(), nullptr);
+	m_Context->OMSetRenderTargets(1u, m_RTV.GetAddressOf(), m_DepthStencilView.Get());
 
-	const FLOAT color[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+	const FLOAT color[] = { 0.9882352941176471f, 0.0117647058823529f, 0.6313725490196078f, 1.0f };
 	m_Context->ClearRenderTargetView(m_RTV.Get(), color);
-	//m_Context->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
+	m_Context->ClearDepthStencilView(m_DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
 
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -171,7 +171,7 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 		for (unsigned short i = 0; i < 36; i++) { indices[i] = i; }
 		for (Vertex& v : vertexBuffer)
 		{
-			v.color = { 0.0f, 0.f, 1.f };
+			v.color = { 1.0f, 0.f, 1.f };
 		}
 		indicesCount = _countof(indices);
 
@@ -317,98 +317,88 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 		bInitialized = true;
 	}
 
-	static float yPos = 0.0f;
-	static float phi, theta, camPitch, camRoll, camYaw = 0.0f;
-	static float camDist = DirectX::XMConvertToRadians(-15.0f);
-	static bool pauseSin = false;
+	renderData.camDist = DirectX::XMConvertToRadians(-15.0f);
 
 	if (ImGui::Begin("Camera Control"))
 	{
-		static float elapsedTime = 0.0f;
-		static int fps = 0;
-		elapsedTime += ImGui::GetIO().DeltaTime;
-		if (elapsedTime > 0.5f)
+		renderData.elapsedTime += ImGui::GetIO().DeltaTime;
+		if (renderData.elapsedTime > 0.5f)
 		{
-			fps = ImGui::GetIO().Framerate;
-			elapsedTime = 0.0f;
+			renderData.fps = ImGui::GetIO().Framerate;
+			renderData.elapsedTime = 0.0f;
 		}
-		ImGui::Text("Frametime: %.3f, FPS: %d", 1000.f / ImGui::GetIO().Framerate, fps);
-		ImGui::Checkbox("Pause Movement", &pauseSin);
+		ImGui::Text("Frametime: %.3f, FPS: %d", 1000.f / ImGui::GetIO().Framerate, renderData.fps);
+		ImGui::Checkbox("Pause Movement", &renderData.pauseSin);
 		ImGui::Checkbox("vSync", (bool*)&syncInterval);
-		ImGui::SliderAngle("Camera Phi X", &phi, -180.0f, 180.0f);
-		ImGui::SliderAngle("Camera Theta Y", &theta, -180.0f, 180.0f);
-		ImGui::SliderAngle("Camera Distance", &camDist, -180.0f, -6.f);
+		ImGui::SliderAngle("Camera Phi X", &renderData.phi, -180.0f, 180.0f);
+		ImGui::SliderAngle("Camera Theta Y", &renderData.theta, -180.0f, 180.0f);
+		ImGui::SliderAngle("Camera Distance", &renderData.camDist, -180.0f, -6.f);
 
-		ImGui::SliderAngle("Camera Roll", &camRoll, -180.0f, 180.0f);
-		ImGui::SliderAngle("Camera Pitch", &camPitch, -180.0f, 180.0f);
-		ImGui::SliderAngle("Camera Yaw", &camYaw, -180.0f, 180.0f);
+		ImGui::SliderAngle("Camera Roll", &renderData.camRoll, -180.0f, 180.0f);
+		ImGui::SliderAngle("Camera Pitch", &renderData.camPitch, -180.0f, 180.0f);
+		ImGui::SliderAngle("Camera Yaw", &renderData.camYaw, -180.0f, 180.0f);
 	
 		if (ImGui::Button("Reset"))
 		{
-			phi = theta = camRoll = camPitch = camYaw = 0.0f;
-			camDist = DirectX::XMConvertToRadians(-15.0f);
+			renderData.phi = renderData.theta = renderData.camRoll 
+				= renderData.camPitch = renderData.camYaw = 0.0f;
+			renderData.camDist = DirectX::XMConvertToRadians(-15.0f);
 		}
 		ImGui::End();
 	}
 
-	if (!pauseSin)
+	if (ImGui::Begin("Scaling"))
 	{
-		yPos += 1.0f * deltaTime;
+		ImGui::SliderFloat("X", &renderData.scaleX, 0.f, 10.f);
+		ImGui::SliderFloat("Y", &renderData.scaleY, 0.f, 10.f);
+		ImGui::SliderFloat("Z", &renderData.scaleZ, 0.f, 10.f);
+		ImGui::End();
 	}
-	DirectX::XMVECTOR pos = DirectX::XMVector3Transform(DirectX::XMVectorSet(0.0f, 0.0f, camDist, 0.0f), DirectX::XMMatrixRotationRollPitchYaw(phi, -theta, 0.0f));
+
+	if (!renderData.pauseSin)
+	{
+		renderData.yPos += 1.0f * deltaTime;
+	}
+	DirectX::XMVECTOR pos = DirectX::XMVector3Transform(
+		DirectX::XMVectorSet(0.0f, 0.0f, renderData.camDist, 0.0f), DirectX::XMMatrixRotationRollPitchYaw(renderData.phi, -renderData.theta, 0.0f));
 	DirectX::XMVECTOR focusPoint = DirectX::XMVectorZero();
 	DirectX::XMVECTOR upVec = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
 	DirectX::XMMATRIX camMat = DirectX::XMMatrixLookAtLH(pos, focusPoint, upVec) *
-		DirectX::XMMatrixRotationRollPitchYaw(camPitch, -camYaw, camRoll);
+		DirectX::XMMatrixRotationRollPitchYaw(renderData.camPitch, -renderData.camYaw, renderData.camRoll);
 	DirectX::XMMATRIX projMat = DirectX::XMMatrixPerspectiveLH(1.0f, 3.0f / 4.0f, 0.1f, 120.f);
-
-	static float objRoll, objPitch, objYaw, objZ;
 
 	if (ImGui::Begin("Object Position"))
 	{
-		ImGui::SliderAngle("Object Roll", &objRoll, -180.f, 180.f);
-		ImGui::SliderAngle("Object Pitch", &objPitch, -180.f, 180.f);
-		ImGui::SliderAngle("Object Yaw", &objYaw, -180.f, 180.f);
-		ImGui::SliderAngle("Object Z", &objZ, -180.f, 180.f);
+		ImGui::SliderAngle("Object Roll", &renderData.objRoll, -180.f, 180.f);
+		ImGui::SliderAngle("Object Pitch", &renderData.objPitch, -180.f, 180.f);
+		ImGui::SliderAngle("Object Yaw", &renderData.objYaw, -180.f, 180.f);
+		ImGui::SliderAngle("Object Z", &renderData.objZ, -180.f, 180.f);
 		ImGui::End();
 	}
-	Transforms transforms;
-	transforms.model = DirectX::XMMatrixTranspose(
-		DirectX::XMMatrixRotationRollPitchYaw(objPitch, objYaw, objRoll) * 
-		DirectX::XMMatrixTranslation(0.0f, sin(yPos) * 0.5f, objZ) * 
+	
+	renderData.transforms.model = DirectX::XMMatrixTranspose(
+		DirectX::XMMatrixRotationRollPitchYaw(renderData.objPitch, renderData.objYaw, renderData.objRoll) *
+		DirectX::XMMatrixTranslation(0.0f, sin(renderData.yPos) * 0.5f, renderData.objZ) *
+		DirectX::XMMatrixScaling(renderData.scaleX, renderData.scaleY, renderData.scaleZ) *
 		projMat
 	);
-	transforms.MVP = DirectX::XMMatrixTranspose(transforms.model * camMat * projMat);
-
-	struct PixelCBuf
-	{
-		DirectX::XMFLOAT3 pos;
-		float padding;
-	};
-
-	static PixelCBuf lightPos =
-	{
-		{ 0.0f, DirectX::XMConvertToRadians(2.0f), DirectX::XMConvertToRadians(1.0f) },
-		0.0f
-	};
+	renderData.transforms.MVP = DirectX::XMMatrixTranspose(renderData.transforms.model * camMat * projMat);
 
 	if (ImGui::Begin("Light Pos"))
 	{
-		ImGui::SliderAngle("Light X", &lightPos.pos.x, -180.f, 180.f);
-		ImGui::SliderAngle("Light Y", &lightPos.pos.y, -180.f, 180.f);
-		ImGui::SliderAngle("Light Z", &lightPos.pos.z, -180.f, 180.f);
+		ImGui::SliderAngle("Light X", &renderData.lightPos.pos.x, -180.f, 180.f);
+		ImGui::SliderAngle("Light Y", &renderData.lightPos.pos.y, -180.f, 180.f);
+		ImGui::SliderAngle("Light Z", &renderData.lightPos.pos.z, -180.f, 180.f);
 		ImGui::End();
 	}
 
-	D3D11_MAPPED_SUBRESOURCE msr{};
-
-	DXERR(m_Context->Map(m_PixelConstantBuffer.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &msr), "Failed to map constant buffer");
-	memcpy(msr.pData, &lightPos, sizeof(lightPos));
+	DXERR(m_Context->Map(m_PixelConstantBuffer.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &renderData.msr), "Failed to map constant buffer");
+	memcpy(renderData.msr.pData, &renderData.lightPos, sizeof(renderData.lightPos));
 	m_Context->Unmap(m_PixelConstantBuffer.Get(), 0u);
 
-	DXERR(m_Context->Map(m_ConstantBuffer.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &msr), "Failed to map constant buffer");
-	memcpy(msr.pData, &transforms, sizeof(transforms));
+	DXERR(m_Context->Map(m_ConstantBuffer.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &renderData.msr), "Failed to map constant buffer");
+	memcpy(renderData.msr.pData, &renderData.transforms, sizeof(renderData.transforms));
 	m_Context->Unmap(m_ConstantBuffer.Get(), 0u);
 
 	m_Context->VSSetConstantBuffers(0u, 1u, m_ConstantBuffer.GetAddressOf());

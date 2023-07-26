@@ -9,18 +9,64 @@
 #define DXERR(x, msg) (x)
 #endif
 
+struct Transforms
+{
+	DirectX::XMMATRIX model;
+	DirectX::XMMATRIX MVP;
+};
+
+struct RenderData
+{
+	struct PixelCBuf
+	{
+		DirectX::XMFLOAT3 pos;
+		float padding;
+	} lightPos;
+	float yPos;
+	float phi;
+	float theta;
+	float camPitch;
+	float camRoll;
+	float camYaw;
+	float camDist;
+	float elapsedTime;
+	bool pauseSin = false;
+	int fps;
+	float scaleX;
+	float scaleY;
+	float scaleZ;
+	DirectX::XMVECTOR pos;
+	DirectX::XMVECTOR focusPoint;
+	DirectX::XMVECTOR upVec;
+	DirectX::XMFLOAT4X4 camMat;
+	DirectX::XMFLOAT4X4 projMat;
+	float objRoll;
+	float objPitch;
+	float objYaw;
+	float objZ;
+	Transforms transforms;
+	D3D11_MAPPED_SUBRESOURCE msr{};
+
+	RenderData()
+	{
+		ZeroMemory(this, sizeof(RenderData));
+		objZ = DirectX::XMConvertToRadians(30.f);
+		scaleX = scaleY = scaleZ = 1.0f;
+		camDist = DirectX::XMConvertToRadians(-15.f);
+		lightPos = 
+		{
+			{ 0.0f, DirectX::XMConvertToRadians(2.0f), DirectX::XMConvertToRadians(1.0f) },
+			0.0f
+		};
+	}
+};
+
 enum Shaders
 {
 	PixelShaderLightPosition = 0,
 	VertexShaderMVP = 1,
 	VertexShaderModel = 2,
 	Shaders_MAX
-};
-
-struct Transforms
-{
-	DirectX::XMMATRIX model;
-	DirectX::XMMATRIX MVP;
 };
 
 class DirectX11Renderer
@@ -76,4 +122,5 @@ private:
 	UINT syncInterval = 1u;
 
 	class Window* m_Window;
+	RenderData renderData;
 };
