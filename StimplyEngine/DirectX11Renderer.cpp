@@ -359,21 +359,13 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 	{
 		renderData.yPos += 1.0f * deltaTime;
 	}
-	DirectX::XMVECTOR pos = DirectX::XMVector3Transform(
-		DirectX::XMVectorSet(0.0f, 0.0f, renderData.camDist, 0.0f), DirectX::XMMatrixRotationRollPitchYaw(renderData.phi, -renderData.theta, 0.0f));
-	DirectX::XMVECTOR focusPoint = DirectX::XMVectorZero();
-	DirectX::XMVECTOR upVec = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-	DirectX::XMMATRIX camMat = DirectX::XMMatrixLookAtLH(pos, focusPoint, upVec) *
-		DirectX::XMMatrixRotationRollPitchYaw(renderData.camPitch, -renderData.camYaw, renderData.camRoll);
-	DirectX::XMMATRIX projMat = DirectX::XMMatrixPerspectiveLH(1.0f, 3.0f / 4.0f, 0.1f, 120.f);
 
 	if (ImGui::Begin("Object Position"))
 	{
 		ImGui::SliderAngle("Object Roll", &renderData.objRoll, -180.f, 180.f);
 		ImGui::SliderAngle("Object Pitch", &renderData.objPitch, -180.f, 180.f);
 		ImGui::SliderAngle("Object Yaw", &renderData.objYaw, -180.f, 180.f);
-		ImGui::SliderAngle("Object Z", &renderData.objZ, -180.f, 180.f);
+		ImGui::SliderAngle("Object Z", &renderData.objZ, 0.0f, 360.f);
 		ImGui::End();
 	}
 	
@@ -381,9 +373,13 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 		DirectX::XMMatrixRotationRollPitchYaw(renderData.objPitch, renderData.objYaw, renderData.objRoll) *
 		DirectX::XMMatrixTranslation(0.0f, sin(renderData.yPos) * 0.5f, renderData.objZ) *
 		DirectX::XMMatrixScaling(renderData.scaleX, renderData.scaleY, renderData.scaleZ) *
-		projMat
+		DirectX::XMLoadFloat4x4(&renderData.projMat)
 	);
-	renderData.transforms.MVP = DirectX::XMMatrixTranspose(renderData.transforms.model * camMat * projMat);
+	renderData.transforms.MVP = DirectX::XMMatrixTranspose(
+		renderData.transforms.model *
+		DirectX::XMLoadFloat4x4(&renderData.camMat) * 
+		DirectX::XMLoadFloat4x4(&renderData.projMat)
+	);
 
 	if (ImGui::Begin("Light Pos"))
 	{

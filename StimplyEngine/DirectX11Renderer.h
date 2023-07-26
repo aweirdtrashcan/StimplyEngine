@@ -58,6 +58,7 @@ struct RenderData
 			{ 0.0f, DirectX::XMConvertToRadians(2.0f), DirectX::XMConvertToRadians(1.0f) },
 			0.0f
 		};
+		DirectX::XMStoreFloat4x4(&projMat, DirectX::XMMatrixPerspectiveLH(1.0, 3.0 / 4.0f, 1.0f, 150.f));
 	}
 };
 
