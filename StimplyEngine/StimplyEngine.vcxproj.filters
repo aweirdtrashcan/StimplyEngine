@@ -201,4 +201,15 @@
       <Filter>Renderer\Shaders\DirectX11</Filter>
     </FxCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Object Include="..\x64\Debug\obj\FinalBaseMesh.obj">
+      <Filter>Resource Files</Filter>
+    </Object>
+    <Object Include="..\x64\Debug\obj\Rabbit.obj">
+      <Filter>Resource Files</Filter>
+    </Object>
+    <Object Include="..\x64\Debug\obj\cottage_obj.obj">
+      <Filter>Resource Files</Filter>
+    </Object>
+  </ItemGroup>
 </Project>

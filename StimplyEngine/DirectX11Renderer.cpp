@@ -1,3 +1,4 @@
+#define TINYOBJLOADER_IMPLEMENTATION
 #include "DirectX11Renderer.h"
 #include "Window.h"
 #include <sstream>
@@ -7,6 +8,11 @@
 #include <imgui.h>
 #include <backends/imgui_impl_dx11.h>
 #include <backends/imgui_impl_win32.h>
+#include <cstdlib>
+#include <fstream>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 
 using namespace Microsoft::WRL;
 
@@ -98,7 +104,6 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 	struct Vertex
 	{
 		DirectX::XMFLOAT3 pos;
-		DirectX::XMFLOAT3 color;
 		DirectX::XMFLOAT3 normal;
 	};
 
@@ -116,7 +121,7 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 	{
 		const float texScalar = 1.0f;
 		const float coordScalar = 1.0f;
-		Vertex vertexBuffer[] =
+		/*Vertex vertexBuffer[] =
 		{
 			{ { -0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
 			{ {  0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
@@ -165,37 +170,68 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 			{ {  0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
 			{ { -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } },
 			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
-		};
+		};*/
 
-		unsigned short indices[36];
-		for (unsigned short i = 0; i < 36; i++) { indices[i] = i; }
-		for (Vertex& v : vertexBuffer)
+		const aiScene* model = imp.ReadFile("C:\\Programming\\VisualStudio Projects\\StimplyEngine\\x64\\Debug\\obj\\FinalBaseMesh.obj",
+			aiProcess_Triangulate | 
+			aiProcess_JoinIdenticalVertices
+		);
+		if (!model)
 		{
-			v.color = { 1.0f, 0.f, 1.f };
+			MessageBoxA(nullptr, imp.GetErrorString(), "Error", MB_OK | MB_ICONEXCLAMATION);
 		}
-		indicesCount = _countof(indices);
+
+		const aiMesh* pMesh = model->mMeshes[0];
+
+		std::vector<unsigned short> indices;
+	
+		std::vector<Vertex> vertices;
+		vertices.reserve(pMesh->mNumVertices);
+		for (UINT i = 0; i < pMesh->mNumVertices; i++)
+		{
+			if (pMesh->mNormals != 0)
+			{
+				vertices.push_back({ { *reinterpret_cast<DirectX::XMFLOAT3*>(&pMesh->mVertices[i]) },
+				*reinterpret_cast<DirectX::XMFLOAT3*>(&pMesh->mNormals[i]) });
+			}
+			else
+			{
+				vertices.push_back({ { *reinterpret_cast<DirectX::XMFLOAT3*>(&pMesh->mVertices[i]) }, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f) });
+			}
+		}
+
+		indices.resize(pMesh->mNumFaces * 3);
+		for (UINT i = 0; i < pMesh->mNumFaces; i++)
+		{
+			assert(pMesh->mFaces[i].mNumIndices == 3);
+			indices.push_back(pMesh->mFaces[i].mIndices[0]);
+			indices.push_back(pMesh->mFaces[i].mIndices[1]);
+			indices.push_back(pMesh->mFaces[i].mIndices[2]);
+		}
+
+		indicesCount = static_cast<UINT>(indices.size());
 
 		D3D11_BUFFER_DESC vertexBufferDesc{};
 		vertexBufferDesc.CPUAccessFlags = 0u;
-		vertexBufferDesc.ByteWidth = sizeof(vertexBuffer);
+		vertexBufferDesc.ByteWidth = static_cast<UINT>(vertices.size() * sizeof(Vertex));
 		vertexBufferDesc.StructureByteStride = sizeof(Vertex);
 		vertexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
 		D3D11_SUBRESOURCE_DATA vertexBufferData;
-		vertexBufferData.pSysMem = vertexBuffer;
+		vertexBufferData.pSysMem = vertices.data();
 
 		DXERR(m_Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_VertexBuffer), "Failed to create vertex buffer");
 
 		D3D11_BUFFER_DESC indexBufferDesc{};
 		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		indexBufferDesc.ByteWidth = sizeof(indices);
+		indexBufferDesc.ByteWidth = static_cast<UINT>(indices.size() * sizeof(unsigned short));
 		indexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		indexBufferDesc.CPUAccessFlags = 0;
 		indexBufferDesc.StructureByteStride = sizeof(unsigned short);
 		
 		D3D11_SUBRESOURCE_DATA srd{};
-		srd.pSysMem = indices;
+		srd.pSysMem = indices.data();
 		
 		DXERR(m_Device->CreateBuffer(&indexBufferDesc, &srd, &m_IndexBuffer), "Failed to create index buffer");
 
@@ -226,8 +262,7 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 		D3D11_INPUT_ELEMENT_DESC ied[] =
 		{
 			{ "Position", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u },
-			{ "Color", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 12u, D3D11_INPUT_PER_VERTEX_DATA, 0u },
-			{ "Normal", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 24u, D3D11_INPUT_PER_VERTEX_DATA, 0u },
+			{ "Normal", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0u },
 		};
 
 		ComPtr<ID3DBlob> m_PixelShaderBlob;
@@ -365,13 +400,15 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 		ImGui::SliderAngle("Object Roll", &renderData.objRoll, -180.f, 180.f);
 		ImGui::SliderAngle("Object Pitch", &renderData.objPitch, -180.f, 180.f);
 		ImGui::SliderAngle("Object Yaw", &renderData.objYaw, -180.f, 180.f);
-		ImGui::SliderAngle("Object Z", &renderData.objZ, 0.0f, 360.f);
+		ImGui::SliderAngle("Object X", &renderData.objX, -360.f * 4.f, 0.0f);
+		ImGui::SliderAngle("Object Y", &renderData.objY, -360.f * 4.f, 0.0f);
+		ImGui::SliderAngle("Object Z", &renderData.objZ, -360.f * 4.f, 360.f * 4.f);
 		ImGui::End();
 	}
 	
 	renderData.transforms.model = DirectX::XMMatrixTranspose(
 		DirectX::XMMatrixRotationRollPitchYaw(renderData.objPitch, renderData.objYaw, renderData.objRoll) *
-		DirectX::XMMatrixTranslation(0.0f, sin(renderData.yPos) * 0.5f, renderData.objZ) *
+		DirectX::XMMatrixTranslation(renderData.objX, renderData.objY, renderData.objZ) *
 		DirectX::XMMatrixScaling(renderData.scaleX, renderData.scaleY, renderData.scaleZ) *
 		DirectX::XMLoadFloat4x4(&renderData.projMat)
 	);
@@ -384,7 +421,7 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 	if (ImGui::Begin("Light Pos"))
 	{
 		ImGui::SliderAngle("Light X", &renderData.lightPos.pos.x, -180.f, 180.f);
-		ImGui::SliderAngle("Light Y", &renderData.lightPos.pos.y, -180.f, 180.f);
+		ImGui::SliderAngle("Light Y", &renderData.lightPos.pos.y, -180.f, 180.f * 4);
 		ImGui::SliderAngle("Light Z", &renderData.lightPos.pos.z, -180.f, 180.f);
 		ImGui::End();
 	}
@@ -399,7 +436,6 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 
 	m_Context->VSSetConstantBuffers(0u, 1u, m_ConstantBuffer.GetAddressOf());
 	m_Context->PSSetConstantBuffers(0u, 1u, m_PixelConstantBuffer.GetAddressOf());
-
 	return true;
 }
 

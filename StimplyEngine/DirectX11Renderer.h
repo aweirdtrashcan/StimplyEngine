@@ -1,6 +1,7 @@
 #pragma once
 
 #include "includes.h"
+#include <assimp/Importer.hpp>
 #include <vector>
 
 #ifdef _DEBUG
@@ -43,6 +44,8 @@ struct RenderData
 	float objRoll;
 	float objPitch;
 	float objYaw;
+	float objX;
+	float objY;
 	float objZ;
 	Transforms transforms;
 	D3D11_MAPPED_SUBRESOURCE msr{};
@@ -121,7 +124,9 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_RTextureView;
 	UINT indicesCount = 0u;
 	UINT syncInterval = 1u;
+	UINT verticesCount = 0u;
 
 	class Window* m_Window;
 	RenderData renderData;
+	Assimp::Importer imp;
 };

@@ -6,8 +6,9 @@ cbuffer CBufs
 
 static const float intensity = 1.0f;
 static const float3 lightColor = { 1.0f, 1.0f, 0.6f };
+static const float3 col = { 0.7f, 0.7f, 0.7f };
 
-float4 main(float3 col : Color, float3 normal : Normal, float3 worldPos : Pos) : SV_Target
+float4 main(float3 normal : Normal, float3 worldPos : Pos) : SV_Target
 {
     const float3 distanceToLight = (float3)lightPos - worldPos;
     const float3 ambient = col * 0.15f;
