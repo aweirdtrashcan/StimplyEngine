@@ -8,6 +8,10 @@
 #include "Keyboard.h"
 #include <exception>
 #include <memory>
+#include <string>
+#include <sstream>
+#include <vector>
+#include <memory>
 
 #ifdef DX12
 #include <wrl.h>

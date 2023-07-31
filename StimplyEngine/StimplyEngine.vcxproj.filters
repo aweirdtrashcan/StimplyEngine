@@ -40,6 +40,21 @@
     <Filter Include="Renderer\Header Files\DirectX11">
       <UniqueIdentifier>{9df9215a-e1b6-4e1d-bad2-6e585de79276}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Bindable">
+      <UniqueIdentifier>{bb8d0d73-77b0-477a-80b7-69b73e35aa33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Drawable">
+      <UniqueIdentifier>{05c43781-41a6-4c60-b7b0-b4d5ada5982e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Bindable">
+      <UniqueIdentifier>{78f8cecc-9c69-4f43-bec7-479281e46088}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Drawable">
+      <UniqueIdentifier>{6396bb42-2adf-4c06-a50d-6aed868ce40b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\StructsAndMacros">
+      <UniqueIdentifier>{0073dde3-6883-4d95-a607-12cfb9202089}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -92,6 +107,15 @@
     </ClCompile>
     <ClCompile Include="..\ThirdParty\imgui\backends\imgui_impl_dx11.cpp">
       <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="HumanModel.cpp">
+      <Filter>Source Files\Drawable</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Source Files\Drawable</Filter>
+    </ClCompile>
+    <ClCompile Include="Light.cpp">
+      <Filter>Source Files\Drawable</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -167,11 +191,47 @@
     <ClInclude Include="..\ThirdParty\imgui\backends\imgui_impl_dx11.h">
       <Filter>imgui</Filter>
     </ClInclude>
+    <ClInclude Include="Bindable.h">
+      <Filter>Header Files\Bindable</Filter>
+    </ClInclude>
+    <ClInclude Include="Buffer.h">
+      <Filter>Header Files\Bindable</Filter>
+    </ClInclude>
+    <ClInclude Include="PixelShader.h">
+      <Filter>Header Files\Bindable</Filter>
+    </ClInclude>
+    <ClInclude Include="VertexShader.h">
+      <Filter>Header Files\Bindable</Filter>
+    </ClInclude>
+    <ClInclude Include="InputLayout.h">
+      <Filter>Header Files\Bindable</Filter>
+    </ClInclude>
+    <ClInclude Include="PrimitiveTopology.h">
+      <Filter>Header Files\Bindable</Filter>
+    </ClInclude>
+    <ClInclude Include="Drawable.h">
+      <Filter>Header Files\Drawable</Filter>
+    </ClInclude>
+    <ClInclude Include="HumanModel.h">
+      <Filter>Header Files\Drawable</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Header Files\Bindable</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderResourceView.h">
+      <Filter>Header Files\Bindable</Filter>
+    </ClInclude>
+    <ClInclude Include="SamplerDescriptor.h">
+      <Filter>Header Files\Bindable</Filter>
+    </ClInclude>
+    <ClInclude Include="BindableIncludes.h">
+      <Filter>Header Files\Bindable</Filter>
+    </ClInclude>
+    <ClInclude Include="Light.h">
+      <Filter>Header Files\Drawable</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="EngineTypes.inl">
-      <Filter>Header Files</Filter>
-    </None>
     <None Include="..\ThirdParty\imgui\.editorconfig">
       <Filter>imgui</Filter>
     </None>
@@ -180,6 +240,15 @@
     </None>
     <None Include="..\ThirdParty\imgui\.gitignore">
       <Filter>imgui</Filter>
+    </None>
+    <None Include="DxMacros.inl">
+      <Filter>Header Files\StructsAndMacros</Filter>
+    </None>
+    <None Include="EngineTypes.inl">
+      <Filter>Header Files\StructsAndMacros</Filter>
+    </None>
+    <None Include="backups.inl">
+      <Filter>Header Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -198,6 +267,12 @@
       <Filter>Renderer\Shaders\DirectX11</Filter>
     </FxCompile>
     <FxCompile Include="PhongVS.hlsl">
+      <Filter>Renderer\Shaders\DirectX11</Filter>
+    </FxCompile>
+    <FxCompile Include="VSLight.hlsl">
+      <Filter>Renderer\Shaders\DirectX11</Filter>
+    </FxCompile>
+    <FxCompile Include="PSLight.hlsl">
       <Filter>Renderer\Shaders\DirectX11</Filter>
     </FxCompile>
   </ItemGroup>

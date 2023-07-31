@@ -3,12 +3,7 @@
 #include "includes.h"
 #include <assimp/Importer.hpp>
 #include <vector>
-
-#ifdef _DEBUG
-#define DXERR(x, msg) if (m_InfoQueue) { m_InfoQueue->ClearStoredMessages(); GetError(); } if (FAILED(x)) { __debugbreak(); assert(false && msg); }
-#else
-#define DXERR(x, msg) (x)
-#endif
+#include "DxMacros.inl"
 
 struct Transforms
 {
@@ -58,10 +53,9 @@ struct RenderData
 		camDist = DirectX::XMConvertToRadians(-15.f);
 		lightPos = 
 		{
-			{ 0.0f, DirectX::XMConvertToRadians(2.0f), DirectX::XMConvertToRadians(1.0f) },
+			{ 0.0f, 0.0f, 0.0f },
 			0.0f
 		};
-		DirectX::XMStoreFloat4x4(&projMat, DirectX::XMMatrixPerspectiveLH(1.0, 3.0 / 4.0f, 1.0f, 150.f));
 	}
 };
 
@@ -91,14 +85,21 @@ public:
 		GetBackBuffers();
 		m_IsResizing = false;
 	};
+	static Microsoft::WRL::ComPtr<ID3D11InfoQueue> GetInfoQueue()
+	{
+		return m_InfoQueue;
+	}
+	static DirectX::XMFLOAT4X4 GetProjection() { return s_Projection; }
+	static DirectX::XMFLOAT4X4 GetView() { return s_View; }
 
 private:
 	void CreateDevice(void);
 	void GetBackBuffers(void);
-	const char* GetError(void);
 	void CreateDepthBuffer(void);
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> CreateSamplerState();
-
+	void SetupLight(bool& isSetup, RenderData::PixelCBuf* pPcb);
+	void ControlCamera();
+	void ControlLight();
 private:
 	bool m_IsResizing = false;
 	static inline uint8_t s_NumFrames = 3u;
@@ -107,7 +108,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_Context;
 	Microsoft::WRL::ComPtr<ID3D11Resource> m_RTVResource;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_RTV;
-	Microsoft::WRL::ComPtr<ID3D11InfoQueue> m_InfoQueue;
+	static inline Microsoft::WRL::ComPtr<ID3D11InfoQueue> m_InfoQueue;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_VertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_IndexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_ConstantBuffer;
@@ -129,4 +130,8 @@ private:
 	class Window* m_Window;
 	RenderData renderData;
 	Assimp::Importer imp;
+	static inline DirectX::XMFLOAT4X4 s_View;
+	static inline DirectX::XMFLOAT4X4 s_Projection;
+	std::vector<class Drawable*> m_Drawables;
+	class DeviceContext* m_DeviceContext;
 };

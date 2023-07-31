@@ -12,6 +12,7 @@
 #include <fstream>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include "HumanModel.h"
 
 
 using namespace Microsoft::WRL;
@@ -34,6 +35,26 @@ DirectX11Renderer::DirectX11Renderer(Window* window)
 	{
 		Window::Log(ConsoleColor::Red, "Failed to init Dx11 Impl");
 	}
+
+	Vector2D winSize = m_Window->GetWindowSize();
+	D3D11_VIEWPORT viewport{};
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.Height = winSize.y;
+	viewport.Width = winSize.x;
+	viewport.MaxDepth = 1.0f;
+	viewport.MinDepth = 0.0f;
+
+	D3D11_RECT scissor{};
+	scissor.left = 0;
+	scissor.top = 0;
+	scissor.bottom = static_cast<LONG>(winSize.y);
+	scissor.right = static_cast<LONG>(winSize.x);
+
+	m_Context->RSSetViewports(1u, &viewport);
+	m_Context->RSSetScissorRects(1u, &scissor);
+
+	DirectX::XMStoreFloat4x4(&s_Projection, DirectX::XMMatrixPerspectiveLH(1.0f, winSize.y / winSize.x, 1.0f, 1500.f));
 }
 
 DirectX11Renderer::~DirectX11Renderer()
@@ -41,6 +62,11 @@ DirectX11Renderer::~DirectX11Renderer()
 	ImGui_ImplWin32_Shutdown();
 	ImGui_ImplDX11_Shutdown();
 	ImGui::DestroyContext();
+	delete m_DeviceContext;
+	for (Drawable* d : m_Drawables)
+	{
+		delete d;
+	}
 }
 
 void DirectX11Renderer::CreateDevice()
@@ -100,12 +126,6 @@ void DirectX11Renderer::CreateDevice()
 bool DirectX11Renderer::BeginFrame(float deltaTime)
 {
 	static bool bInitialized = false;
-	
-	struct Vertex
-	{
-		DirectX::XMFLOAT3 pos;
-		DirectX::XMFLOAT3 normal;
-	};
 
 	m_Context->OMSetRenderTargets(1u, m_RTV.GetAddressOf(), m_DepthStencilView.Get());
 
@@ -118,331 +138,37 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 	ImGui::NewFrame();
 
 	if (!bInitialized)
-	{
-		const float texScalar = 1.0f;
-		const float coordScalar = 1.0f;
-		/*Vertex vertexBuffer[] =
-		{
-			{ { -0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
-			{ {  0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
-			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, -1.0f } },
-
-			{ { -0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
-			{ {  0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, -1.0f } },
-			{ {  0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
-
-			{ {  0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-			{ {  0.5f,  0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-			{ {  0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
-
-			{ {  0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-			{ {  0.5f,  0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
-			{ {  0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-
-			{ {  0.5f,  0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-			{ { -0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-			{ {  0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
-
-			{ {  0.5f,  0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-			{ { -0.5f,  0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
-			{ { -0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-
-			{ { -0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f } },
-			{ { -0.5f,  0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f }, { -1.0f, 0.0f, 0.0f } },
-			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { -1.0f, 0.0f, 0.0f } },
-
-			{ { -0.5f,  0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { -1.0f, 0.0f, 0.0f } },
-			{ { -0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { -1.0f, 0.0f, 0.0f } },
-			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { -1.0f, 0.0f, 0.0f } },
-
-			{ { -0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-			{ { -0.5f,  0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-			{ {  0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
-
-			{ { -0.5f,  0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-			{ {  0.5f,  0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
-			{ {  0.5f,  0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-
-			{ {  0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
-			{ {  0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
-			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } },
-
-			{ {  0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
-			{ { -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, -1.0f, 0.0f } },
-			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 0.0f, -1.0f, 0.0f } },
-		};*/
-
-		const aiScene* model = imp.ReadFile("C:\\Programming\\VisualStudio Projects\\StimplyEngine\\x64\\Debug\\obj\\FinalBaseMesh.obj",
-			aiProcess_Triangulate | 
-			aiProcess_JoinIdenticalVertices
-		);
-		if (!model)
-		{
-			MessageBoxA(nullptr, imp.GetErrorString(), "Error", MB_OK | MB_ICONEXCLAMATION);
-		}
-
-		const aiMesh* pMesh = model->mMeshes[0];
-
-		std::vector<unsigned short> indices;
-	
-		std::vector<Vertex> vertices;
-		vertices.reserve(pMesh->mNumVertices);
-		for (UINT i = 0; i < pMesh->mNumVertices; i++)
-		{
-			if (pMesh->mNormals != 0)
-			{
-				vertices.push_back({ { *reinterpret_cast<DirectX::XMFLOAT3*>(&pMesh->mVertices[i]) },
-				*reinterpret_cast<DirectX::XMFLOAT3*>(&pMesh->mNormals[i]) });
-			}
-			else
-			{
-				vertices.push_back({ { *reinterpret_cast<DirectX::XMFLOAT3*>(&pMesh->mVertices[i]) }, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f) });
-			}
-		}
-
-		indices.resize(pMesh->mNumFaces * 3);
-		for (UINT i = 0; i < pMesh->mNumFaces; i++)
-		{
-			assert(pMesh->mFaces[i].mNumIndices == 3);
-			indices.push_back(pMesh->mFaces[i].mIndices[0]);
-			indices.push_back(pMesh->mFaces[i].mIndices[1]);
-			indices.push_back(pMesh->mFaces[i].mIndices[2]);
-		}
-
-		indicesCount = static_cast<UINT>(indices.size());
-
-		D3D11_BUFFER_DESC vertexBufferDesc{};
-		vertexBufferDesc.CPUAccessFlags = 0u;
-		vertexBufferDesc.ByteWidth = static_cast<UINT>(vertices.size() * sizeof(Vertex));
-		vertexBufferDesc.StructureByteStride = sizeof(Vertex);
-		vertexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-		vertexBufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-
-		D3D11_SUBRESOURCE_DATA vertexBufferData;
-		vertexBufferData.pSysMem = vertices.data();
-
-		DXERR(m_Device->CreateBuffer(&vertexBufferDesc, &vertexBufferData, &m_VertexBuffer), "Failed to create vertex buffer");
-
-		D3D11_BUFFER_DESC indexBufferDesc{};
-		indexBufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-		indexBufferDesc.ByteWidth = static_cast<UINT>(indices.size() * sizeof(unsigned short));
-		indexBufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-		indexBufferDesc.CPUAccessFlags = 0;
-		indexBufferDesc.StructureByteStride = sizeof(unsigned short);
-		
-		D3D11_SUBRESOURCE_DATA srd{};
-		srd.pSysMem = indices.data();
-		
-		DXERR(m_Device->CreateBuffer(&indexBufferDesc, &srd, &m_IndexBuffer), "Failed to create index buffer");
-
-		{
-			D3D11_BUFFER_DESC cBufferDesc{};
-			cBufferDesc.ByteWidth = sizeof(DirectX::XMVECTOR); // vector3 size.
-			cBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-			cBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-			cBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-			cBufferDesc.MiscFlags = 0;
-			cBufferDesc.StructureByteStride = 0;
-
-			DXERR(m_Device->CreateBuffer(&cBufferDesc, nullptr, &m_PixelConstantBuffer), "Failed to create constant buffer");
-		}
-
-		{
-			D3D11_BUFFER_DESC cBufferDesc{};
-			cBufferDesc.ByteWidth = sizeof(Transforms);
-			cBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-			cBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-			cBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-			cBufferDesc.MiscFlags = 0;
-			cBufferDesc.StructureByteStride = 0;
-
-			DXERR(m_Device->CreateBuffer(&cBufferDesc, nullptr, &m_ConstantBuffer), "Failed to create constant buffer");
-		}
-
-		D3D11_INPUT_ELEMENT_DESC ied[] =
-		{
-			{ "Position", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, 0u, D3D11_INPUT_PER_VERTEX_DATA, 0u },
-			{ "Normal", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0u },
-		};
-
-		ComPtr<ID3DBlob> m_PixelShaderBlob;
-		ComPtr<ID3DBlob> m_VertexShaderBlob;
-
-		DXERR(D3DReadFileToBlob(L"./PhongPS.cso", &m_PixelShaderBlob), "Failed to compile Pixel Shader.");
-		DXERR(D3DReadFileToBlob(L"./PhongVS.cso", &m_VertexShaderBlob), "Failed to compile Vertex Shader.");
-
-		DXERR(m_Device->CreatePixelShader(m_PixelShaderBlob->GetBufferPointer(), m_PixelShaderBlob->GetBufferSize(), nullptr, &m_PixelShader), "Failed to create shader");
-		DXERR(m_Device->CreateVertexShader(m_VertexShaderBlob->GetBufferPointer(), m_VertexShaderBlob->GetBufferSize(), nullptr, &m_VertexShader), "Failed to create shader");
-
-		DXERR(m_Device->CreateInputLayout(ied, _countof(ied), m_VertexShaderBlob->GetBufferPointer(), m_VertexShaderBlob->GetBufferSize(), &m_InputLayout), "Failed to create input layout");
-		m_Context->IASetInputLayout(m_InputLayout.Get());
-
-		m_Context->PSSetShader(m_PixelShader.Get(), nullptr, 0u);
-		m_Context->VSSetShader(m_VertexShader.Get(), nullptr, 0u);
-
-		m_Context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		
-		Vector2D winSize = m_Window->GetWindowSize();
-		D3D11_VIEWPORT viewport{};
-		viewport.TopLeftX = 0.0f;
-		viewport.TopLeftY = 0.0f;
-		viewport.Height = winSize.y;
-		viewport.Width = winSize.x;
-		viewport.MaxDepth = 1.0f;
-		viewport.MinDepth = 0.0f;
-
-		D3D11_RECT scissor{};
-		scissor.left = 0;
-		scissor.top = 0;
-		scissor.bottom = static_cast<LONG>(winSize.y);
-		scissor.right = static_cast<LONG>(winSize.x);
-
-		m_Context->RSSetViewports(1u, &viewport);
-		m_Context->RSSetScissorRects(1u, &scissor);
-
-		m_Context->IASetVertexBuffers(0u, 1u, m_VertexBuffer.GetAddressOf(), &vertexBufferDesc.StructureByteStride, &vertexBufferDesc.CPUAccessFlags);
-		m_Context->IASetIndexBuffer(m_IndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0u);
-		m_Context->VSSetConstantBuffers(0u, 1u, m_ConstantBuffer.GetAddressOf());
-
-		// create texture
-
-		const Surface s = Surface::FromFile("Images\\r.png");
-
-		D3D11_TEXTURE2D_DESC rTextDesc{};
-		rTextDesc.ArraySize = 1u;
-		rTextDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		rTextDesc.CPUAccessFlags = 0u;
-		rTextDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		rTextDesc.Height = s.GetHeight();
-		rTextDesc.Width = s.GetWidth();
-		rTextDesc.MipLevels = 1u;
-		rTextDesc.MiscFlags = 0u;
-		rTextDesc.SampleDesc.Count = 1u;
-		rTextDesc.SampleDesc.Quality = 0u;
-		rTextDesc.Usage = D3D11_USAGE_IMMUTABLE;
-		D3D11_SUBRESOURCE_DATA rTextSrd{};
-		rTextSrd.pSysMem = s.GetBufferPtr();
-		rTextSrd.SysMemPitch = s.GetWidth() * sizeof(Surface::Color);
-		DXERR(m_Device->CreateTexture2D(&rTextDesc, &rTextSrd, &m_RTexture), "failed to create r-texture");
-
-		D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
-		srvDesc.Format = rTextDesc.Format;
-		srvDesc.Texture2D.MipLevels = 1u;
-		srvDesc.Texture2D.MostDetailedMip = 0u;
-		srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-		DXERR(m_Device->CreateShaderResourceView(m_RTexture.Get(), &srvDesc, &m_RTextureView), "Failed to create r-texture view");
-
-		D3D11_SAMPLER_DESC samplerDesc{};
-		samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-		samplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-		samplerDesc.MinLOD = 0.0f;
-		samplerDesc.MaxLOD = 5.0f;
-		samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-		samplerDesc.BorderColor[0] = 1.0f;
-		samplerDesc.BorderColor[1] = 0.0f;
-		samplerDesc.BorderColor[2] = 1.0f;
-		samplerDesc.BorderColor[3] = 1.0f;
-		DXERR(m_Device->CreateSamplerState(&samplerDesc, &m_SamplerState), "Failed to create sampler state");
-
-		m_Context->PSSetSamplers(0u, 1u, m_SamplerState.GetAddressOf());
-		m_Context->PSSetShaderResources(0u, 1u, m_RTextureView.GetAddressOf());
-
+	{	
+		m_DeviceContext = new DeviceContext(m_Device, m_Context, m_InfoQueue);
+		m_Drawables.push_back(new HumanModel(m_DeviceContext));
 		bInitialized = true;
 	}
 
-	renderData.camDist = DirectX::XMConvertToRadians(-15.0f);
-
-	if (ImGui::Begin("Camera Control"))
+	for (Drawable* drawable : m_Drawables)
 	{
-		renderData.elapsedTime += ImGui::GetIO().DeltaTime;
-		if (renderData.elapsedTime > 0.5f)
-		{
-			renderData.fps = ImGui::GetIO().Framerate;
-			renderData.elapsedTime = 0.0f;
-		}
-		ImGui::Text("Frametime: %.3f, FPS: %d", 1000.f / ImGui::GetIO().Framerate, renderData.fps);
-		ImGui::Checkbox("Pause Movement", &renderData.pauseSin);
-		ImGui::Checkbox("vSync", (bool*)&syncInterval);
-		ImGui::SliderAngle("Camera Phi X", &renderData.phi, -180.0f, 180.0f);
-		ImGui::SliderAngle("Camera Theta Y", &renderData.theta, -180.0f, 180.0f);
-		ImGui::SliderAngle("Camera Distance", &renderData.camDist, -180.0f, -6.f);
-
-		ImGui::SliderAngle("Camera Roll", &renderData.camRoll, -180.0f, 180.0f);
-		ImGui::SliderAngle("Camera Pitch", &renderData.camPitch, -180.0f, 180.0f);
-		ImGui::SliderAngle("Camera Yaw", &renderData.camYaw, -180.0f, 180.0f);
-	
-		if (ImGui::Button("Reset"))
-		{
-			renderData.phi = renderData.theta = renderData.camRoll 
-				= renderData.camPitch = renderData.camYaw = 0.0f;
-			renderData.camDist = DirectX::XMConvertToRadians(-15.0f);
-		}
-		ImGui::End();
+		drawable->Update();
 	}
 
-	if (ImGui::Begin("Scaling"))
-	{
-		ImGui::SliderFloat("X", &renderData.scaleX, 0.f, 10.f);
-		ImGui::SliderFloat("Y", &renderData.scaleY, 0.f, 10.f);
-		ImGui::SliderFloat("Z", &renderData.scaleZ, 0.f, 10.f);
-		ImGui::End();
-	}
+	ControlLight();
 
-	if (!renderData.pauseSin)
-	{
-		renderData.yPos += 1.0f * deltaTime;
-	}
+	//DXERR(m_Context->Map(m_PixelConstantBuffer.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &renderData.msr), "Failed to map constant buffer");
+	//memcpy(renderData.msr.pData, &renderData.lightPos, sizeof(renderData.lightPos));
+	//m_Context->Unmap(m_PixelConstantBuffer.Get(), 0u);
 
-	if (ImGui::Begin("Object Position"))
-	{
-		ImGui::SliderAngle("Object Roll", &renderData.objRoll, -180.f, 180.f);
-		ImGui::SliderAngle("Object Pitch", &renderData.objPitch, -180.f, 180.f);
-		ImGui::SliderAngle("Object Yaw", &renderData.objYaw, -180.f, 180.f);
-		ImGui::SliderAngle("Object X", &renderData.objX, -360.f * 4.f, 0.0f);
-		ImGui::SliderAngle("Object Y", &renderData.objY, -360.f * 4.f, 0.0f);
-		ImGui::SliderAngle("Object Z", &renderData.objZ, -360.f * 4.f, 360.f * 4.f);
-		ImGui::End();
-	}
-	
-	renderData.transforms.model = DirectX::XMMatrixTranspose(
-		DirectX::XMMatrixRotationRollPitchYaw(renderData.objPitch, renderData.objYaw, renderData.objRoll) *
-		DirectX::XMMatrixTranslation(renderData.objX, renderData.objY, renderData.objZ) *
-		DirectX::XMMatrixScaling(renderData.scaleX, renderData.scaleY, renderData.scaleZ) *
-		DirectX::XMLoadFloat4x4(&renderData.projMat)
-	);
-	renderData.transforms.MVP = DirectX::XMMatrixTranspose(
-		renderData.transforms.model *
-		DirectX::XMLoadFloat4x4(&renderData.camMat) * 
-		DirectX::XMLoadFloat4x4(&renderData.projMat)
-	);
-
-	if (ImGui::Begin("Light Pos"))
-	{
-		ImGui::SliderAngle("Light X", &renderData.lightPos.pos.x, -180.f, 180.f);
-		ImGui::SliderAngle("Light Y", &renderData.lightPos.pos.y, -180.f, 180.f * 4);
-		ImGui::SliderAngle("Light Z", &renderData.lightPos.pos.z, -180.f, 180.f);
-		ImGui::End();
-	}
-
-	DXERR(m_Context->Map(m_PixelConstantBuffer.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &renderData.msr), "Failed to map constant buffer");
-	memcpy(renderData.msr.pData, &renderData.lightPos, sizeof(renderData.lightPos));
-	m_Context->Unmap(m_PixelConstantBuffer.Get(), 0u);
-
-	DXERR(m_Context->Map(m_ConstantBuffer.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &renderData.msr), "Failed to map constant buffer");
-	memcpy(renderData.msr.pData, &renderData.transforms, sizeof(renderData.transforms));
-	m_Context->Unmap(m_ConstantBuffer.Get(), 0u);
-
-	m_Context->VSSetConstantBuffers(0u, 1u, m_ConstantBuffer.GetAddressOf());
-	m_Context->PSSetConstantBuffers(0u, 1u, m_PixelConstantBuffer.GetAddressOf());
+	//m_Context->PSSetConstantBuffers(0u, 1u, m_PixelConstantBuffer.GetAddressOf());
 	return true;
 }
 
 bool DirectX11Renderer::EndFrame(float deltaTime)
 {
 	if (m_IsResizing) return true;
-	m_Context->DrawIndexed(indicesCount, 0u, 0u);
+	//m_Context->DrawIndexed(indicesCount, 0u, 0u);
+	
+	for (Drawable* d : m_Drawables)
+	{
+		d->Draw();
+	}
+
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 	UINT presentFlags = syncInterval != 0 ? 0u : DXGI_PRESENT_ALLOW_TEARING;
@@ -454,41 +180,6 @@ void DirectX11Renderer::GetBackBuffers(void)
 {
 	DXERR(m_SwapChain->GetBuffer(0, IID_PPV_ARGS(&m_RTVResource)), "Failed to get back buffer");
 	DXERR(m_Device->CreateRenderTargetView(m_RTVResource.Get(), nullptr, &m_RTV), "Failed to create RenderTargetView");
-}
-
-const char* DirectX11Renderer::GetError(void)
-{
-	UINT64 numStoredMsg = m_InfoQueue->GetNumStoredMessages();
-
-	std::stringstream ss;
-
-	std::string str;
-	const char* strChar = 0;
-
-	if (numStoredMsg)
-	{
-		for (UINT64 i = 0; i < numStoredMsg; ++i)
-		{
-			D3D11_MESSAGE message{};
-			SIZE_T msgLength = 0;
-			m_InfoQueue->GetMessageW(i, nullptr, &msgLength);
-			m_InfoQueue->GetMessageW(i, &message, &msgLength);
-
-			ss << message.pDescription << std::endl;
-		}
-
-		str = ss.str();
-		strChar = str.c_str();
-
-		MessageBoxA(nullptr, strChar, "Fatal error", MB_OK | MB_ICONEXCLAMATION);
-	}
-
-	if (strChar)
-	{
-		return strChar;
-	}
-
-	return "Unknown Error";
 }
 
 void DirectX11Renderer::CreateDepthBuffer(void)
@@ -539,4 +230,199 @@ Microsoft::WRL::ComPtr<ID3D11SamplerState> DirectX11Renderer::CreateSamplerState
 	DXERR(m_Device->CreateSamplerState(&samplerDesc, &sS), "Failed to create sampler state");
 
 	return sS;
+}
+
+void DirectX11Renderer::ControlCamera()
+{
+	if (ImGui::Begin("Camera Control"))
+	{
+		renderData.elapsedTime += ImGui::GetIO().DeltaTime;
+		if (renderData.elapsedTime > 0.5f)
+		{
+			renderData.fps = (int)ImGui::GetIO().Framerate;
+			renderData.elapsedTime = 0.0f;
+		}
+		ImGui::Text("Frametime: %.3f, FPS: %d", 1000.f / ImGui::GetIO().Framerate, renderData.fps);
+		ImGui::Checkbox("Pause Movement", &renderData.pauseSin);
+		ImGui::Checkbox("vSync", (bool*)&syncInterval);
+		ImGui::SliderAngle("Camera Phi X", &renderData.phi, -180.0f, 180.0f);
+		ImGui::SliderAngle("Camera Theta Y", &renderData.theta, -180.0f, 180.0f);
+		ImGui::SliderAngle("Camera Distance", &renderData.camDist, -180.0f, -6.f);
+
+		ImGui::SliderAngle("Camera Roll", &renderData.camRoll, -180.0f, 180.0f);
+		ImGui::SliderAngle("Camera Pitch", &renderData.camPitch, -180.0f, 180.0f);
+		ImGui::SliderAngle("Camera Yaw", &renderData.camYaw, -180.0f, 180.0f);
+
+		if (ImGui::Button("Reset"))
+		{
+			renderData.phi = renderData.theta = renderData.camRoll
+				= renderData.camPitch = renderData.camYaw = 0.0f;
+			renderData.camDist = DirectX::XMConvertToRadians(-15.0f);
+		}
+		ImGui::End();
+	}
+}
+
+void DirectX11Renderer::ControlLight()
+{
+	if (ImGui::Begin("Light Pos"))
+	{
+		ImGui::SliderFloat("Light X", &renderData.lightPos.pos.x, -180.f, 180.f);
+		ImGui::SliderFloat("Light Y", &renderData.lightPos.pos.y, -180.f, 180.f);
+		ImGui::SliderFloat("Light Z", &renderData.lightPos.pos.z, -180.f, 180.f);
+		ImGui::SliderFloat("Light Intensity", &renderData.lightPos.padding, 0.0f, 1200.f);
+		ImGui::End();
+	}
+}
+
+void DirectX11Renderer::SetupLight(bool& isSetup, RenderData::PixelCBuf* pPcb)
+{
+	static ComPtr<ID3D11Buffer> lightCBuf;
+	static UINT vertCount = 0;
+	
+	if (!isSetup)
+	{
+		DirectX::XMFLOAT3 lightColor = { 1.0f, 1.0f, 1.0f };
+		const Vertex vertBuffer[] =
+		{
+			{ { -0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ {  0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+
+			{ { -0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ {  0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+			{ {  0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+
+			{ {  0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ {  0.5f,  0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+			{ {  0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
+
+			{ {  0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ {  0.5f,  0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
+			{ {  0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
+
+			{ {  0.5f,  0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ { -0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
+			{ {  0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
+
+			{ {  0.5f,  0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ { -0.5f,  0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
+			{ { -0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
+
+			{ { -0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ { -0.5f,  0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
+			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+
+			{ { -0.5f,  0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ { -0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+
+			{ { -0.5f,  0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ { -0.5f,  0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
+			{ {  0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+
+			{ { -0.5f,  0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ {  0.5f,  0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
+			{ {  0.5f,  0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+
+			{ {  0.5f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ {  0.5f, -0.5f, 1.0f }, { 0.0f, 1.0f, 0.0f } },
+			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+
+			{ {  0.5f, -0.5f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+			{ { -0.5f, -0.5f, 1.0f }, { 0.0f, 0.0f, 1.0f } },
+			{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+		};
+		vertCount = _countof(vertBuffer);
+
+		ComPtr<ID3DBlob> vertBlob;
+		ComPtr<ID3DBlob> pixelBlob;
+
+		DXERR(D3DReadFileToBlob(L"VSLight.cso", &vertBlob), "Failed to compile VSLight");
+		DXERR(D3DReadFileToBlob(L"PSLight.cso", &pixelBlob), "Failed to compile PSLight");
+
+		ComPtr<ID3D11PixelShader> pixelShader;
+		ComPtr<ID3D11VertexShader> vertShader;
+
+		DXERR(m_Device->CreatePixelShader(
+			pixelBlob->GetBufferPointer(),
+			pixelBlob->GetBufferSize(),
+			nullptr,
+			&pixelShader), "Failed to create Light PixelShader");
+
+		DXERR(m_Device->CreateVertexShader(
+			vertBlob->GetBufferPointer(),
+			vertBlob->GetBufferSize(),
+			nullptr,
+			&vertShader), "Failed to create Light VertexShader");
+
+		m_Context->PSSetShader(pixelShader.Get(), nullptr, 0u);
+		m_Context->VSSetShader(vertShader.Get(), nullptr, 0u);
+
+		{
+			D3D11_BUFFER_DESC bd{};
+			bd.ByteWidth = sizeof(RenderData::PixelCBuf);
+			bd.StructureByteStride = 0u;
+			bd.MiscFlags = 0u;
+			bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+			bd.Usage = D3D11_USAGE_DYNAMIC;
+			D3D11_SUBRESOURCE_DATA srd{};
+			srd.pSysMem = pPcb;
+			
+			DXERR(m_Device->CreateBuffer(&bd, &srd, &lightCBuf), "Failed to create Light CBuf");
+
+			m_Context->VSSetConstantBuffers(0u, 1u, lightCBuf.GetAddressOf());
+		}
+		
+		{
+			ComPtr<ID3D11Buffer> buffer;
+
+			D3D11_BUFFER_DESC bd{};
+			bd.ByteWidth = sizeof(vertBuffer);
+			bd.StructureByteStride = sizeof(Vertex);
+			bd.MiscFlags = 0u;
+			bd.CPUAccessFlags = 0u;
+			bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+			bd.Usage = D3D11_USAGE_IMMUTABLE;
+			D3D11_SUBRESOURCE_DATA srd{};
+			srd.pSysMem = &vertBuffer;
+
+			DXERR(m_Device->CreateBuffer(&bd, &srd, &buffer), "Failed to create Light CBuf");
+
+			m_Context->IASetVertexBuffers(0u, 1u, buffer.GetAddressOf(), &bd.StructureByteStride, &bd.MiscFlags);
+		}
+		
+		D3D11_INPUT_ELEMENT_DESC ied[] =
+		{
+			{ "Color", 0u, DXGI_FORMAT_R32G32B32_FLOAT, 0u, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0u },
+		};
+
+		ComPtr<ID3D11InputLayout> inputLayout;
+		DXERR(m_Device->CreateInputLayout(
+			ied,
+			_countof(ied),
+			vertBlob->GetBufferPointer(),
+			vertBlob->GetBufferSize(),
+			&inputLayout), "Failed to create light Input Layout");
+		
+		m_Context->IASetInputLayout(inputLayout.Get());
+		isSetup = true;
+	}
+
+	if (ImGui::Begin("Light Pos"))
+	{
+		ImGui::SliderAngle("Light X", &pPcb->pos.x, -180.f, 180.f);
+		ImGui::SliderAngle("Light Y", &pPcb->pos.y, -180.f, 180.f * 4);
+		ImGui::SliderAngle("Light Z", &pPcb->pos.z, -180.f, 180.f);
+		ImGui::End();
+	}
+
+	D3D11_MAPPED_SUBRESOURCE srd{};
+	DXERR(m_Context->Map(lightCBuf.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &srd), "Failed to map light CBuf");
+	srd.pData = pPcb;
+	m_Context->Unmap(lightCBuf.Get(), 0u);
+	m_Context->VSSetConstantBuffers(0u, 1u, lightCBuf.GetAddressOf());
+
+	m_Context->Draw(36 * 3, 0u);
 }

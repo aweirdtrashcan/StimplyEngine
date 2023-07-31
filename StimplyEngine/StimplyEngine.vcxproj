@@ -159,7 +159,9 @@
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="DirectX11Renderer.cpp" />
     <ClCompile Include="GDIPlusManager.cpp" />
+    <ClCompile Include="HumanModel.cpp" />
     <ClCompile Include="Keyboard.cpp" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="stfafx.cpp">
@@ -167,6 +169,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Surface.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -180,25 +183,40 @@
     <ClInclude Include="..\ThirdParty\imgui\imstb_textedit.h" />
     <ClInclude Include="..\ThirdParty\imgui\imstb_truetype.h" />
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Bindable.h" />
+    <ClInclude Include="BindableIncludes.h" />
+    <ClInclude Include="Buffer.h" />
     <ClInclude Include="DirectX11Renderer.h" />
+    <ClInclude Include="Drawable.h" />
     <ClInclude Include="EngineException.h" />
     <ClInclude Include="EngineGlobals.h" />
     <ClInclude Include="EngineMacros.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="GDIPlusManager.h" />
+    <ClInclude Include="HumanModel.h" />
     <ClInclude Include="includes.h" />
+    <ClInclude Include="InputLayout.h" />
     <ClInclude Include="Keyboard.h" />
+    <ClInclude Include="Light.h" />
+    <ClInclude Include="PixelShader.h" />
+    <ClInclude Include="PrimitiveTopology.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="SamplerDescriptor.h" />
+    <ClInclude Include="ShaderResourceView.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StimplyMemory.h" />
     <ClInclude Include="Surface.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="VertexShader.h" />
     <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ThirdParty\imgui\.editorconfig" />
     <None Include="..\ThirdParty\imgui\.gitattributes" />
     <None Include="..\ThirdParty\imgui\.gitignore" />
+    <None Include="backups.inl" />
+    <None Include="DxMacros.inl" />
     <None Include="EngineTypes.inl" />
   </ItemGroup>
   <ItemGroup>
@@ -224,12 +242,24 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
+    <FxCompile Include="PSLight.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
     <FxCompile Include="VertexShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="VSLight.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

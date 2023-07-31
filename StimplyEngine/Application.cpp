@@ -42,8 +42,8 @@ void Application::Run()
         static float elapsedTime = 0.0f;
         t0 = clock.now();
         _window->processMessages();        
-        _renderer->BeginFrame(deltaTime);
-        _renderer->EndFrame(deltaTime);
+        _renderer->BeginFrame((float)deltaTime);
+        _renderer->EndFrame((float)deltaTime);
         t1 = clock.now();
         deltaTime = static_cast<float>((t1 - t0).count() * 1e-9);
     }
