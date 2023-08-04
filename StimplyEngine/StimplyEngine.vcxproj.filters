@@ -52,8 +52,11 @@
     <Filter Include="Source Files\Drawable">
       <UniqueIdentifier>{6396bb42-2adf-4c06-a50d-6aed868ce40b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\StructsAndMacros">
-      <UniqueIdentifier>{0073dde3-6883-4d95-a607-12cfb9202089}</UniqueIdentifier>
+    <Filter Include="Header Files\utils">
+      <UniqueIdentifier>{6d648af8-dadd-4fba-ba37-75e8efc9e0c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\controls">
+      <UniqueIdentifier>{06cde3db-d094-4cf2-8562-0cabb6f62599}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -117,6 +120,9 @@
     <ClCompile Include="Light.cpp">
       <Filter>Source Files\Drawable</Filter>
     </ClCompile>
+    <ClCompile Include="Scene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
@@ -131,28 +137,16 @@
     <ClInclude Include="EngineException.h">
       <Filter>Exceptions</Filter>
     </ClInclude>
-    <ClInclude Include="includes.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="EngineGlobals.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Keyboard.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="EngineMacros.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="StimplyMemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Renderer.h">
       <Filter>Renderer\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Event.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ThirdParty\imgui\imgui.h">
@@ -183,9 +177,6 @@
       <Filter>Renderer\Header Files\DirectX11</Filter>
     </ClInclude>
     <ClInclude Include="Surface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GDIPlusManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ThirdParty\imgui\backends\imgui_impl_dx11.h">
@@ -230,6 +221,27 @@
     <ClInclude Include="Light.h">
       <Filter>Header Files\Drawable</Filter>
     </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="includes.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="GDIPlusManager.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="StimplyMemory.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Keyboard.h">
+      <Filter>Header Files\controls</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalContext.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ThirdParty\imgui\.editorconfig">
@@ -241,14 +253,14 @@
     <None Include="..\ThirdParty\imgui\.gitignore">
       <Filter>imgui</Filter>
     </None>
-    <None Include="DxMacros.inl">
-      <Filter>Header Files\StructsAndMacros</Filter>
-    </None>
-    <None Include="EngineTypes.inl">
-      <Filter>Header Files\StructsAndMacros</Filter>
-    </None>
     <None Include="backups.inl">
       <Filter>Header Files</Filter>
+    </None>
+    <None Include="DxMacros.inl">
+      <Filter>Header Files\utils</Filter>
+    </None>
+    <None Include="EngineTypes.inl">
+      <Filter>Header Files\utils</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

@@ -164,6 +164,7 @@
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="stfafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -193,6 +194,7 @@
     <ClInclude Include="EngineMacros.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="GDIPlusManager.h" />
+    <ClInclude Include="GlobalContext.h" />
     <ClInclude Include="HumanModel.h" />
     <ClInclude Include="includes.h" />
     <ClInclude Include="InputLayout.h" />
@@ -202,6 +204,7 @@
     <ClInclude Include="PrimitiveTopology.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="SamplerDescriptor.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="ShaderResourceView.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StimplyMemory.h" />

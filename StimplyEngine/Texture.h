@@ -8,12 +8,10 @@ class ShaderResourceView;
 class Texture : public Bindable
 {
 public:
-	Texture(TextureType type, const Surface* surface, ShaderStage stage, const DeviceContext* deviceCtx)
+	Texture(TextureType type, const Surface* surface, ShaderStage stage)
 		:
 		m_Type(type)
 	{
-		InfoMan();
-
 		if (m_Type == TextureType::Texture2D)
 		{
 			D3D11_TEXTURE2D_DESC tex2DDesc{};
@@ -40,15 +38,14 @@ public:
 			{
 				tex2DDesc.Usage = D3D11_USAGE_DYNAMIC;
 			}
-			DXERR(m_DeviceCtx->device->CreateTexture2D(&tex2DDesc, &srd, &m_Texture2D), 
+			DXERR(GlobalContext::device->CreateTexture2D(&tex2DDesc, &srd, &m_Texture2D), 
 				"Failed to create 2D Texture");
 			CreateShaderResourceView(
 				tex2DDesc.Format,
 				D3D11_SRV_DIMENSION_TEXTURE2D,
 				m_Texture2D.Get(),
 				m_Type,
-				stage,
-				m_DeviceCtx);
+				stage);
 		}
 		else
 		{
@@ -67,8 +64,7 @@ private:
 		D3D11_SRV_DIMENSION dimension,
 		ID3D11Resource* resource,
 		TextureType type,
-		ShaderStage stage,
-		const DeviceContext* bindInfo);
+		ShaderStage stage);
 
 	TextureType m_Type;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> m_Texture2D;

@@ -4,9 +4,8 @@
 class SamplerDescriptor : public Bindable
 {
 public:
-	SamplerDescriptor(D3D11_TEXTURE_ADDRESS_MODE addressMode, FLOAT* borderColor, const DeviceContext* deviceCtx)
+	SamplerDescriptor(D3D11_TEXTURE_ADDRESS_MODE addressMode, FLOAT* borderColor)
 	{
-		InfoMan();
 		D3D11_SAMPLER_DESC desc{};
 		desc.AddressU = addressMode;
 		desc.AddressV = addressMode;
@@ -24,14 +23,14 @@ public:
 			desc.BorderColor[2] = borderColor[2];
 			desc.BorderColor[3] = borderColor[3];
 		}
-		DXERR(m_DeviceCtx->device->CreateSamplerState(&desc, &m_SamplerState),
+		DXERR(GlobalContext::device->CreateSamplerState(&desc, &m_SamplerState),
 			"Failed to create SamplerState");
 
 	}
 
 	virtual void Bind() override
 	{
-		m_DeviceCtx->context->VSSetSamplers(0u, 1u, m_SamplerState.GetAddressOf());
+		GlobalContext::context->VSSetSamplers(0u, 1u, m_SamplerState.GetAddressOf());
 	}
 private:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> m_SamplerState;

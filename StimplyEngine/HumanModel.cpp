@@ -7,10 +7,9 @@
 #include <imgui.h>
 #include "DirectX11Renderer.h"
 
-HumanModel::HumanModel(DeviceContext* deviceCtx)
+HumanModel::HumanModel()
 {
-	if (deviceCtx != nullptr && m_DeviceCtx == nullptr) m_DeviceCtx = deviceCtx;
-
+	Assimp::Importer imp;
 	const aiScene* model = imp.ReadFile("obj\\FinalBaseMesh.obj",
 		aiProcess_Triangulate |
 		aiProcess_JoinIdenticalVertices);
@@ -55,15 +54,13 @@ HumanModel::HumanModel(DeviceContext* deviceCtx)
 	m_Bindables.push_back(std::make_unique<Buffer<Vertex>>(
 		BufferType::VertexBuffer,
 		ShaderStage::UnknownOrNotUsed,
-		vertices,
-		m_DeviceCtx
+		vertices
 	));
 
 	std::unique_ptr<Buffer<unsigned short>> indexBuffer = std::make_unique<Buffer<unsigned short>>(
 		BufferType::IndexBuffer,
 		ShaderStage::UnknownOrNotUsed,
-		indices,
-		m_DeviceCtx
+		indices
 	);
 	m_IndicesCount = indexBuffer->GetIndices();
 
@@ -80,8 +77,7 @@ HumanModel::HumanModel(DeviceContext* deviceCtx)
 	};
 
 	std::unique_ptr<VertexShader> vertexShader = std::make_unique<VertexShader>(
-		L"./PhongVS.cso",
-		m_DeviceCtx
+		L"./PhongVS.cso"
 	);
 
 	ID3DBlob* vsBlob = vertexShader->GetBlob().Get();
@@ -89,15 +85,19 @@ HumanModel::HumanModel(DeviceContext* deviceCtx)
 	m_Bindables.push_back(std::move(vertexShader));
 
 	m_Bindables.push_back(std::make_unique<PixelShader>(
-		L"./PhongPS.cso",
-		m_DeviceCtx
+		L"./PhongPS.cso"
 	));
 
 	m_Bindables.push_back(std::make_unique<InputLayout>(
 		ied,
-		vsBlob,
-		m_DeviceCtx
+		vsBlob
 	));
+
+	m_PixelShaderCBuf = std::make_unique<Buffer<DirectX::XMFLOAT4>>(
+		BufferType::ConstantBuffer,
+		ShaderStage::PixelStage,
+		std::vector<DirectX::XMFLOAT4>{ DirectX11Renderer::GetLightPos() }
+	);
 
 	std::vector vecMatrices = {
 		matrix
@@ -106,9 +106,13 @@ HumanModel::HumanModel(DeviceContext* deviceCtx)
 	m_MatrixBuffer = std::make_unique<Buffer<Matrices>>(
 		BufferType::ConstantBuffer,
 		ShaderStage::VertexStage,
-		vecMatrices,
-		m_DeviceCtx
+		vecMatrices
 	);
+
+	for (std::unique_ptr<Bindable>& bind : m_Bindables)
+	{
+		bind->Bind();
+	}
 }
 
 void HumanModel::Update()
@@ -146,6 +150,9 @@ void HumanModel::Update()
 		DirectX::XMLoadFloat4x4(&proj)
 	);
 
+	DirectX::XMFLOAT4X4 f;
+	DirectX::XMStoreFloat4x4(&f, model);
+
 	DirectX::XMMATRIX mvp = DirectX::XMMatrixIdentity();
 
 	DirectX::XMStoreFloat4x4(&matrix.model, model);
@@ -156,16 +163,7 @@ void HumanModel::Update()
 
 void HumanModel::Draw()
 {
-	if (!m_IsBound)
-	{
-		for (std::unique_ptr<Bindable>& bind : m_Bindables)
-		{
-			bind->Bind();
-		}
-		m_IsBound = true;
-	}
-
 	m_MatrixBuffer->Bind();
 
-	m_DeviceCtx->context->DrawIndexed(m_IndicesCount, 0u, 0u);
+	GlobalContext::context->DrawIndexed(m_IndicesCount, 0u, 0u);
 }

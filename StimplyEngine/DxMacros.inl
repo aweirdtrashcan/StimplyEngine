@@ -1,18 +1,13 @@
 #ifdef _DEBUG
-#define DXERR(x, msg) if (m_InfoQueue) { m_InfoQueue->ClearStoredMessages(); GetError(); } if (FAILED(x)) { __debugbreak(); assert(false && msg); }
+#define DXERR(x, msg) if (GlobalContext::infoQueue) { GlobalContext::infoQueue->ClearStoredMessages(); GetError(); } if (FAILED(x)) { __debugbreak(); assert(false && msg); }
 #else
 #define DXERR(x, msg) (x)
 #endif
 
-#define SetupBindableInfo()\
-	if (deviceCtx != nullptr && deviceCtx != m_DeviceCtx) m_DeviceCtx = deviceCtx
-
-#define SetupDrawableInfo()\
-	if (deviceCtx != nullptr && deviceCtx != m_DeviceCtx) m_DeviceCtx = deviceCtx;
-
 #define GetError()\
 {\
-	UINT64 numStoredMsg = m_InfoQueue->GetNumStoredMessages();\
+	ID3D11InfoQueue* __infoQueue = GlobalContext::infoQueue;\
+	UINT64 numStoredMsg = __infoQueue->GetNumStoredMessages();\
 \
 	std::stringstream ss;\
 \
@@ -25,8 +20,8 @@
 		{\
 			D3D11_MESSAGE message{};\
 			SIZE_T msgLength = 0;\
-			m_InfoQueue->GetMessageW(i, nullptr, &msgLength);\
-			m_InfoQueue->GetMessageW(i, &message, &msgLength);\
+			__infoQueue->GetMessageW(i, nullptr, &msgLength);\
+			__infoQueue->GetMessageW(i, &message, &msgLength);\
 \
 			ss << message.pDescription << std::endl;\
 		}\
@@ -37,8 +32,3 @@
 		MessageBoxA(nullptr, strChar, "Fatal error", MB_OK | MB_ICONEXCLAMATION);\
 	}\
 }
-
-#define SetupDebugger()\
-	Microsoft::WRL::ComPtr<ID3D11InfoQueue> m_InfoQueue = m_DeviceCtx->infoQueue.Get();
-
-#define InfoMan() SetupBindableInfo(); SetupDebugger();

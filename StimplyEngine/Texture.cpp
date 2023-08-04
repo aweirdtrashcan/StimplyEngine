@@ -11,7 +11,7 @@ Texture::~Texture()
 void Texture::Bind()
 {
 	m_SamplerDescriptor->Bind();
-	m_DeviceCtx->context;
+	GlobalContext::context;
 }
 
 void Texture::AddSamplerDescriptor(SamplerDescriptor* samplerDescriptor)
@@ -35,8 +35,7 @@ void Texture::CreateShaderResourceView(DXGI_FORMAT format,
 	D3D11_SRV_DIMENSION dimension,
 	ID3D11Resource* resource,
 	TextureType type,
-	ShaderStage stage,
-	const DeviceContext* bindInfo)
+	ShaderStage stage)
 {
-	m_ShaderResourceView = new ShaderResourceView(format, dimension, resource, type, stage, bindInfo);
+	m_ShaderResourceView = new ShaderResourceView(format, dimension, resource, type, stage);
 }

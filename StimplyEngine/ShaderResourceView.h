@@ -9,12 +9,10 @@ public:
 		D3D11_SRV_DIMENSION dimension, 
 		ID3D11Resource* resource, 
 		TextureType type, 
-		ShaderStage stage,
-		const DeviceContext* deviceCtx)
+		ShaderStage stage)
 		:
 		m_Stage(stage)
 	{
-		InfoMan();
 		D3D11_SHADER_RESOURCE_VIEW_DESC desc{};
 		desc.Format = format;
 		if (type == TextureType::Texture2D)
@@ -23,7 +21,7 @@ public:
 			desc.Texture2D.MostDetailedMip = 0u;
 		}
 		desc.ViewDimension = dimension;
-		DXERR(m_DeviceCtx->device->CreateShaderResourceView(resource, &desc, &m_SRV), 
+		DXERR(GlobalContext::device->CreateShaderResourceView(resource, &desc, &m_SRV), 
 			"Failed to create Shader Resource View");
 	}
 
@@ -31,11 +29,11 @@ public:
 	{
 		if (m_Stage == ShaderStage::VertexStage)
 		{
-			m_DeviceCtx->context->VSSetShaderResources(0u, 1u, m_SRV.GetAddressOf());
+			GlobalContext::context->VSSetShaderResources(0u, 1u, m_SRV.GetAddressOf());
 		} 
 		if (m_Stage == ShaderStage::PixelStage)
 		{
-			m_DeviceCtx->context->PSSetShaderResources(0u, 1u, m_SRV.GetAddressOf());
+			GlobalContext::context->PSSetShaderResources(0u, 1u, m_SRV.GetAddressOf());
 		}
 	}
 

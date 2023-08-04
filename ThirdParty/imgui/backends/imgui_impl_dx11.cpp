@@ -185,10 +185,10 @@ void ImGui_ImplDX11_RenderDrawData(ImDrawData* draw_data)
         float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
         float mvp[4][4] =
         {
-            { 2.0f/(R-L),   0.0f,           0.0f,       0.0f },
-            { 0.0f,         2.0f/(T-B),     0.0f,       0.0f },
+            { 2.0f / (R - L),   0.0f,           0.0f,       0.0f },
+            { 0.0f,         2.0f / (T - B),     0.0f,       0.0f },
             { 0.0f,         0.0f,           0.5f,       0.0f },
-            { (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f },
+            { (R + L) / (L - R),  (T + B) / (B - T),    0.5f,       1.0f },
         };
         memcpy(&constant_buffer->mvp, mvp, sizeof(mvp));
         ctx->Unmap(bd->pVertexConstantBuffer, 0);
@@ -200,24 +200,24 @@ void ImGui_ImplDX11_RenderDrawData(ImDrawData* draw_data)
         UINT                        ScissorRectsCount, ViewportsCount;
         D3D11_RECT                  ScissorRects[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
         D3D11_VIEWPORT              Viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
-        ID3D11RasterizerState*      RS;
-        ID3D11BlendState*           BlendState;
+        ID3D11RasterizerState* RS;
+        ID3D11BlendState* BlendState;
         FLOAT                       BlendFactor[4];
         UINT                        SampleMask;
         UINT                        StencilRef;
-        ID3D11DepthStencilState*    DepthStencilState;
-        ID3D11ShaderResourceView*   PSShaderResource;
-        ID3D11SamplerState*         PSSampler;
-        ID3D11PixelShader*          PS;
-        ID3D11VertexShader*         VS;
-        ID3D11GeometryShader*       GS;
+        ID3D11DepthStencilState* DepthStencilState;
+        ID3D11ShaderResourceView* PSShaderResource;
+        ID3D11SamplerState* PSSampler;
+        ID3D11PixelShader* PS;
+        ID3D11VertexShader* VS;
+        ID3D11GeometryShader* GS;
         UINT                        PSInstancesCount, VSInstancesCount, GSInstancesCount;
-        ID3D11ClassInstance         *PSInstances[256], *VSInstances[256], *GSInstances[256];   // 256 is max according to PSSetShader documentation
+        ID3D11ClassInstance* PSInstances[256], * VSInstances[256], * GSInstances[256];   // 256 is max according to PSSetShader documentation
         D3D11_PRIMITIVE_TOPOLOGY    PrimitiveTopology;
-        ID3D11Buffer*               IndexBuffer, *VertexBuffer, *VSConstantBuffer;
+        ID3D11Buffer* IndexBuffer, * VertexBuffer, * VSConstantBuffer;
         UINT                        IndexBufferOffset, VertexBufferStride, VertexBufferOffset;
         DXGI_FORMAT                 IndexBufferFormat;
-        ID3D11InputLayout*          InputLayout;
+        ID3D11InputLayout* InputLayout;
     };
     BACKUP_DX11_STATE old = {};
     old.ScissorRectsCount = old.ViewportsCount = D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE;
@@ -233,7 +233,7 @@ void ImGui_ImplDX11_RenderDrawData(ImDrawData* draw_data)
     ctx->VSGetShader(&old.VS, old.VSInstances, &old.VSInstancesCount);
     ctx->VSGetConstantBuffers(0, 1, &old.VSConstantBuffer);
     ctx->GSGetShader(&old.GS, old.GSInstances, &old.GSInstancesCount);
-
+    
     ctx->IAGetPrimitiveTopology(&old.PrimitiveTopology);
     ctx->IAGetIndexBuffer(&old.IndexBuffer, &old.IndexBufferFormat, &old.IndexBufferOffset);
     ctx->IAGetVertexBuffers(0, 1, &old.VertexBuffer, &old.VertexBufferStride, &old.VertexBufferOffset);

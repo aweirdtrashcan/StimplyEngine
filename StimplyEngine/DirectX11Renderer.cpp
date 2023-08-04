@@ -13,7 +13,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include "HumanModel.h"
-
+#include "GlobalContext.h"
+#include "Light.h"
 
 using namespace Microsoft::WRL;
 
@@ -55,18 +56,30 @@ DirectX11Renderer::DirectX11Renderer(Window* window)
 	m_Context->RSSetScissorRects(1u, &scissor);
 
 	DirectX::XMStoreFloat4x4(&s_Projection, DirectX::XMMatrixPerspectiveLH(1.0f, winSize.y / winSize.x, 1.0f, 1500.f));
+	GlobalContext::Initialize();
+	GlobalContext::context = m_Context.Get();
+	GlobalContext::device = m_Device.Get();
+	GlobalContext::infoQueue = m_InfoQueue.Get();
+	m_Light = new Light();
+	m_Drawables.push_back(m_Light);
 }
 
 DirectX11Renderer::~DirectX11Renderer()
 {
+	m_Light = 0;
+	GlobalContext::Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui_ImplDX11_Shutdown();
 	ImGui::DestroyContext();
-	delete m_DeviceContext;
 	for (Drawable* d : m_Drawables)
 	{
 		delete d;
 	}
+}
+
+DirectX::XMFLOAT4 DirectX11Renderer::GetLightPos()
+{
+	return m_Light->GetLightPos();
 }
 
 void DirectX11Renderer::CreateDevice()
@@ -138,9 +151,8 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 	ImGui::NewFrame();
 
 	if (!bInitialized)
-	{	
-		m_DeviceContext = new DeviceContext(m_Device, m_Context, m_InfoQueue);
-		m_Drawables.push_back(new HumanModel(m_DeviceContext));
+	{
+		m_Drawables.push_back(new HumanModel());
 		bInitialized = true;
 	}
 
@@ -149,13 +161,8 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 		drawable->Update();
 	}
 
-	ControlLight();
+	ControlCamera();
 
-	//DXERR(m_Context->Map(m_PixelConstantBuffer.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &renderData.msr), "Failed to map constant buffer");
-	//memcpy(renderData.msr.pData, &renderData.lightPos, sizeof(renderData.lightPos));
-	//m_Context->Unmap(m_PixelConstantBuffer.Get(), 0u);
-
-	//m_Context->PSSetConstantBuffers(0u, 1u, m_PixelConstantBuffer.GetAddressOf());
 	return true;
 }
 
@@ -265,14 +272,7 @@ void DirectX11Renderer::ControlCamera()
 
 void DirectX11Renderer::ControlLight()
 {
-	if (ImGui::Begin("Light Pos"))
-	{
-		ImGui::SliderFloat("Light X", &renderData.lightPos.pos.x, -180.f, 180.f);
-		ImGui::SliderFloat("Light Y", &renderData.lightPos.pos.y, -180.f, 180.f);
-		ImGui::SliderFloat("Light Z", &renderData.lightPos.pos.z, -180.f, 180.f);
-		ImGui::SliderFloat("Light Intensity", &renderData.lightPos.padding, 0.0f, 1200.f);
-		ImGui::End();
-	}
+	
 }
 
 void DirectX11Renderer::SetupLight(bool& isSetup, RenderData::PixelCBuf* pPcb)

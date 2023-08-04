@@ -35,6 +35,6 @@ private:
     std::chrono::high_resolution_clock clock;
     std::chrono::steady_clock::time_point t0;
     std::chrono::steady_clock::time_point t1;
-    double deltaTime = 0.0;
+    float deltaTime = 0.0f;
 };
 

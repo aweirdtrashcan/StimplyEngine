@@ -4,10 +4,9 @@
 class InputLayout : public Bindable
 {
 public:
-	InputLayout(std::vector<D3D11_INPUT_ELEMENT_DESC> ied, ID3DBlob* vertShaderBytecode, const DeviceContext* deviceCtx)
+	InputLayout(std::vector<D3D11_INPUT_ELEMENT_DESC> ied, ID3DBlob* vertShaderBytecode)
 	{
-		InfoMan();
-		DXERR(m_DeviceCtx->device->CreateInputLayout(
+		DXERR(GlobalContext::device->CreateInputLayout(
 			ied.data(), 
 			(UINT)ied.size(), 
 			vertShaderBytecode->GetBufferPointer(), 
@@ -19,7 +18,7 @@ public:
 
 	virtual void Bind() override
 	{
-		m_DeviceCtx->context->IASetInputLayout(m_InputLayout.Get());
+		GlobalContext::context->IASetInputLayout(m_InputLayout.Get());
 	}
 
 private:

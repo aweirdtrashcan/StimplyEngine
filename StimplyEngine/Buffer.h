@@ -5,12 +5,11 @@ template<typename T>
 class Buffer : public Bindable
 {
 public:
-	Buffer(BufferType type, ShaderStage stage, std::vector<T> data, const DeviceContext* deviceCtx)
+	Buffer(BufferType type, ShaderStage stage, std::vector<T> data)
 		:
 		m_Type(type),
 		m_Stage(stage)
 	{
-		InfoMan();
 		D3D11_BUFFER_DESC bd{};
 		bd.ByteWidth = sizeof(T) * (UINT)data.size();
 		bd.StructureByteStride = sizeof(T);
@@ -37,7 +36,7 @@ public:
 		D3D11_SUBRESOURCE_DATA srd{};
 		srd.pSysMem = data.data();
 
-		DXERR(m_DeviceCtx->device->CreateBuffer(&bd, &srd, &m_Buffer), "Failed to create Buffer");
+		DXERR(GlobalContext::device->CreateBuffer(&bd, &srd, &m_Buffer), "Failed to create Buffer");
 	}
 	
 	virtual void Bind() override
@@ -51,7 +50,7 @@ public:
 		case BufferType::VertexBuffer:
 			offset = 0;
 			stride = sizeof(T);
-			m_DeviceCtx->context->IASetVertexBuffers(0u, 1u, m_Buffer.GetAddressOf(), &stride, &offset);
+			GlobalContext::context->IASetVertexBuffers(0u, 1u, m_Buffer.GetAddressOf(), &stride, &offset);
 			break;
 		case BufferType::IndexBuffer:
 			offset = 0;
@@ -68,16 +67,16 @@ public:
 				MessageBoxA(nullptr, "Failed to find a suitable IndexBuffer Type. Either 16-bits or 32-bits unsigned integer", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 				__debugbreak();
 			}
-			m_DeviceCtx->context->IASetIndexBuffer(m_Buffer.Get(), format, 0);
+			GlobalContext::context->IASetIndexBuffer(m_Buffer.Get(), format, 0);
 			break;
 		case BufferType::ConstantBuffer:
 			switch (m_Stage)
 			{
 			case ShaderStage::VertexStage:
-				m_DeviceCtx->context->VSSetConstantBuffers(0u, 1u, m_Buffer.GetAddressOf());
+				GlobalContext::context->VSSetConstantBuffers(0u, 1u, m_Buffer.GetAddressOf());
 				break;
 			case ShaderStage::PixelStage:
-				m_DeviceCtx->context->PSSetConstantBuffers(0u, 1u, m_Buffer.GetAddressOf());
+				GlobalContext::context->PSSetConstantBuffers(0u, 1u, m_Buffer.GetAddressOf());
 				break;
 			} break;
 		default:
@@ -89,12 +88,11 @@ public:
 
 	void Update(T* data)
 	{
-		SetupDebugger();
 		D3D11_MAPPED_SUBRESOURCE msr{};
-		DXERR(m_DeviceCtx->context->Map(m_Buffer.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &msr),
+		DXERR(GlobalContext::context->Map(m_Buffer.Get(), 0u, D3D11_MAP_WRITE_DISCARD, 0u, &msr),
 			"Failed to bind buffer");
 		memcpy(msr.pData, data, sizeof(T));
-		m_DeviceCtx->context->Unmap(m_Buffer.Get(), 0u);
+		GlobalContext::context->Unmap(m_Buffer.Get(), 0u);
 	}
 
 	const UINT GetIndices() const { return m_IndexCount; }

@@ -12,7 +12,7 @@ public:
 	
 	virtual void Bind() override 
 	{
-		m_DeviceCtx->context->IASetPrimitiveTopology(m_Topology);
+		GlobalContext::context->IASetPrimitiveTopology(m_Topology);
 	};
 private:
 	D3D11_PRIMITIVE_TOPOLOGY m_Topology;

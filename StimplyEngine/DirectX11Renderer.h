@@ -91,6 +91,7 @@ public:
 	}
 	static DirectX::XMFLOAT4X4 GetProjection() { return s_Projection; }
 	static DirectX::XMFLOAT4X4 GetView() { return s_View; }
+	static DirectX::XMFLOAT4 GetLightPos();
 
 private:
 	void CreateDevice(void);
@@ -133,5 +134,5 @@ private:
 	static inline DirectX::XMFLOAT4X4 s_View;
 	static inline DirectX::XMFLOAT4X4 s_Projection;
 	std::vector<class Drawable*> m_Drawables;
-	class DeviceContext* m_DeviceContext;
+	static inline class Light* m_Light;
 };

@@ -39,11 +39,15 @@ void Application::Run()
 {
     while (Global::gIsRunning)
     {
+        if (GetAsyncKeyState(VK_ESCAPE))
+        {
+            Global::gIsRunning = false;
+        }
         static float elapsedTime = 0.0f;
         t0 = clock.now();
         _window->processMessages();        
-        _renderer->BeginFrame((float)deltaTime);
-        _renderer->EndFrame((float)deltaTime);
+        _renderer->BeginFrame(deltaTime);
+        _renderer->EndFrame(deltaTime);
         t1 = clock.now();
         deltaTime = static_cast<float>((t1 - t0).count() * 1e-9);
     }

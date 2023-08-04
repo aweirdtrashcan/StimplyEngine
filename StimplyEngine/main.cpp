@@ -13,9 +13,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 int main()
 {
-    Application app(L"Stimply Engine", GetModuleHandleW(0));
+    Application* app = new Application(L"Stimply Engine", GetModuleHandleW(0));
 
-    app.Run();
+    app->Run();
+
+    delete app;
 
     return 0;
 }

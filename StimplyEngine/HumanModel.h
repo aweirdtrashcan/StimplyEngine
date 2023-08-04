@@ -8,19 +8,17 @@
 class HumanModel : public Drawable
 {
 public:
-	HumanModel(DeviceContext* drawableInfo);
+	HumanModel();
 	
 	virtual void Update() override;
 	virtual void Draw() override;
 private:
 	std::unique_ptr<class Buffer<Matrices>> m_MatrixBuffer;
+	std::unique_ptr<class Buffer<DirectX::XMFLOAT4>> m_PixelShaderCBuf;
 	DirectX::XMFLOAT4X4 m_ModelMatrix;
 	float scaleXYZ[3] = { 1.0f, 1.0f, 1.0f };
 	float roll, pitch, yaw;
 	float x, y, z;
-	bool m_IsBound = false;
-	UINT m_IndicesCount = 0;
 	Matrices matrix;
-	Assimp::Importer imp;
 };
 
