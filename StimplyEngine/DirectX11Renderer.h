@@ -91,7 +91,7 @@ public:
 	}
 	static DirectX::XMFLOAT4X4 GetProjection() { return s_Projection; }
 	static DirectX::XMFLOAT4X4 GetView() { return s_View; }
-	static DirectX::XMFLOAT4 GetLightPos();
+	static DirectX::XMFLOAT4& GetLightPos();
 
 private:
 	void CreateDevice(void);

@@ -78,6 +78,8 @@ public:
 			case ShaderStage::PixelStage:
 				GlobalContext::context->PSSetConstantBuffers(0u, 1u, m_Buffer.GetAddressOf());
 				break;
+			default:
+				throw std::runtime_error("Failed to select shader stage");
 			} break;
 		default:
 			MessageBoxA(nullptr, "Failed to select what is the BufferType", "ERROR", MB_OK | MB_ICONEXCLAMATION);

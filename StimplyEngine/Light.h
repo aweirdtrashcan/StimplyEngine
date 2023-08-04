@@ -9,7 +9,7 @@ public:
 
 	virtual void Update() override;
 	virtual void Draw() override;
-	DirectX::XMFLOAT4 GetLightPos() { return m_LightPos; }
+	DirectX::XMFLOAT4& GetLightPos() { return m_LightPos; }
 
 private:
 	DirectX::XMFLOAT4 m_LightPos = { 0.0f, 0.0f, 0.0f, 1.0f };

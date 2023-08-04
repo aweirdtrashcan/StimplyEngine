@@ -90,6 +90,8 @@ Light::Light()
 
 	m_Bindables.push_back(std::move(vShader));
 
+	m_Bindables.push_back(std::make_unique<PrimitiveTopology>(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST));
+
 	std::vector<DirectX::XMFLOAT4X4> m = { DirectX::XMFLOAT4X4() };
 
 	m_CBuf = std::make_unique<Buffer<DirectX::XMFLOAT4X4>>(
@@ -103,28 +105,22 @@ Light::Light()
 		ShaderStage::VertexStage,
 		f
 	));*/
-
-	for (std::unique_ptr<Bindable>& b : m_Bindables)
-	{
-		b->Bind();
-	}
 }
 
 void Light::Update()
 {
 	if (ImGui::Begin("Light Pos"))
 	{
-		ImGui::SliderFloat("Light X", &m_LightPos.x, -180.f, 180.f);
-		ImGui::SliderFloat("Light Y", &m_LightPos.y, -180.f, 180.f);
-		ImGui::SliderFloat("Light Z", &m_LightPos.z, -180.f, 180.f);
+		ImGui::SliderFloat("Light X", &m_LightPos.x, -10.f, 30.f);
+		ImGui::SliderFloat("Light Y", &m_LightPos.y, -10.f, 30.f);
+		ImGui::SliderFloat("Light Z", &m_LightPos.z, -10.f, 360.f);
+		ImGui::SliderFloat("Light Intensity", &m_LightPos.w, 0.0f, 30.f);
 		ImGui::End();
 	}
 
 	const DirectX::XMFLOAT4X4& proj = DirectX11Renderer::GetProjection();
 
 	DirectX::XMMATRIX m = DirectX::XMMatrixTranspose(
-		DirectX::XMMatrixRotationRollPitchYaw(0.0f, 0.0f, 0.0f) *
-		DirectX::XMMatrixScaling(1.0f, 1.0f, 1.0f) *
 		DirectX::XMMatrixTranslation(m_LightPos.x, m_LightPos.y, m_LightPos.z) *
 		DirectX::XMLoadFloat4x4(&proj)
 	);
@@ -136,7 +132,11 @@ void Light::Update()
 
 void Light::Draw()
 {
+	for (std::unique_ptr<Bindable>& b : m_Bindables)
+	{
+		b->Bind();
+	}
 	m_CBuf->Bind();
 
-	GlobalContext::context->Draw(36u, 0u);
+	GlobalContext::context->DrawIndexed(m_IndicesCount, 0u, 0u);
 }

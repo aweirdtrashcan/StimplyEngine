@@ -60,8 +60,6 @@ DirectX11Renderer::DirectX11Renderer(Window* window)
 	GlobalContext::context = m_Context.Get();
 	GlobalContext::device = m_Device.Get();
 	GlobalContext::infoQueue = m_InfoQueue.Get();
-	m_Light = new Light();
-	m_Drawables.push_back(m_Light);
 }
 
 DirectX11Renderer::~DirectX11Renderer()
@@ -77,9 +75,14 @@ DirectX11Renderer::~DirectX11Renderer()
 	}
 }
 
-DirectX::XMFLOAT4 DirectX11Renderer::GetLightPos()
+DirectX::XMFLOAT4& DirectX11Renderer::GetLightPos()
 {
-	return m_Light->GetLightPos();
+	static DirectX::XMFLOAT4 f(0.0f, 0.0f, 0.0f, 0.0f);
+	if (m_Light != nullptr)
+	{
+		return m_Light->GetLightPos();
+	}
+	return f;
 }
 
 void DirectX11Renderer::CreateDevice()
@@ -153,6 +156,8 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 	if (!bInitialized)
 	{
 		m_Drawables.push_back(new HumanModel());
+		m_Light = new Light();
+		m_Drawables.push_back(m_Light);
 		bInitialized = true;
 	}
 
@@ -277,7 +282,7 @@ void DirectX11Renderer::ControlLight()
 
 void DirectX11Renderer::SetupLight(bool& isSetup, RenderData::PixelCBuf* pPcb)
 {
-	static ComPtr<ID3D11Buffer> lightCBuf;
+	/*static ComPtr<ID3D11Buffer> lightCBuf;
 	static UINT vertCount = 0;
 	
 	if (!isSetup)
@@ -424,5 +429,5 @@ void DirectX11Renderer::SetupLight(bool& isSetup, RenderData::PixelCBuf* pPcb)
 	m_Context->Unmap(lightCBuf.Get(), 0u);
 	m_Context->VSSetConstantBuffers(0u, 1u, lightCBuf.GetAddressOf());
 
-	m_Context->Draw(36 * 3, 0u);
+	m_Context->Draw(36 * 3, 0u);*/
 }

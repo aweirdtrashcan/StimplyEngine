@@ -108,11 +108,6 @@ HumanModel::HumanModel()
 		ShaderStage::VertexStage,
 		vecMatrices
 	);
-
-	for (std::unique_ptr<Bindable>& bind : m_Bindables)
-	{
-		bind->Bind();
-	}
 }
 
 void HumanModel::Update()
@@ -159,11 +154,18 @@ void HumanModel::Update()
 	DirectX::XMStoreFloat4x4(&matrix.mvp, mvp);
 
 	m_MatrixBuffer->Update(&matrix);
+	m_PixelShaderCBuf->Update(&DirectX11Renderer::GetLightPos());
+	//printf("Light Pos: %f %f %f\n", DirectX11Renderer::GetLightPos().x, DirectX11Renderer::GetLightPos().y, DirectX11Renderer::GetLightPos().z);
 }
 
 void HumanModel::Draw()
 {
+	for (std::unique_ptr<Bindable>& bind : m_Bindables)
+	{
+		bind->Bind();
+	}
 	m_MatrixBuffer->Bind();
+	m_PixelShaderCBuf->Bind();
 
 	GlobalContext::context->DrawIndexed(m_IndicesCount, 0u, 0u);
 }
