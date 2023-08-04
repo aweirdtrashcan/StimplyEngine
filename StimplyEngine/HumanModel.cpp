@@ -51,6 +51,11 @@ HumanModel::HumanModel()
 		}
 	}
 
+	x = 0.0f;
+	y = -11.122f;
+	z = 113.707f;
+	yaw = DirectX::XMConvertToRadians(180.f);
+
 	m_Bindables.push_back(std::make_unique<Buffer<Vertex>>(
 		BufferType::VertexBuffer,
 		ShaderStage::UnknownOrNotUsed,
@@ -93,10 +98,10 @@ HumanModel::HumanModel()
 		vsBlob
 	));
 
-	m_PixelShaderCBuf = std::make_unique<Buffer<DirectX::XMFLOAT4>>(
+	m_PixelShaderCBuf = std::make_unique<Buffer<LightConstantBuffer>>(
 		BufferType::ConstantBuffer,
 		ShaderStage::PixelStage,
-		std::vector<DirectX::XMFLOAT4>{ DirectX11Renderer::GetLightPos() }
+		std::vector<LightConstantBuffer>{ DirectX11Renderer::GetLightConstantBuffer() }
 	);
 
 	std::vector vecMatrices = {
@@ -112,27 +117,25 @@ HumanModel::HumanModel()
 
 void HumanModel::Update()
 {
-	if (ImGui::Begin("Scaling"))
+	static bool bShow = true;
+	ImGui::Begin("Human", &bShow);
+	if (bShow)
 	{
+		ImGui::Text("Scaling");
 		ImGui::SliderFloat("X", &scaleXYZ[0], 0.f, 10.f);
 		ImGui::SliderFloat("Y", &scaleXYZ[1], 0.f, 10.f);
 		ImGui::SliderFloat("Z", &scaleXYZ[2], 0.f, 10.f);
-		ImGui::End();
-	}
 
-	if (ImGui::Begin("Object Rotation"))
-	{
+		ImGui::Text("Rotation");
 		ImGui::SliderAngle("Object Roll", &roll, -180.f, 180.f);
 		ImGui::SliderAngle("Object Pitch", &pitch, -180.f, 180.f);
 		ImGui::SliderAngle("Object Yaw", &yaw, -180.f, 180.f);
-		ImGui::End();
-	}
 
-	if (ImGui::Begin("Object Position"))
-	{
+		ImGui::Text("Position");
 		ImGui::SliderFloat("Object X", &x, -30.f, 30.f);
 		ImGui::SliderFloat("Object Y", &y, -30.f, 30.f);
 		ImGui::SliderFloat("Object Z", &z, -30.f, 30.f * 20.f);
+		
 		ImGui::End();
 	}
 
@@ -154,12 +157,12 @@ void HumanModel::Update()
 	DirectX::XMStoreFloat4x4(&matrix.mvp, mvp);
 
 	m_MatrixBuffer->Update(&matrix);
-	m_PixelShaderCBuf->Update(&DirectX11Renderer::GetLightPos());
-	//printf("Light Pos: %f %f %f\n", DirectX11Renderer::GetLightPos().x, DirectX11Renderer::GetLightPos().y, DirectX11Renderer::GetLightPos().z);
+	m_PixelShaderCBuf->Update((LightConstantBuffer*)&DirectX11Renderer::GetLightConstantBuffer());
 }
 
 void HumanModel::Draw()
 {
+	Update();
 	for (std::unique_ptr<Bindable>& bind : m_Bindables)
 	{
 		bind->Bind();

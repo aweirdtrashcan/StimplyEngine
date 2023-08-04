@@ -75,14 +75,9 @@ DirectX11Renderer::~DirectX11Renderer()
 	}
 }
 
-DirectX::XMFLOAT4& DirectX11Renderer::GetLightPos()
+const LightConstantBuffer& DirectX11Renderer::GetLightConstantBuffer()
 {
-	static DirectX::XMFLOAT4 f(0.0f, 0.0f, 0.0f, 0.0f);
-	if (m_Light != nullptr)
-	{
-		return m_Light->GetLightPos();
-	}
-	return f;
+	return m_Light->GetLightConstantBuffer();
 }
 
 void DirectX11Renderer::CreateDevice()
@@ -155,15 +150,10 @@ bool DirectX11Renderer::BeginFrame(float deltaTime)
 
 	if (!bInitialized)
 	{
-		m_Drawables.push_back(new HumanModel());
 		m_Light = new Light();
 		m_Drawables.push_back(m_Light);
+		m_Drawables.push_back(new HumanModel());
 		bInitialized = true;
-	}
-
-	for (Drawable* drawable : m_Drawables)
-	{
-		drawable->Update();
 	}
 
 	ControlCamera();
@@ -246,7 +236,9 @@ Microsoft::WRL::ComPtr<ID3D11SamplerState> DirectX11Renderer::CreateSamplerState
 
 void DirectX11Renderer::ControlCamera()
 {
-	if (ImGui::Begin("Camera Control"))
+	static bool bShow = true;
+	ImGui::Begin("Camera Control", &bShow);
+	if (bShow)
 	{
 		renderData.elapsedTime += ImGui::GetIO().DeltaTime;
 		if (renderData.elapsedTime > 0.5f)

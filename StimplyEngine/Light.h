@@ -9,11 +9,12 @@ public:
 
 	virtual void Update() override;
 	virtual void Draw() override;
-	DirectX::XMFLOAT4& GetLightPos() { return m_LightPos; }
+	const LightConstantBuffer& GetLightConstantBuffer() const { return m_LightCBuf; }
 
 private:
-	DirectX::XMFLOAT4 m_LightPos = { 0.0f, 0.0f, 0.0f, 1.0f };
+	LightConstantBuffer m_LightCBuf;
 	DirectX::XMFLOAT4X4 m_Matrix;
 	std::unique_ptr<Buffer<DirectX::XMFLOAT4X4>> m_CBuf;
+	std::unique_ptr<Buffer<DirectX::XMFLOAT4>> m_PSCbufLightColor;
 };
 

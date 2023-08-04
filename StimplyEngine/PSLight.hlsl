@@ -1,4 +1,9 @@
-float4 main(float4 lightColor : Color) : SV_TARGET
+cbuffer cbuf
+{
+    float4 lightColor;
+};
+
+float4 main() : SV_TARGET
 {
     return lightColor;
 }

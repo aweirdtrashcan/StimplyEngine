@@ -40,6 +40,12 @@ struct Matrices
 	DirectX::XMFLOAT4X4 mvp;
 };
 
+struct Float3Padding
+{
+	DirectX::XMFLOAT3 xyz;
+	float padding;
+};
+
 struct DeviceContext
 {
 	friend bool operator==(const DeviceContext& a, const DeviceContext& b)
@@ -72,4 +78,16 @@ enum class TextureType : uint8_t
 {
 	Texture2D,
 	Texture3D
+};
+
+struct LightConstantBuffer
+{
+	alignas(16)DirectX::XMFLOAT3 lightPos;
+	alignas(16)DirectX::XMFLOAT3 materialColor;
+	alignas(16)DirectX::XMFLOAT3 ambient;
+	alignas(16)DirectX::XMFLOAT3 diffuseColor;
+	float diffuseIntensity;
+	float attConst;
+	float attLin;
+	float attQuad;
 };

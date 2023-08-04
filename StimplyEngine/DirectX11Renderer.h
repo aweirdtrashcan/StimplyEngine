@@ -91,7 +91,7 @@ public:
 	}
 	static DirectX::XMFLOAT4X4 GetProjection() { return s_Projection; }
 	static DirectX::XMFLOAT4X4 GetView() { return s_View; }
-	static DirectX::XMFLOAT4& GetLightPos();
+	static const LightConstantBuffer& GetLightConstantBuffer();
 
 private:
 	void CreateDevice(void);
@@ -125,7 +125,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> m_SamplerState;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_RTextureView;
 	UINT indicesCount = 0u;
-	UINT syncInterval = 1u;
+	UINT syncInterval = 0u;
 	UINT verticesCount = 0u;
 
 	class Window* m_Window;
