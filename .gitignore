@@ -12,3 +12,4 @@ ShaderCompilation.props
 ShaderCompilation.targets
 .vs
 .vs/*
+compile_commands.json
