@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="containers">
+      <UniqueIdentifier>{FB7E5497-E736-96E4-503E-6F403C1531D5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core">
+      <UniqueIdentifier>{4E40957C-3A77-960D-E363-7C10CF79120F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platform">
+      <UniqueIdentifier>{4A63C33C-3630-1E48-5F49-0CF04B7553D6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="renderer">
+      <UniqueIdentifier>{9C6AA017-8837-FB22-B150-E9CA9D7C30B1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="window">
+      <UniqueIdentifier>{5DFE1E25-49A0-49FB-325B-5D4F1E9CD04B}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="engine\containers\list.h">
+      <Filter>containers</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\core\logger.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\core\test.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\defines.h" />
+    <ClInclude Include="engine\platform\platform.h">
+      <Filter>platform</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\renderer\renderer.h">
+      <Filter>renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\renderer\renderer_interface.h">
+      <Filter>renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="engine\window\window.h">
+      <Filter>window</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="engine\core\entry.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\core\logger.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\platform\platform_linux.cpp">
+      <Filter>platform</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\platform\platform_win32.cpp">
+      <Filter>platform</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\renderer\renderer.cpp">
+      <Filter>renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="engine\window\window.cpp">
+      <Filter>window</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="assets\shaders\naked_vert.hlsl" />
+  </ItemGroup>
+</Project>

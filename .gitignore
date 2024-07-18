@@ -1,0 +1,13 @@
+bin/*
+.cache/*
+obj/*
+.cache/*
+*.make
+Makefile
+*.vcxproj
+*.sln
+ShaderCompilation.xml
+ShaderCompilation.props
+ShaderCompilation.targets
+.vs
+.vs/*

@@ -1,0 +1,114 @@
+#include "core/logger.h"
+#include "platform.h"
+
+#include "defines.h"
+
+#if defined (PLATFORM_LINUX)
+
+#include "window/window.h"
+
+#include <vulkan/vulkan_core.h>
+#include <SDL2/SDL_stdinc.h>
+#include <SDL2/SDL_video.h>
+#include <SDL2/SDL_vulkan.h>
+
+#include <cstring>
+#include <dlfcn.h>
+
+#include <filesystem>
+#include <string>
+
+struct alloc_header {
+    size_t allocation_size;
+};
+
+static Platform* platform_ptr = nullptr;
+
+static inline void* from_header_to_memory(alloc_header* header) {
+    return ((uint8_t*)header) + sizeof(alloc_header); 
+}
+
+static inline alloc_header* from_memory_to_header(void* memory) {
+    return (alloc_header*)(((uint8_t*)memory) - sizeof(alloc_header));
+}
+
+Platform::Platform() {
+    if (platform_ptr) {
+        // TODO: Throw exception
+    }
+    platform_ptr = this;
+}
+
+Platform::~Platform() {
+    platform_ptr = nullptr;
+}
+
+void* Platform::ualloc(size_t size) {
+    alloc_header* header = (alloc_header*)malloc(sizeof(alloc_header) + size);
+    memset(header, 0, sizeof(alloc_header) + size);
+    header->allocation_size = size;
+
+    if (!platform_ptr) {
+        Logger::warning("Allocating %zu bytes before initializing platform", size);
+        platform_ptr->m_TotalAllocation += size;
+    }
+    
+    return from_header_to_memory(header);    
+}
+
+void Platform::ufree(void* memory) {
+    alloc_header* header = from_memory_to_header(memory);
+
+    if (!platform_ptr) {
+        Logger::warning("Freeing %zu bytes before initializing platform", header->allocation_size);
+        platform_ptr->m_TotalAllocation -= header->allocation_size;
+    }
+
+    free(header);
+}
+
+void* Platform::zero_memory(void* memory, size_t size) {
+    return memset(memory, 0, size);
+}
+
+void Platform::log(log_level level, const char *message) {
+    static constexpr const char* color_string[] = { "0;41", "1;33", "1;32", "1;30" };
+    printf("\033[%sm%s\033[0m\n", color_string[level], message);
+}
+
+void* Platform::load_library(const char* libraryPath) {
+    char library_name[1024]{};
+
+    std::string path = std::filesystem::current_path();
+
+    snprintf(library_name, sizeof(library_name), "%s/lib%s.so", path.c_str(), libraryPath);
+
+    void* library = dlopen(library_name, RTLD_NOW);
+
+    if (!library) {
+        Logger::fatal("%s", dlerror());
+    }
+
+    return library;
+}
+
+void Platform::unload_library(void* library) {
+    dlclose(library);
+}
+
+void* Platform::load_library_function(void* library, const std::string& functionName) {
+    return dlsym(library, functionName.c_str());
+}
+
+void* Platform::create_vulkan_surface(Window* window, void* instance) {
+    VkSurfaceKHR surface = 0;
+    
+    if (SDL_Vulkan_CreateSurface((SDL_Window*)window->get_internal_handle(), (VkInstance)instance, &surface) != SDL_TRUE) {
+        Logger::fatal("Failed to create vulkan surface");
+        return nullptr;
+    }
+
+    return surface;
+}
+
+#endif

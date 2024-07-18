@@ -1,0 +1,10 @@
+{
+    "clangd.fallbackFlags": [
+        "${workspaceFolder}/compile_commands"
+    ],
+    "C_Cpp.intelliSenseEngine": "disabled",
+    "files.associations": {
+        "*.rh": "cpp",
+        "future": "cpp"
+    }
+}
