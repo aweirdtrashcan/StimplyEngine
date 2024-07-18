@@ -5,6 +5,7 @@ obj/*
 *.make
 Makefile
 *.vcxproj
+*.vcxproj.*
 *.sln
 ShaderCompilation.xml
 ShaderCompilation.props
