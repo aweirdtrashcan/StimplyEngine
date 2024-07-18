@@ -342,7 +342,7 @@ bool create_d3d12_device() {
         DXGI_ADAPTER_DESC desc;
         adapter->GetDesc(&desc);
 
-        LFATAL("Found adapter: %ws", desc.Description);
+        LDEBUG("Found adapter: %ws", desc.Description);
 
         if (desc.DedicatedVideoMemory > video_memory) {
             state->adapter = adapter;

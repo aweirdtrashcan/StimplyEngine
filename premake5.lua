@@ -25,6 +25,7 @@ project "Stimply-Engine"
     elseif os.host() == "linux" then
         cppdialect "gnu++17"
         toolset "clang"
+        defines { "DYNAMIC_RENDERER= ", "RAPI= " }
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
         links { "SDL2main", "SDL2" }
@@ -54,6 +55,7 @@ project "Stimply-Game"
         defines { "RAPI=__declspec(dllimport)" }
         flags { "MultiProcessorCompile" }
     elseif os.host() == "linux" then
+        defines { "RAPI= " }
         cppdialect "gnu++17"
         toolset "clang"
     end
@@ -86,6 +88,7 @@ project "Stimply-Renderer-Backend-Vulkan"
         links { "SDL2main", "SDL2", "vulkan-1" }
         flags { "MultiProcessorCompile" }
     elseif os.host() == "linux" then
+        defines { "DYNAMIC_RENDERER= ", "RAPI= " }
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
         links { "SDL2main", "SDL2" }
@@ -100,12 +103,18 @@ project "Stimply-Renderer-Backend-Vulkan"
     includedirs { "engine/", "$(VULKAN_SDK)/include", "vendor/" }
 
     filter "configurations:Debug"
-        defines { "DEBUG", "RAPI=__declspec(dllimport)", platform_define }
+        if os.host() == "windows" then
+            defines { "RAPI=__declspec(dllimport)" }
+        end
+        defines { "DEBUG", platform_define }
         debugdir "bin/Debug"
         symbols "On"
 
     filter "configurations:Release"
-        defines { platform_define, "RAPI" }
+        if os.host() == "windows" then
+            defines { "RAPI=__declspec(dllimport)" }
+        end
+        defines { platform_define }
         debugdir "bin/Release"
         optimize "Full"
 
@@ -119,6 +128,7 @@ project "Stimply-Renderer-Backend-DX12"
         links { "SDL2main", "SDL2", "d3d12" }
         flags { "MultiProcessorCompile" }
     elseif os.host() == "linux" then
+        defines { "DYNAMIC_RENDERER= ", "RAPI= " }
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
         links { "SDL2main", "SDL2" }
@@ -133,11 +143,17 @@ project "Stimply-Renderer-Backend-DX12"
     includedirs { "engine/", "vendor/" }
 
     filter "configurations:Debug"
-        defines { "DEBUG", "RAPI=__declspec(dllimport)", platform_define }
+        if os.host() == "windows" then
+            defines { "RAPI=__declspec(dllimport)" }
+        end
+        defines { "DEBUG", platform_define }
         debugdir "bin/Debug"
         symbols "On"
 
     filter "configurations:Release"
-        defines { platform_define, "RAPI=__declspec(dllimport)" }
+        if os.host() == "windows" then
+            defines { "RAPI=__declspec(dllimport)" }
+        end
+        defines { platform_define }
         debugdir "bin/Release"
         optimize "Full"
