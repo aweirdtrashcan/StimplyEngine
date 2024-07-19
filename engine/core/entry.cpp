@@ -9,7 +9,7 @@
 RAPI void initialize_engine(void) {
     try {
         Window window(100, 100, 800, 600, "Stimply Engine");
-        Renderer renderer(RendererType::VULKAN, &window);
+        Renderer renderer(RendererType::D3D12, &window);
 
         while (window.process_messages()) {
             if (!renderer.draw()) {

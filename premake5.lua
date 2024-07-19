@@ -12,6 +12,7 @@ end
 
 workspace "StimplyEngine"
     configurations { "Debug", "Release" }
+    startproject "Stimply-Game"
    
 project "Stimply-Engine"
     kind "SharedLib"
@@ -34,6 +35,7 @@ project "Stimply-Engine"
        
     architecture("x86_64")
     files { "engine/**.cpp", "engine/**.h" }
+    floatingpoint "Fast"
 
     includedirs { "engine/", "vendor/", "$(VULKAN_SDK)/include", "plugins/renderer" }
 
@@ -63,6 +65,7 @@ project "Stimply-Game"
 
     architecture("x86_64")
     files { "game/**.cpp", "game/**.h" }
+    floatingpoint "Fast"
 
     links { "Stimply-Engine" }
 
@@ -98,7 +101,8 @@ project "Stimply-Renderer-Backend-Vulkan"
     targetdir "bin/%{cfg.buildcfg}"
 
     architecture("x86_64")
-    files { "plugins/renderer/vulkan/**.cpp", "plugins/renderer/vulkan/**.h" }
+    files { "plugins/renderer/vulkan/*.cpp", "plugins/renderer/vulkan/*.h" }
+    floatingpoint "Fast"
 
     includedirs { "engine/", "$(VULKAN_SDK)/include", "vendor/" }
 
@@ -138,7 +142,8 @@ project "Stimply-Renderer-Backend-DX12"
     targetdir "bin/%{cfg.buildcfg}"
 
     architecture("x86_64")
-    files { "plugins/renderer/directx/**.cpp", "plugins/renderer/directx/**.h" }
+    files { "plugins/renderer/directx/*.cpp", "plugins/renderer/directx/*.h" }
+    floatingpoint "Fast"
 
     includedirs { "engine/", "vendor/" }
 
