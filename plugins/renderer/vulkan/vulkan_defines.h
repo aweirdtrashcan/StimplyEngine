@@ -10,3 +10,10 @@ struct vulkan_image {
     uint32_t width;
     uint32_t height;
 };
+
+struct gpu_buffer {
+    uint64_t size;
+    VkBuffer buffer;
+    VkDeviceMemory memory;
+    void* memory_pointer;
+};

@@ -2,22 +2,25 @@
 
 #include "renderer_interface.h"
 
+class Window;
+struct RenderItemCreateInfo;
+
 enum class RendererType : char {
     D3D12,
     VULKAN
 };
 
-class Window;
-
 class RAPI Renderer {
 public:
-    Renderer(RendererType type, class Window* window);
+    Renderer(RendererType type, Window* window);
     ~Renderer();
 
-    bool draw();
+    bool Draw();
+    void* CreateRenderItem(const RenderItemCreateInfo* render_item);
+    void DestroyRenderItem(void* render_item);
 
 private:
-    [[nodiscard]] renderer_interface load_renderer_functions(RendererType type);
+    [[nodiscard]] renderer_interface LoadRendererFunctions(RendererType type);
 
 private:
     renderer_interface m_Interface;

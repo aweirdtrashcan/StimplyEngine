@@ -3,7 +3,9 @@
 #include "containers/list.h"
 #include "core/logger.h"
 #include "platform/platform.h"
+#include "../render_item.h"
 #include "vulkan_defines.h"
+#include "renderer/render_item_utils.h"
 
 #include <cstdint>
 #include <cstdlib>
@@ -52,6 +54,7 @@ struct internal_vulkan_renderer_state {
     list<VkFramebuffer> swapchain_framebuffers;
     VkSurfaceCapabilitiesKHR surface_capabilities;
     list<VkClearValue> clear_values;
+    list<render_item> render_items;
 };
 
 internal_vulkan_renderer_state* state = nullptr;
@@ -84,6 +87,7 @@ static bool get_swapchain_back_buffers();
 static bool create_swapchain_back_buffer_views();
 static bool destroy_swapchain_image_views();
 static bool create_fence(VkFence& out_fence, bool create_signaled);
+static bool destroy_fence(VkFence fence);
 static bool create_semaphore(VkSemaphore& out_semaphore);
 static bool create_swapchain_semaphores_and_fences();
 static bool destroy_swapchain_semaphores_and_fences();
@@ -112,12 +116,20 @@ static bool destroy_shader_module(VkShaderModule shader_module);
 static bool create_framebuffer(VkRenderPass renderpass, uint32_t attachment_count, VkImageView* attachments, uint32_t width, uint32_t height, VkFramebuffer* out_framebuffer);
 static bool create_swapchain_framebuffers(const VkSurfaceCapabilitiesKHR& surface_capabilities);
 static bool destroy_swapchain_framebuffers();
+static bool recreate_swapchain();
 
 static bool begin_command_buffer(VkCommandBuffer command_buffer);
 static bool end_command_buffer(VkCommandBuffer command_buffer);
 static bool begin_render_pass(VkRenderPass render_pass, VkCommandBuffer command_buffer, VkFramebuffer framebuffer, VkRect2D render_area, uint32_t clear_value_count, const VkClearValue* clear_values);
 static bool end_render_pass(VkCommandBuffer command_buffer);
-static bool recreate_swapchain();
+static bool create_uploader_buffer(size_t size, gpu_buffer* out_gpu_buffer);
+static bool copy_to_upload_buffer(void* source, size_t size, gpu_buffer* buffer);
+static bool copy_to_gpu_buffer(VkCommandBuffer command_buffer, const gpu_buffer* source_upload_buffer, gpu_buffer* gpu_buffer);
+static bool create_gpu_buffer(size_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties, gpu_buffer* out_gpu_buffer);
+static bool destroy_gpu_buffer(gpu_buffer* buffer);
+static bool create_one_time_command_buffer(VkCommandBuffer* out_command_buffer);
+static bool end_one_time_command_buffer(VkCommandBuffer command_buffer, VkQueue queue);
+static VkResult submit_command_queue(VkSemaphore wait_semaphore, VkSemaphore signal_semaphore, VkFence fence, VkQueue queue, VkCommandBuffer command_buffer);
 
 /* public functions */
 bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, const char* name, void* sdl_window) {
@@ -280,6 +292,7 @@ bool vulkan_begin_frame() {
     VkFence fence = state->fences[state->current_frame_index];
     VkSemaphore queue_complete = state->queue_complete_semaphore[state->current_frame_index];
     VkSemaphore image_acquired = state->image_acquired_semaphore[state->current_frame_index];
+    VkCommandBuffer command_buffer = state->graphics_command_buffers[state->current_frame_index];
     VkRenderPass renderpass = state->main_renderpass;
     const VkSurfaceCapabilitiesKHR& surface_capabilities = state->surface_capabilities;
     const list<VkClearValue>& clear_values = state->clear_values;
@@ -305,7 +318,6 @@ bool vulkan_begin_frame() {
     vk_result(vkResetFences(state->logical_device, 1, &fence));
 
     VkFramebuffer framebuffer = state->swapchain_framebuffers[state->image_index];
-    VkCommandBuffer command_buffer = state->graphics_command_buffers[state->current_frame_index];
 
     VkViewport viewport;
     VkRect2D scissor;
@@ -333,22 +345,7 @@ bool vulkan_end_frame() {
     end_render_pass(command_buffer);
     end_command_buffer(command_buffer);
 
-    VkPipelineStageFlags wait_stages[] = {
-        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-    };
-
-    VkSubmitInfo submit_info;
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.pNext = nullptr;
-    submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &image_acquired;
-    submit_info.pWaitDstStageMask = wait_stages;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &command_buffer;
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &queue_completed;
-
-    result = vkQueueSubmit(queue, 1, &submit_info, fence);
+    result = submit_command_queue(image_acquired, queue_completed, fence, queue, command_buffer);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         recreate_swapchain();
@@ -381,6 +378,74 @@ bool vulkan_end_frame() {
     }
 
     return true;
+}
+
+void* vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInfo) {
+    if (pRenderItemCreateInfo == nullptr) {
+        Logger::debug("vulkan_create_render_item: pRenderItemCreateInfo can't be nullptr");
+        return nullptr;
+    }
+
+    if (pRenderItemCreateInfo->pIndices == 0 || pRenderItemCreateInfo->pMeshes == 0) {
+        Logger::debug("vulkan_create_render_item: RenderItemCreateInfo->pIndices and/or RenderItemCreateInfo->pMeshes can't be nullptr");
+        return nullptr;
+    }
+
+    VkCommandBuffer command_buffer;
+    create_one_time_command_buffer(&command_buffer);
+
+    gpu_buffer vertex_uploader;
+    gpu_buffer index_uploader;
+
+    render_item* r_item = (render_item*)Platform::ualloc(sizeof(render_item));
+
+    if (!create_uploader_buffer(pRenderItemCreateInfo->meshSize, &vertex_uploader)) {
+        Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");
+        return nullptr;
+    }
+
+    if (!create_uploader_buffer(pRenderItemCreateInfo->indicesSize, &index_uploader)) {
+        Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");
+        return nullptr;
+    }
+
+    if (!create_gpu_buffer(
+        pRenderItemCreateInfo->meshSize, 
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        &r_item->vertex_buffer)) {
+        Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");
+        return nullptr;
+    }
+
+    if (!create_gpu_buffer(
+        pRenderItemCreateInfo->indicesSize, 
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        &r_item->index_buffer)) {
+        Logger::debug("vulkan_create_render_item: Failed to create index buffer");
+        return nullptr;
+    }
+
+    copy_to_upload_buffer(pRenderItemCreateInfo->pMeshes, pRenderItemCreateInfo->meshSize, &vertex_uploader);
+    copy_to_upload_buffer(pRenderItemCreateInfo->pIndices, pRenderItemCreateInfo->indicesSize, &index_uploader);
+
+    copy_to_gpu_buffer(command_buffer, &vertex_uploader, &r_item->vertex_buffer);
+    copy_to_gpu_buffer(command_buffer, &index_uploader, &r_item->index_buffer);
+
+    end_one_time_command_buffer(command_buffer, state->graphics_queue);
+
+    destroy_gpu_buffer(&vertex_uploader);
+    destroy_gpu_buffer(&index_uploader);
+
+    return r_item;
+}
+
+void vulkan_destroy_render_item(void* r_item) {
+    destroy_gpu_buffer(&(((render_item*)r_item))->vertex_buffer);
+    destroy_gpu_buffer(&(((render_item*)r_item))->index_buffer);
+    Platform::zero_memory(r_item, sizeof(render_item));
+    Platform::ufree(r_item);
 }
 
 /****************************************** INTERNAL FUNCTIONS ********************************************* */
@@ -832,6 +897,12 @@ bool create_fence(VkFence& out_fence, bool create_signaled) {
     create_info.flags = create_signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
 
     vk_result(vkCreateFence(state->logical_device, &create_info, state->allocator, &out_fence));
+
+    return true;
+}
+
+bool destroy_fence(VkFence fence) {
+    vkDestroyFence(state->logical_device, fence, state->allocator);
 
     return true;
 }
@@ -1514,6 +1585,207 @@ bool recreate_swapchain() {
     }
 
     return true;    
+}
+
+bool create_uploader_buffer(size_t size, gpu_buffer* out_gpu_buffer) {
+    if (out_gpu_buffer == nullptr) {
+        Logger::fatal("create_uploader_buffer: out_gpu_buffer can't be nullptr");
+        return false;
+    }
+
+    Platform::zero_memory(out_gpu_buffer, sizeof(*out_gpu_buffer));
+
+    VkBufferCreateInfo buffer_create;
+    buffer_create.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create.pNext = nullptr;
+    buffer_create.flags = 0;
+    buffer_create.size = size;
+    buffer_create.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    buffer_create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer_create.queueFamilyIndexCount = 0;
+    buffer_create.pQueueFamilyIndices = nullptr;
+    
+    vk_result(vkCreateBuffer(state->logical_device, &buffer_create, state->allocator, &out_gpu_buffer->buffer));
+
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(state->logical_device, out_gpu_buffer->buffer, &memory_requirements);
+
+    uint32_t memory_index;
+    if (!find_memory_type_index(
+        memory_requirements.memoryTypeBits, 
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 
+        &memory_index)) {
+        return false;    
+    }
+
+    VkMemoryAllocateInfo allocate_info;
+    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocate_info.pNext = nullptr;
+    allocate_info.allocationSize = memory_requirements.size;
+    allocate_info.memoryTypeIndex = memory_index;
+
+    vk_result(vkAllocateMemory(state->logical_device, &allocate_info, state->allocator, &out_gpu_buffer->memory));
+
+    vk_result(vkBindBufferMemory(state->logical_device, out_gpu_buffer->buffer, out_gpu_buffer->memory, 0));
+
+    out_gpu_buffer->size = memory_requirements.size;
+
+    vk_result(vkMapMemory(state->logical_device, out_gpu_buffer->memory, 0, out_gpu_buffer->size, 0, &out_gpu_buffer->memory_pointer));
+
+    return true;
+}
+
+bool copy_to_upload_buffer(void* source, size_t size, gpu_buffer* buffer) {
+    memcpy(buffer->memory_pointer, source, size);
+
+    VkMappedMemoryRange memory_range;
+    memory_range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    memory_range.pNext = nullptr;
+    memory_range.memory = buffer->memory;
+    memory_range.offset = 0;
+    memory_range.size = buffer->size;
+
+    vk_result(vkFlushMappedMemoryRanges(state->logical_device, 1, &memory_range));
+    
+    return true;
+}
+
+bool copy_to_gpu_buffer(VkCommandBuffer command_buffer, const gpu_buffer* source_upload_buffer, gpu_buffer* gpu_buffer) {
+    VkBufferCopy region;
+    region.srcOffset = 0;
+    region.size = source_upload_buffer->size;
+    region.dstOffset = 0;
+
+    vkCmdCopyBuffer(command_buffer, source_upload_buffer->buffer, gpu_buffer->buffer, 1, &region);
+    return true;
+}
+
+bool create_gpu_buffer(size_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties, gpu_buffer* out_gpu_buffer) {
+    if (out_gpu_buffer == nullptr) {
+        Logger::fatal("create_gpu_buffer: out_gpu_buffer can't be nullptr");
+        return false;
+    }
+
+    Platform::zero_memory(out_gpu_buffer, sizeof(*out_gpu_buffer));
+
+    VkBufferCreateInfo buffer_create;
+    buffer_create.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create.pNext = nullptr;
+    buffer_create.flags = 0;
+    buffer_create.size = size;
+    buffer_create.usage = usage;
+    buffer_create.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer_create.queueFamilyIndexCount = 0;
+    buffer_create.pQueueFamilyIndices = nullptr;
+    
+    VkResult res = vkCreateBuffer(state->logical_device, &buffer_create, state->allocator, &out_gpu_buffer->buffer);
+
+    if (res != VK_SUCCESS) {
+        Logger::debug("create_gpu_buffer: Failed to create vulkan buffer");
+        return false;
+    }
+
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(state->logical_device, out_gpu_buffer->buffer, &memory_requirements);
+
+    uint32_t memory_index;
+    if (!find_memory_type_index(
+        memory_requirements.memoryTypeBits, 
+        memory_properties, 
+        &memory_index)) {
+        Logger::debug("create_gpu_buffer: Failed to find memory type index");
+        return false;    
+    }
+
+    VkMemoryAllocateInfo allocate_info;
+    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocate_info.pNext = nullptr;
+    allocate_info.allocationSize = memory_requirements.size;
+    allocate_info.memoryTypeIndex = memory_index;
+
+    res = vkAllocateMemory(state->logical_device, &allocate_info, state->allocator, &out_gpu_buffer->memory);
+
+    if (res != VK_SUCCESS) {
+        Logger::debug("create_gpu_buffer: Failed to allocate buffer memory");
+        goto cleanup;
+    }
+
+    res = vkBindBufferMemory(state->logical_device, out_gpu_buffer->buffer, out_gpu_buffer->memory, 0);
+
+    if (res != VK_SUCCESS) {
+        Logger::debug("create_gpu_buffer: Failed to bind buffer memory");
+        goto cleanup;
+    }
+
+    out_gpu_buffer->size = memory_requirements.size;
+
+    return true;
+
+cleanup:
+    if (out_gpu_buffer->buffer) {
+        vkDestroyBuffer(state->logical_device, out_gpu_buffer->buffer, state->allocator);
+    }
+    if (out_gpu_buffer->memory) {
+        vkFreeMemory(state->logical_device, out_gpu_buffer->memory, state->allocator);
+    }
+
+    Platform::zero_memory(out_gpu_buffer, sizeof(*out_gpu_buffer));
+
+    return false;
+}
+
+bool destroy_gpu_buffer(gpu_buffer* buffer) {
+    vkDestroyBuffer(state->logical_device, buffer->buffer, state->allocator);
+    vkFreeMemory(state->logical_device, buffer->memory, state->allocator);
+    Platform::zero_memory(buffer, sizeof(*buffer));
+
+    return true;
+}
+
+bool create_one_time_command_buffer(VkCommandBuffer* out_command_buffer) {
+    if (!allocate_command_buffers(state->command_pool, 1, out_command_buffer)) {
+        return false;
+    }
+
+    begin_command_buffer(*out_command_buffer);
+
+    return true;
+}
+
+bool end_one_time_command_buffer(VkCommandBuffer command_buffer, VkQueue queue) {
+    end_command_buffer(command_buffer);
+    
+    VkFence fence;
+    create_fence(fence, false);
+
+    submit_command_queue(nullptr, nullptr, fence, queue, command_buffer);
+    
+    vk_result(vkWaitForFences(state->logical_device, 1, &fence, VK_TRUE, UINT64_MAX));
+
+    free_command_buffers(1, state->command_pool, &command_buffer);
+
+    destroy_fence(fence);
+
+    return true;
+}
+
+VkResult submit_command_queue(VkSemaphore wait_semaphore, VkSemaphore signal_semaphore, VkFence fence, VkQueue queue, VkCommandBuffer command_buffer) {
+    VkPipelineStageFlags wait_stages[] = {
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+    };
+    
+    VkSubmitInfo submit_info;
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.pNext = nullptr;
+    submit_info.waitSemaphoreCount = wait_semaphore ? 1 : 0;
+    submit_info.pWaitSemaphores = &wait_semaphore;
+    submit_info.pWaitDstStageMask = wait_stages;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
+    submit_info.signalSemaphoreCount = signal_semaphore ? 1 : 0;
+    submit_info.pSignalSemaphores = &signal_semaphore;
+
+    return vkQueueSubmit(queue, 1, &submit_info, fence);
 }
 
 }

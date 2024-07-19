@@ -13,7 +13,7 @@ public:
     Window(int32_t x, int32_t y, int32_t width, int32_t height, const char* name);
     ~Window();
 
-    int process_messages();
+    int ProcessMessages();
     void* get_internal_handle() const { return m_Window; }
     
     list<const char*> get_vulkan_required_instance_layers() const;

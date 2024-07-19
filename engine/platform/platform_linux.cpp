@@ -4,7 +4,6 @@
 #if defined (PLATFORM_LINUX)
 
 #include "window/window.h"
-#include "defines.h"
 
 #include <vulkan/vulkan_core.h>
 #include <SDL2/SDL_stdinc.h>

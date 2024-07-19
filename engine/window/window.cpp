@@ -26,7 +26,7 @@ Window::~Window() {
     SDL_DestroyWindow(m_Window);
 }
 
-int Window::process_messages() {
+int Window::ProcessMessages() {
     SDL_Event event;
     while(SDL_PollEvent(&event)) {
         if (event.type == SDL_EventType::SDL_QUIT) {

@@ -35,7 +35,7 @@ Renderer::Renderer(RendererType type, Window* window) {
 
     m_Library = Platform::load_library(library_name);
 
-    m_Interface = load_renderer_functions(type);
+    m_Interface = LoadRendererFunctions(type);
 
     if (!m_Interface.initialize) {
         throw RendererException("Failed to load library");
@@ -58,7 +58,7 @@ Renderer::~Renderer() {
     Platform::unload_library(m_Library);
 }
 
-bool Renderer::draw() {
+bool Renderer::Draw() {
     if (m_Interface.begin_frame()) {
         m_Interface.end_frame();
         return true;
@@ -66,7 +66,15 @@ bool Renderer::draw() {
     return false;
 }
 
-renderer_interface Renderer::load_renderer_functions(RendererType type) {
+void* Renderer::CreateRenderItem(const RenderItemCreateInfo* render_item) {
+    return m_Interface.renderer_create_render_item(render_item);
+}
+
+void Renderer::DestroyRenderItem(void* render_item) {
+    m_Interface.renderer_destroy_render_item(render_item);
+}
+
+renderer_interface Renderer::LoadRendererFunctions(RendererType type) {
     renderer_interface interface{};
 
     std::string renderer_placeholder;
@@ -82,6 +90,8 @@ renderer_interface Renderer::load_renderer_functions(RendererType type) {
     interface.create_texture = (PFN_create_texture)Platform::load_library_function(m_Library, renderer_placeholder + "_create_texture");
     interface.begin_frame = (PFN_renderer_begin_frame)Platform::load_library_function(m_Library, renderer_placeholder + "_begin_frame");
     interface.end_frame = (PFN_renderer_end_frame)Platform::load_library_function(m_Library, renderer_placeholder + "_end_frame");
+    interface.renderer_create_render_item = (PFN_renderer_create_render_item)Platform::load_library_function(m_Library, renderer_placeholder + "_create_render_item");
+    interface.renderer_destroy_render_item = (PFN_renderer_destroy_render_item)Platform::load_library_function(m_Library, renderer_placeholder + "_destroy_render_item");
 
     return interface;
 }
