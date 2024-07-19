@@ -26,7 +26,7 @@ project "Stimply-Engine"
     elseif os.host() == "linux" then
         cppdialect "gnu++17"
         toolset "clang"
-        defines { "DYNAMIC_RENDERER= ", "RAPI= " }
+        defines { "DYNAMIC_RENDERER= ", 'RAPI=__attribute__((visibility("default")))' }
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
         links { "SDL2main", "SDL2" }
@@ -94,9 +94,13 @@ project "Stimply-Renderer-Backend-Vulkan"
         defines { "DYNAMIC_RENDERER= ", "RAPI= " }
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
-        links { "SDL2main", "SDL2" }
+        libdirs { "$(VULKAN_SDK)/lib" }
+        links { "SDL2main", "SDL2", "vulkan", "Stimply-Engine" }
         cppdialect "gnu++17"
         toolset "clang"
+        postbuildcommands {
+            "./compile_shaders.sh"
+        }
     end
     targetdir "bin/%{cfg.buildcfg}"
 

@@ -2,6 +2,7 @@
 
 #include "containers/list.h"
 #include "core/logger.h"
+#include "platform/platform.h"
 #include "vulkan_defines.h"
 
 #include <cstdint>
@@ -10,7 +11,6 @@
 #include <iterator>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
-#include <fstream>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
@@ -79,6 +79,7 @@ static bool get_physical_device_queues();
 static bool query_optimal_back_buffer_format(VkSurfaceFormatKHR* format);
 static bool create_surface();
 static bool create_swapchain(const VkSurfaceCapabilitiesKHR& surface_capabilities);
+static bool destroy_swapchain();
 static bool get_swapchain_back_buffers();
 static bool create_swapchain_back_buffer_views();
 static bool destroy_swapchain_image_views();
@@ -116,6 +117,7 @@ static bool begin_command_buffer(VkCommandBuffer command_buffer);
 static bool end_command_buffer(VkCommandBuffer command_buffer);
 static bool begin_render_pass(VkRenderPass render_pass, VkCommandBuffer command_buffer, VkFramebuffer framebuffer, VkRect2D render_area, uint32_t clear_value_count, const VkClearValue* clear_values);
 static bool end_render_pass(VkCommandBuffer command_buffer);
+static bool recreate_swapchain();
 
 /* public functions */
 bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, const char* name, void* sdl_window) {
@@ -256,7 +258,7 @@ void vulkan_backend_shutdown() {
     destroy_depth_buffer();
     destroy_swapchain_semaphores_and_fences();
     destroy_swapchain_image_views();
-    vkDestroySwapchainKHR(state->logical_device, state->swapchain, state->allocator);
+    destroy_swapchain();
     vkDestroySurfaceKHR(state->instance, state->surface, state->allocator);
     vkDestroyDevice(state->logical_device, state->allocator);
 
@@ -276,14 +278,13 @@ void vulkan_backend_shutdown() {
 
 bool vulkan_begin_frame() {
     VkFence fence = state->fences[state->current_frame_index];
-    VkSemaphore qcmp = state->queue_complete_semaphore[state->current_frame_index];
-    VkSemaphore iacq = state->image_acquired_semaphore[state->current_frame_index];
-    VkRenderPass rp = state->main_renderpass;
-    const VkSurfaceCapabilitiesKHR& sc = state->surface_capabilities;
-    const list<VkClearValue>& cv = state->clear_values;
+    VkSemaphore queue_complete = state->queue_complete_semaphore[state->current_frame_index];
+    VkSemaphore image_acquired = state->image_acquired_semaphore[state->current_frame_index];
+    VkRenderPass renderpass = state->main_renderpass;
+    const VkSurfaceCapabilitiesKHR& surface_capabilities = state->surface_capabilities;
+    const list<VkClearValue>& clear_values = state->clear_values;
 
     vk_result(vkWaitForFences(state->logical_device, 1, &fence, VK_TRUE, UINT64_MAX));
-    vk_result(vkResetFences(state->logical_device, 1, &fence));
 
     VkResult result;
 
@@ -291,42 +292,46 @@ bool vulkan_begin_frame() {
         state->logical_device, 
         state->swapchain, 
         UINT64_MAX, 
-        iacq, 
+        image_acquired, 
         VK_NULL_HANDLE, 
         &state->image_index);
 
     if (result != VK_SUCCESS) {
         // TODO: Resize
+        recreate_swapchain();
+        return false;
     }
 
-    VkCommandBuffer cb = state->graphics_command_buffers[state->current_frame_index];
-    VkFramebuffer fb = state->swapchain_framebuffers[state->image_index];
+    vk_result(vkResetFences(state->logical_device, 1, &fence));
+
+    VkFramebuffer framebuffer = state->swapchain_framebuffers[state->image_index];
+    VkCommandBuffer command_buffer = state->graphics_command_buffers[state->current_frame_index];
 
     VkViewport viewport;
     VkRect2D scissor;
-    get_viewport_and_scissor(sc, &viewport, &scissor);
+    get_viewport_and_scissor(surface_capabilities, &viewport, &scissor);
 
-    vkResetCommandBuffer(cb, 0);
-    begin_command_buffer(cb);
+    vkResetCommandBuffer(command_buffer, 0);
+    begin_command_buffer(command_buffer);
 
-    vkCmdSetViewport(cb, 0, 1, &viewport);
-    vkCmdSetScissor(cb, 0, 1, &scissor);
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    begin_render_pass(rp, cb, fb, scissor, (uint32_t)cv.size(), cv.data());
+    begin_render_pass(renderpass, command_buffer, framebuffer, scissor, (uint32_t)clear_values.size(), clear_values.data());
 
     return true;
 }
 
 bool vulkan_end_frame() {
     VkResult result;
-    VkCommandBuffer cb = state->graphics_command_buffers[state->current_frame_index];
-    VkSemaphore iacq = state->image_acquired_semaphore[state->current_frame_index];
-    VkSemaphore qcmp = state->queue_complete_semaphore[state->current_frame_index];
+    VkCommandBuffer command_buffer = state->graphics_command_buffers[state->current_frame_index];
+    VkSemaphore image_acquired = state->image_acquired_semaphore[state->current_frame_index];
+    VkSemaphore queue_completed = state->queue_complete_semaphore[state->current_frame_index];
     VkQueue queue = state->graphics_queue;
     VkFence fence = state->fences[state->current_frame_index];
 
-    end_render_pass(cb);
-    end_command_buffer(cb);
+    end_render_pass(command_buffer);
+    end_command_buffer(command_buffer);
 
     VkPipelineStageFlags wait_stages[] = {
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
@@ -336,29 +341,44 @@ bool vulkan_end_frame() {
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit_info.pNext = nullptr;
     submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &iacq;
+    submit_info.pWaitSemaphores = &image_acquired;
     submit_info.pWaitDstStageMask = wait_stages;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &cb;
+    submit_info.pCommandBuffers = &command_buffer;
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &qcmp;
+    submit_info.pSignalSemaphores = &queue_completed;
 
     result = vkQueueSubmit(queue, 1, &submit_info, fence);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        recreate_swapchain();
+        return false;
+    } else if (result != VK_SUCCESS) {
+        return false;
+    }
 
     VkPresentInfoKHR present_info;
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.pNext = nullptr;
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &qcmp;
+    present_info.pWaitSemaphores = &queue_completed;
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &state->swapchain;
     present_info.pImageIndices = &state->image_index;
     present_info.pResults = nullptr;
 
+    //Logger::debug("Presenting built frame %u", state->current_frame_index);
+    //Logger::debug("Presenting image %u", state->image_index);
+
     result = vkQueuePresentKHR(queue, &present_info);
     state->current_frame_index = (state->current_frame_index + 1) % state->num_frames;
 
-    //Logger::debug("Presenting frame %u", state->image_index);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        recreate_swapchain();
+        return false;
+    } else if (result != VK_SUCCESS) {
+        return false;
+    }
 
     return true;
 }
@@ -753,6 +773,12 @@ bool create_swapchain(const VkSurfaceCapabilitiesKHR& surface_capabilities) {
     state->samples = VK_SAMPLE_COUNT_1_BIT;
     // TODO: Mip-mapping?
     state->mip_levels = 1;
+
+    return true;
+}
+
+bool destroy_swapchain() {
+    vkDestroySwapchainKHR(state->logical_device, state->swapchain, state->allocator);
 
     return true;
 }
@@ -1346,31 +1372,22 @@ bool get_viewport_and_scissor(const VkSurfaceCapabilitiesKHR& surface_capabiliti
 }
 
 static bool create_shader_module(const char* shader_path, VkShaderModule* out_shader_module) {
-    std::ifstream file(shader_path, std::ios::binary | std::ios::ate);
+    binary_info shader = Platform::read_binary(shader_path);
+    
+    if (shader.size) {
+        VkShaderModuleCreateInfo create_info;
+        create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        create_info.pNext = nullptr;
+        create_info.flags = 0;
+        create_info.codeSize = shader.size;
+        create_info.pCode = (uint32_t*)shader.binary;
 
-    if (!file.is_open()) {
-        return false;
+        vk_result(vkCreateShaderModule(state->logical_device, &create_info, state->allocator, out_shader_module));
+
+        return true;
     }
 
-    size_t code_size = file.tellg();
-    file.seekg(0);
-
-    list<char> shader_code(code_size);
-
-    file.read(shader_code.data(), code_size);
-
-    file.close();
-
-    VkShaderModuleCreateInfo create_info;
-    create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    create_info.pNext = nullptr;
-    create_info.flags = 0;
-    create_info.codeSize = code_size;
-    create_info.pCode = (uint32_t*)shader_code.data();
-
-    vk_result(vkCreateShaderModule(state->logical_device, &create_info, state->allocator, out_shader_module));
-
-    return true;
+    return false;
 }
 
 static bool destroy_shader_module(VkShaderModule shader_module) {
@@ -1460,6 +1477,43 @@ static bool begin_render_pass(VkRenderPass render_pass, VkCommandBuffer command_
 static bool end_render_pass(VkCommandBuffer command_buffer) {
     vkCmdEndRenderPass(command_buffer);
     return true;
+}
+
+bool recreate_swapchain() {
+    vkDeviceWaitIdle(state->logical_device);
+
+    destroy_swapchain_framebuffers();
+    destroy_render_pass();
+    destroy_swapchain_image_views();
+    destroy_swapchain();
+    destroy_depth_buffer();
+    state->swapchain = nullptr;
+
+    vk_result(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+        state->physical_device, 
+        state->surface, 
+        &state->surface_capabilities));
+
+    if (!create_swapchain(state->surface_capabilities)) {
+        return false;
+    }
+    if (!get_swapchain_back_buffers()) {
+        return false;
+    }
+    if (!create_swapchain_back_buffer_views()) {
+        return false;
+    }
+    if (!create_depth_buffer(state->surface_capabilities)) {
+        return false;
+    }
+    if (!create_render_pass()) {
+        return false;
+    }
+    if (!create_swapchain_framebuffers(state->surface_capabilities)) {
+        return false;
+    }
+
+    return true;    
 }
 
 }

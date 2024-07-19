@@ -1,11 +1,10 @@
 #include "core/logger.h"
 #include "platform.h"
 
-#include "defines.h"
-
 #if defined (PLATFORM_LINUX)
 
 #include "window/window.h"
+#include "defines.h"
 
 #include <vulkan/vulkan_core.h>
 #include <SDL2/SDL_stdinc.h>
@@ -16,7 +15,7 @@
 #include <dlfcn.h>
 
 #include <filesystem>
-#include <string>
+#include <cstdio>
 
 struct alloc_header {
     size_t allocation_size;
@@ -79,7 +78,7 @@ void Platform::log(log_level level, const char *message) {
 void* Platform::load_library(const char* libraryPath) {
     char library_name[1024]{};
 
-    std::string path = std::filesystem::current_path();
+    std::filesystem::path path = std::filesystem::current_path();
 
     snprintf(library_name, sizeof(library_name), "%s/lib%s.so", path.c_str(), libraryPath);
 
@@ -109,6 +108,29 @@ void* Platform::create_vulkan_surface(Window* window, void* instance) {
     }
 
     return surface;
+}
+
+binary_info Platform::read_binary(const char* path) {
+    FILE* file = fopen(path, "rb");
+
+    if (!file) return {0, nullptr};
+
+    binary_info info{};
+
+    // go to the end of the file
+    fseek(file, 0, SEEK_END);
+    // get the size of the file
+    info.size = ftell(file);
+    // get back to the beginning
+    fseek(file, 0, SEEK_SET);
+
+    info.binary = (char*)Platform::ualloc(info.size);
+
+    fread(info.binary, info.size, 1, file);
+
+    fclose(file);
+
+    return info;
 }
 
 #endif

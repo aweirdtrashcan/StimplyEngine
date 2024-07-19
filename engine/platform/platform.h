@@ -2,9 +2,15 @@
 
 #include "core/logger.h"
 #include <cstddef>
+#include <cstdint>
 #include <string>
 
 class Window;
+
+struct binary_info {
+    uint64_t size;
+    char* binary;
+};
 
 class RAPI Platform {
 public:
@@ -27,6 +33,8 @@ public:
     static void* load_library_function(void* library, const std::string& functionName);
 
     static void* create_vulkan_surface(Window* window, void* instance);
+
+    static binary_info read_binary(const char* path);
 
 private:
     size_t m_TotalAllocation = 0;
