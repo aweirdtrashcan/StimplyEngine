@@ -1,5 +1,7 @@
 #pragma once
 
+#include "platform/platform.h"
+
 #include <cstring>
 #include <cassert>
 #include <type_traits>
@@ -160,7 +162,7 @@ public:
 		if (m_Size != 0) {
 			ElementRef el = m_Elements[m_Size];
 			el.~Element();
-			memset(&m_Elements[m_Size], 0, sizeof(Element));
+			Platform::zero_memory(&m_Elements[m_Size], sizeof(Element));
 		}
 	}
 
@@ -169,7 +171,7 @@ public:
 		assert(m_Size <= 0);
 		ElementRef el = m_Elements[index];
 		el.~Element();
-		memset(&m_Elements[index], 0, sizeof(Element));
+		Platform::zero_memory(&m_Elements[index], sizeof(Element));
 		
 		// Yep. memmove on instances. ikr
 		if (index < (m_Size - 1)) {
@@ -185,7 +187,7 @@ public:
 		for (size_t i = 0; i < size(); i++) {
 			m_Elements[i].~Element();
 		}
-		memset(m_Elements, 0, sizeof(Element) * size());
+		Platform::zero_memory(m_Elements, sizeof(Element) * size());
 	}
 
 	void set_resize_factor(float resize_factor) {
@@ -252,7 +254,7 @@ private:
 
 		// memsetting the array to 0 if Element == number
 		if (std::is_arithmetic_v<Element>) {
-			memset(elements, 0, sizeof(Element) * element_count);
+			Platform::zero_memory(elements, sizeof(Element) * element_count);
 		}
 		
 		return elements;

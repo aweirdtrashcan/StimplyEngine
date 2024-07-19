@@ -1,6 +1,7 @@
 #include "vulkan_renderer.h"
 
 #include "containers/list.h"
+#include "core/logger.h"
 #include "vulkan_defines.h"
 
 #include <cstdint>
@@ -18,10 +19,6 @@ extern "C" {
 
 struct internal_vulkan_renderer_state {
     VkInstance instance;
-    PFN_logger pfn_fatal;
-    PFN_logger pfn_warning;
-    PFN_logger pfn_debug;
-    PFN_logger pfn_info;
     SDL_Window* window;
     VkAllocationCallbacks* allocator;
     VkPhysicalDevice physical_device;
@@ -121,8 +118,7 @@ static bool begin_render_pass(VkRenderPass render_pass, VkCommandBuffer command_
 static bool end_render_pass(VkCommandBuffer command_buffer);
 
 /* public functions */
-bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, const char* name,
-    PFN_logger pfn_fatal, PFN_logger pfn_warning, PFN_logger pfn_debug, PFN_logger pfn_info, void* sdl_window) {
+bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, const char* name, void* sdl_window) {
     if (!required_size) return false;
     if (*required_size == 0) {
         *required_size = sizeof(internal_vulkan_renderer_state);
@@ -133,26 +129,22 @@ bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, 
     }
 
     state = (internal_vulkan_renderer_state*)allocated_memory;
-    state->pfn_fatal = pfn_fatal;
-    state->pfn_warning = pfn_warning;
-    state->pfn_debug = pfn_debug;
-    state->pfn_info = pfn_info;
 
-    state->pfn_info("Initializing Vulkan Backend");
+    Logger::info("Initializing Vulkan Backend");
 
     state->window = (SDL_Window*)sdl_window;
 
     if (!create_vulkan_instance(name)) {
-        state->pfn_fatal("Failed to create vulkan instance");
+        Logger::fatal("Failed to create vulkan instance");
         return false;
     }    
 
     if (!enable_validation_layer()) {
-        state->pfn_fatal("Validaiton Layer was not enabled!");
+        Logger::fatal("Validaiton Layer was not enabled!");
     }
 
     if (!select_physical_device()) {
-        state->pfn_fatal("Failed to select physical device");
+        Logger::fatal("Failed to select physical device");
         return false;
     }
 
@@ -160,17 +152,17 @@ bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, 
     features.depthClamp = VK_TRUE;
 
     if (!create_logical_device(&features)) {
-        state->pfn_fatal("Failed to create logical device");
+        Logger::fatal("Failed to create logical device");
         return false;
     }
 
     if (!get_physical_device_queues()) {
-        state->pfn_fatal("Failed to get physical device queues");
+        Logger::fatal("Failed to get physical device queues");
         return false;
     }
 
     if (!create_surface()) {
-        state->pfn_fatal("Failed to create surface");
+        Logger::fatal("Failed to create surface");
         return false;
     }
 
@@ -180,58 +172,58 @@ bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, 
         &state->surface_capabilities));
 
     if (!create_swapchain(state->surface_capabilities)) {
-        state->pfn_fatal("Failed to create swapchain");
+        Logger::fatal("Failed to create swapchain");
         return false;
     }
 
     if (!get_swapchain_back_buffers()) {
-        state->pfn_fatal("Failed to get swapchain backbuffers");
+        Logger::fatal("Failed to get swapchain backbuffers");
         return false;
     }
 
     if (!create_swapchain_back_buffer_views()) {
-        state->pfn_fatal("Failed to create swapchain backbuffer views");
+        Logger::fatal("Failed to create swapchain backbuffer views");
         return false;
     }
 
     if (!create_swapchain_semaphores_and_fences()) {
-        state->pfn_fatal("Failed to create swapchain semaphores and fences");
+        Logger::fatal("Failed to create swapchain semaphores and fences");
         return false;
     }
 
     if (!create_depth_buffer(state->surface_capabilities)) {
-        state->pfn_fatal("Failed to create depth buffer");
+        Logger::fatal("Failed to create depth buffer");
         return false;
     }
 
     if (!create_descriptor_pool(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, true, &state->uniform_descriptor_pool)) {
-        state->pfn_fatal("Failed to create uniform buffer descriptor pool");
+        Logger::fatal("Failed to create uniform buffer descriptor pool");
         return false;
     }
 
     if (!create_command_pool(&state->command_pool, state->graphics_queue_index)) {
-        state->pfn_fatal("Failed to create graphics command pool");
+        Logger::fatal("Failed to create graphics command pool");
         return false;
     }
 
     state->graphics_command_buffers.resize(state->num_frames);
     if (!allocate_command_buffers(state->command_pool, state->num_frames, state->graphics_command_buffers.data())) {
-        state->pfn_fatal("Failed to allocate graphics command buffers");
+        Logger::fatal("Failed to allocate graphics command buffers");
         return false;
     }
 
     if (!create_render_pass()) {
-        state->pfn_fatal("Failed to create main render pass");
+        Logger::fatal("Failed to create main render pass");
         return false;
     }
 
     if (!create_naked_graphics_pipeline_state(state->surface_capabilities)) {
-        state->pfn_fatal("Failed to create naked graphics pipeline");
+        Logger::fatal("Failed to create naked graphics pipeline");
         return false;
     }
 
     if (!create_swapchain_framebuffers(state->surface_capabilities)) {
-        state->pfn_fatal("Failed to create swapchain framebuffers");
+        Logger::fatal("Failed to create swapchain framebuffers");
         return false;
     }
 
@@ -247,14 +239,14 @@ bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, 
     state->clear_values.push_back(color_clear_value);
     state->clear_values.push_back(depth_clear_value);
 
-    state->pfn_info("Vulkan Backend Initialized");
+    Logger::info("Vulkan Backend Initialized");
 
     return true;
 }
 
 void vulkan_backend_shutdown() {
     vkDeviceWaitIdle(state->logical_device);
-    state->pfn_info("Shutting Down Vulkan Renderer");
+    Logger::info("Shutting Down Vulkan Renderer");
 
     destroy_swapchain_framebuffers();
     destroy_naked_graphics_pipeline_state();
@@ -379,15 +371,15 @@ static VkBool32 debug_utils_callback(VkDebugUtilsMessageSeverityFlagBitsEXT     
 
     switch (messageSeverity) {
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-            state->pfn_debug("%s", pCallbackData->pMessage);
+            Logger::debug("%s", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-            state->pfn_warning("%s", pCallbackData->pMessage);
+            Logger::warning("%s", pCallbackData->pMessage);
             break;
         case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-            state->pfn_info("%s", pCallbackData->pMessage);
+            Logger::info("%s", pCallbackData->pMessage);
         default:
-            state->pfn_info("%s", pCallbackData->pMessage);
+            Logger::info("%s", pCallbackData->pMessage);
             break;
     }
 
@@ -407,14 +399,14 @@ bool create_vulkan_instance(const char* name) {
     list<const char*> extension_properties;
 
     if (!enumerate_required_instance_extensions(extension_properties)) {
-        state->pfn_fatal("One or more instance extensions are not supported!");
+        Logger::fatal("One or more instance extensions are not supported!");
         return false;
     }
 
     list<const char*> layer_properties;
 
     if (!enumerate_required_instance_layers(layer_properties)) {
-        state->pfn_fatal("One or more instance layers are not supported!");
+        Logger::fatal("One or more instance layers are not supported!");
         return false;
     }
 
@@ -448,7 +440,7 @@ bool enumerate_required_instance_extensions(list<const char*>& out_required_exte
     vk_result(vkEnumerateInstanceExtensionProperties(nullptr, &supported_extension_count, supported_extensions.data()));
 
     for (const VkExtensionProperties& extension : supported_extensions) {
-        state->pfn_debug("Supported Instance Extensions: %s", extension.extensionName);
+        Logger::debug("Supported Instance Extensions: %s", extension.extensionName);
     }
 
     uint32_t required_extensions_count = 0;
@@ -488,7 +480,7 @@ bool enumerate_required_instance_layers(list<const char*>& out_required_layers) 
     vk_result(vkEnumerateInstanceLayerProperties(&supported_layer_count, supported_layers.data()));
 
     for (const VkLayerProperties& property : supported_layers) {
-        state->pfn_debug("Supported Instance Layers: %s", property.layerName);
+        Logger::debug("Supported Instance Layers: %s", property.layerName);
     }
 
     const char* validation = "VK_LAYER_KHRONOS_validation";
@@ -561,7 +553,7 @@ bool select_physical_device() {
         }
     }
 
-    state->pfn_info("Selecting Physical Device: ", selected_physical_device.deviceName);
+    Logger::info("Selecting Physical Device: ", selected_physical_device.deviceName);
 
     if (!selected_device) {
         return false;
@@ -585,7 +577,7 @@ bool create_logical_device(const VkPhysicalDeviceFeatures* features) {
     list<const char*> required_extensions;
 
     if (!enumerate_required_device_extensions(required_extensions)) {
-        state->pfn_fatal("Failed to acquire required device extension");
+        Logger::fatal("Failed to acquire required device extension");
         return false;
     }
 
@@ -617,7 +609,7 @@ bool enumerate_required_device_extensions(list<const char*>& out_required_extens
     vk_result(vkEnumerateDeviceExtensionProperties(state->physical_device, nullptr, &supported_extension_count, supported_extensions.data()));
 
     for (const VkExtensionProperties& property : supported_extensions) {
-        state->pfn_debug("Supported Device Extensions: %s", property.extensionName);
+        Logger::debug("Supported Device Extensions: %s", property.extensionName);
     }
 
     list<const char*> requested_extensions(2);
@@ -636,7 +628,7 @@ bool enumerate_required_device_extensions(list<const char*>& out_required_extens
         }
 
         if (!supported) {
-            state->pfn_fatal("Extension %s is not supported by your GPU!", requested_extension);
+            Logger::fatal("Extension %s is not supported by your GPU!", requested_extension);
             return false;
         }
     }
@@ -954,7 +946,7 @@ bool destroy_depth_buffer() {
 
 bool find_memory_type_index(uint32_t supported_memory_type, VkMemoryPropertyFlags property_flags, uint32_t* out_memory_type_index) {
     if (out_memory_type_index == nullptr) {
-        state->pfn_fatal("find_memory_type_index: out_memory_type_index can't be nullptr");
+        Logger::fatal("find_memory_type_index: out_memory_type_index can't be nullptr");
         return false;
     }
 
@@ -976,7 +968,7 @@ bool find_memory_type_index(uint32_t supported_memory_type, VkMemoryPropertyFlag
 
 bool create_descriptor_pool(VkDescriptorType type, bool can_be_freed, VkDescriptorPool* out_descriptor_pool, uint32_t max_sets) {
     if (out_descriptor_pool == nullptr) {
-        state->pfn_fatal("create_descriptor_pool: out_descriptor_pool can't be nullptr");
+        Logger::fatal("create_descriptor_pool: out_descriptor_pool can't be nullptr");
         return false;
     }
 
@@ -1004,7 +996,7 @@ bool destroy_descriptor_pool(VkDescriptorPool descriptor_pool) {
 
 bool create_descriptor_set(VkDescriptorPool descriptor_pool, VkDescriptorSet* out_descriptor_set) {
     if (out_descriptor_set == nullptr) {
-        state->pfn_fatal("create_descriptor_set: out_descriptor_pool can't be nullptr");
+        Logger::fatal("create_descriptor_set: out_descriptor_pool can't be nullptr");
         return false;
     }
     VkDescriptorSetAllocateInfo allocate_info;
@@ -1020,7 +1012,7 @@ bool create_descriptor_set(VkDescriptorPool descriptor_pool, VkDescriptorSet* ou
 
 bool create_command_pool(VkCommandPool* out_command_pool, uint32_t queueIndex) {
     if (out_command_pool == nullptr) {
-        state->pfn_fatal("create_command_pool: out_command_pool can't be nullptr");
+        Logger::fatal("create_command_pool: out_command_pool can't be nullptr");
         return false;
     }
 
@@ -1139,7 +1131,7 @@ bool destroy_render_pass() {
 
 bool create_naked_graphics_pipeline_state(const VkSurfaceCapabilitiesKHR& surface_capabilities) {
     if (state->naked_graphics_pipeline || state->naked_graphics_pipeline_layout) {
-        state->pfn_fatal("create_naked_graphics_pipeline_state: either the pipeline layout or the pipeline state are already created");
+        Logger::fatal("create_naked_graphics_pipeline_state: either the pipeline layout or the pipeline state are already created");
         return false;
     }
 

@@ -3,6 +3,7 @@
 #ifdef PLATFORM_WINDOWS
 
 #include "containers/list.h"
+#include "core/logger.h"
 
 #include <d3d12.h>
 #include <d3dcompiler.h>
@@ -28,10 +29,6 @@ struct internal_d3d12_renderer_state {
     ComPtr<IDXGIAdapter1> adapter;
     bool has_debug_layer_enabled;
     ComPtr<IDXGIInfoQueue> info_queue;
-    PFN_logger pfn_fatal;
-    PFN_logger pfn_warning;
-    PFN_logger pfn_debug;
-    PFN_logger pfn_info;
     SDL_Window* window;
     int32_t width;
     int32_t height;
@@ -71,11 +68,6 @@ extern "C" {
 
 #define d3d12_infocheck(call) { (call); bool had_error = poll_for_d3d12_messages(); if (had_error) return false; }
 
-#define LFATAL(x, ...) state->pfn_fatal(x, ##__VA_ARGS__)
-#define LWARNING(x, ...) state->pfn_warning(x, ##__VA_ARGS__)
-#define LDEBUG(x, ...) state->pfn_debug(x, ##__VA_ARGS__)
-#define LINFO(x, ...) state->pfn_info(x, ##__VA_ARGS__)
-
 internal_d3d12_renderer_state* state;
 /* internal functions */
 static void __stdcall dxgi_message_func(DXGI_INFO_QUEUE_MESSAGE_SEVERITY Severity, LPCSTR pDescription);
@@ -105,8 +97,7 @@ static bool wait_for_fence(ID3D12Fence* fence, uint64_t value_to_wait);
 static bool wait_device_idle();
 
 /* public functions */
-bool d3d12_backend_initialize(uint64_t* required_size, void* allocated_memory, const char* name,
-    PFN_logger pfn_fatal, PFN_logger pfn_warning, PFN_logger pfn_debug, PFN_logger pfn_info, void* sdl_window) {
+bool d3d12_backend_initialize(uint64_t* required_size, void* allocated_memory, const char* name, void* sdl_window) {
     if (required_size == nullptr) return false;
     if (*required_size == 0) {
         *required_size = sizeof(internal_d3d12_renderer_state);
@@ -119,99 +110,95 @@ bool d3d12_backend_initialize(uint64_t* required_size, void* allocated_memory, c
     // since i'm using instances (ComPtr), i'll call the constructor.
     // as of now this memory is also zeroed out.
     state = new(allocated_memory) internal_d3d12_renderer_state;
-    state->pfn_fatal = pfn_fatal;
-    state->pfn_warning = pfn_warning;
-    state->pfn_debug = pfn_debug;
-    state->pfn_info = pfn_info;
 
-    state->pfn_info("Initializing D3D12 Backend");
+    Logger::info("Initializing D3D12 Backend");
 
     state->window = (SDL_Window*)sdl_window;
 
     if (!enable_debug_layer()) {
-        state->pfn_debug("Failed to enable d3d12 debug layer");
+        Logger::debug("Failed to enable d3d12 debug layer");
     }
 
     if (!create_dxgi_factory()) {
-        LFATAL("Failed to create DXGI Factory");
+        Logger::fatal("Failed to create DXGI Factory");
         return false;
     }
 
     if (!create_d3d12_device()) {
-        LFATAL("Failed to create d3d12 Device");
+        Logger::fatal("Failed to create d3d12 Device");
         return false;
     }
 
     if (!create_device_queues()) {
-        LFATAL("Failed to create d3d12 graphics queue");
+        Logger::fatal("Failed to create d3d12 graphics queue");
         return false;
     }
 
     SDL_GetWindowSize(state->window, &state->width, &state->height);
     if (!create_swapchain(state->width, state->height)) {
-        LFATAL("Failed to create D3D12 swapchain");
+        Logger::fatal("Failed to create D3D12 swapchain");
         return false;
     }
 
     if (!get_swapchain_back_buffers()) {
-        LFATAL("Failed to get swapchain backbuffers");
+        Logger::fatal("Failed to get swapchain backbuffers");
         return false;
     }
 
     get_descriptor_heap_increment_sizes();
 
     if (!create_descriptor_heap(&state->render_target_view_heap, D3D12_DESCRIPTOR_HEAP_TYPE_RTV, state->num_frames)) {
-        LFATAL("Failed to create render target view heap");
+        Logger::fatal("Failed to create render target view heap");
         return false;
     }
 
     if (!create_descriptor_heap(&state->depth_stencil_view_heap, D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1)) {
-        LFATAL("Failed to create depth stencil view heap");
+        Logger::fatal("Failed to create depth stencil view heap");
         return false;
     }
 
     if (!create_descriptor_heap(&state->constant_buffer_heap, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1000)) {
-        LFATAL("Failed to create constant buffer heap");
+        Logger::fatal("Failed to create constant buffer heap");
         return false;
     }
 
     if (!create_render_target_views()) {
-        LFATAL("Failed to create render target views");
+        Logger::fatal("Failed to create render target views");
         return false;
     }
 
     if (!create_swapchain_fences()) {
-        LFATAL("Failed to create swapchain fences");
+        Logger::fatal("Failed to create swapchain fences");
         return false;
     }
 
     if (!create_depth_buffer(state->width, state->height)) {
-        LFATAL("Failed to create depth buffer");
+        Logger::fatal("Failed to create depth buffer");
         return false;
     }
     
     if (!create_depth_view()) {
-        LFATAL("Failed to create depth stencil view");
+        Logger::fatal("Failed to create depth stencil view");
         return false;
     }
 
     if (!create_graphics_command_allocator_and_lists()) {
-        LFATAL("Failed to create swapchain command lists and/or allocators");
+        Logger::fatal("Failed to create swapchain command lists and/or allocators");
         return false;
     }
 
     if (!create_naked_pipeline_state_object()) {
-        LFATAL("Failed to create naked pipeline state object");
+        Logger::fatal("Failed to create naked pipeline state object");
         return false;
     }
 
-    LINFO("D3D12 Backend Initialized");
+    Logger::info("D3D12 Backend Initialized");
 
     return true;
 }
 
 void d3d12_backend_shutdown() {
-    LINFO("Shutting Down D3D12 Renderer");
+    Logger::info("Shutting Down D3D12 Renderer");
     wait_device_idle();
     state->~internal_d3d12_renderer_state();
     memset(state, 0, sizeof(*state));
@@ -282,22 +269,22 @@ void dxgi_message_func(
 ) {
     switch (Severity) {
     case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION:
-        LFATAL("%s", pDescription);
+        Logger::fatal("%s", pDescription);
         break;
     case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR:
-        LFATAL("%s", pDescription);
+        Logger::fatal("%s", pDescription);
         break;
     case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING:
-        LWARNING("%s", pDescription);
+        Logger::warning("%s", pDescription);
         break;
     case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_INFO:
-        LDEBUG("%s", pDescription);
+        Logger::debug("%s", pDescription);
         break;
     case DXGI_INFO_QUEUE_MESSAGE_SEVERITY_MESSAGE:
-        LINFO("%s", pDescription);
+        Logger::info("%s", pDescription);
         break;
     default:
-        LINFO("%s", pDescription);
+        Logger::info("%s", pDescription);
         break;
     }
 }
@@ -342,7 +329,7 @@ bool create_d3d12_device() {
         DXGI_ADAPTER_DESC desc;
         adapter->GetDesc(&desc);
 
-        LDEBUG("Found adapter: %ws", desc.Description);
+        Logger::debug("Found adapter: %ws", desc.Description);
 
         if (desc.DedicatedVideoMemory > video_memory) {
             state->adapter = adapter;
@@ -610,7 +597,7 @@ bool create_naked_pipeline_state_object() {
         D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1_0, &root_blob, &error);
      
         if (error.Get() != nullptr) {
-            LFATAL("%s", error->GetBufferPointer());
+            Logger::fatal("%s", error->GetBufferPointer());
             return false;
         }
 

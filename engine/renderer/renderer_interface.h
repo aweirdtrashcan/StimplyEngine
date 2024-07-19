@@ -7,8 +7,7 @@ typedef void* renderer_image;
 typedef void(*PFN_logger)(const char* message, ...);
 
 /* In the vulkan renderer, make sure that the extra parameter is a pointer to an array of required instance layers. */
-typedef bool(*PFN_renderer_backend_initialize)(uint64_t* required_size, void* allocated_memory, const char* name, 
-    PFN_logger pfn_fatal, PFN_logger pfn_warning, PFN_logger pfn_debug, PFN_logger pfn_info, void* sdl_window);
+typedef bool(*PFN_renderer_backend_initialize)(uint64_t* required_size, void* allocated_memory, const char* name, void* sdl_window);
 typedef void(*PFN_renderer_backend_shutdown)();
 typedef bool(*PFN_renderer_begin_frame)();
 typedef bool(*PFN_renderer_end_frame)();

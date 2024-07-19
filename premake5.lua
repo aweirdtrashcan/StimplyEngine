@@ -88,7 +88,7 @@ project "Stimply-Renderer-Backend-Vulkan"
         cppdialect "c++17"
         defines { "DYNAMIC_RENDERER=__declspec(dllexport)" }
         libdirs { "$(VULKAN_SDK)/Lib", "vendor/SDL2" }
-        links { "SDL2main", "SDL2", "vulkan-1" }
+        links { "SDL2main", "SDL2", "vulkan-1", "Stimply-Engine" }
         flags { "MultiProcessorCompile" }
     elseif os.host() == "linux" then
         defines { "DYNAMIC_RENDERER= ", "RAPI= " }
@@ -129,7 +129,7 @@ project "Stimply-Renderer-Backend-DX12"
         cppdialect "c++17"
         defines { "DYNAMIC_RENDERER=__declspec(dllexport)" }
         libdirs { "vendor/SDL2" }
-        links { "SDL2main", "SDL2", "d3d12" }
+        links { "SDL2main", "SDL2", "d3d12", "Stimply-Engine" }
         flags { "MultiProcessorCompile" }
     elseif os.host() == "linux" then
         defines { "DYNAMIC_RENDERER= ", "RAPI= " }

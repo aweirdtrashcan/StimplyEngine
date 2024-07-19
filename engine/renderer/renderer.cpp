@@ -41,13 +41,13 @@ Renderer::Renderer(RendererType type, Window* window) {
         throw RendererException("Failed to load library");
     }     
     
-    if (!m_Interface.initialize(&allocation_size, nullptr, "Stimply Engine", nullptr, nullptr, nullptr, nullptr, window->get_internal_handle())) {
+    if (!m_Interface.initialize(&allocation_size, nullptr, "Stimply Engine", window->get_internal_handle())) {
         throw RendererException("Failed to get renderer required size for internal state");
     }
 
     m_Renderer_Memory = Platform::ualloc(allocation_size);
 
-    if (!m_Interface.initialize(&allocation_size, m_Renderer_Memory, "Stimply Engine", Logger::fatal, Logger::warning, Logger::debug, Logger::info, window->get_internal_handle())) {
+    if (!m_Interface.initialize(&allocation_size, m_Renderer_Memory, "Stimply Engine", window->get_internal_handle())) {
         throw RendererException("Failed to initialize renderer");
     }
 }
