@@ -1,20 +1,15 @@
-#include "core/logger.h"
 #include "platform.h"
 
 #if defined (PLATFORM_LINUX)
 
 #include "window/window.h"
+#include "core/logger.h"
 
-#include <vulkan/vulkan_core.h>
-#include <SDL2/SDL_stdinc.h>
-#include <SDL2/SDL_video.h>
 #include <SDL2/SDL_vulkan.h>
 
-#include <cstring>
 #include <dlfcn.h>
-
-#include <filesystem>
-#include <cstdio>
+#include <unistd.h>
+#include <linux/limits.h> // NOTE: I think you must have linux-headers installed, but i still need to look for that up.
 
 struct alloc_header {
     size_t allocation_size;
@@ -77,9 +72,13 @@ void Platform::log(log_level level, const char *message) {
 void* Platform::load_library(const char* libraryPath) {
     char library_name[1024]{};
 
-    std::filesystem::path path = std::filesystem::current_path();
+    char path[PATH_MAX];
+    if (getcwd(path, PATH_MAX) == nullptr) {
+        Logger::debug("Platform::load_library: Failed to get current working directory");
+        return nullptr;
+    }
 
-    snprintf(library_name, sizeof(library_name), "%s/lib%s.so", path.c_str(), libraryPath);
+    snprintf(library_name, sizeof(library_name), "%s/lib%s.so", path, libraryPath);
 
     void* library = dlopen(library_name, RTLD_NOW);
 
