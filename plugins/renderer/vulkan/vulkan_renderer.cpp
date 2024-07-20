@@ -2,17 +2,10 @@
 
 #include "containers/list.h"
 #include "core/logger.h"
-#include "platform/platform.h"
 #include "../render_item.h"
-#include "vulkan_defines.h"
 #include "renderer/render_item_utils.h"
 
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-#include <iterator>
 #include <vulkan/vulkan.h>
-#include <vulkan/vulkan_core.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
