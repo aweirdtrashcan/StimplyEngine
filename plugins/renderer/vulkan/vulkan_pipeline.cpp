@@ -20,8 +20,8 @@ bool create_naked_graphics_pipeline_layout(internal_vulkan_renderer_state* state
 }
 
 bool create_naked_graphics_pipeline_state(internal_vulkan_renderer_state* state, const VkSurfaceCapabilitiesKHR& surface_capabilities) {
-    if (state->graphics_pipelines[LAYOUT_NAKED] || state->graphics_pipeline_layouts[LAYOUT_NAKED]) {
-        Logger::fatal("create_naked_graphics_pipeline_state: either the pipeline layout or the pipeline state are already created");
+    if (state->graphics_pipelines[LAYOUT_NAKED]) {
+        Logger::fatal("create_naked_graphics_pipeline_state: pipeline state is already created");
         return false;
     }
 
@@ -201,5 +201,13 @@ bool destroy_naked_graphics_pipeline_layout(internal_vulkan_renderer_state* stat
 bool destroy_naked_graphics_pipeline_state(internal_vulkan_renderer_state* state) {
     vkDestroyPipeline(state->logical_device, state->graphics_pipelines[LAYOUT_NAKED], state->allocator);
 
+    return true;
+}
+
+bool create_mvp_pipeline_layout() {
+    return true;
+}
+
+bool create_mvp_pipeline() {
     return true;
 }

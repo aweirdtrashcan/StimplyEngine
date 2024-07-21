@@ -130,6 +130,7 @@ void vulkan_backend_shutdown() {
 
     destroy_swapchain_framebuffers(state);
     destroy_naked_graphics_pipeline_state(state);
+    destroy_naked_graphics_pipeline_layout(state);
     destroy_render_pass(state);
     destroy_command_pool(state, state->command_pool);
     destroy_descriptor_pool(state, state->uniform_descriptor_pool);
