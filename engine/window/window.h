@@ -18,6 +18,7 @@ public:
     
     list<const char*> get_vulkan_required_instance_layers() const;
     void* create_vulkan_surface(void* instance) { return Platform::create_vulkan_surface(this, instance); }
+    static void MessageBox(const char* title, const char* message);
 
 private:
     void process_window_messages(const SDL_Event& event);

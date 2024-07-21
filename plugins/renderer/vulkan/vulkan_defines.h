@@ -17,3 +17,10 @@ struct gpu_buffer {
     VkDeviceMemory memory;
     void* memory_pointer;
 };
+
+enum vulkan_layouts {
+    LAYOUT_NAKED,
+    LAYOUT_MVP,
+
+    LAYOUT_MAX
+};

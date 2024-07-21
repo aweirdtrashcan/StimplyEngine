@@ -44,5 +44,6 @@ RAPI void initialize_engine(void) {
         
     } catch (const std::exception& exception) {
         Logger::fatal("Error: %s", exception.what());
+        Window::MessageBox("Fatal error", exception.what());
     }
 }

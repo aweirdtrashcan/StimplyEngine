@@ -1,3 +1,4 @@
+#include "SDL2/SDL_messagebox.h"
 #include "platform.h"
 
 #if defined (PLATFORM_LINUX)
@@ -10,6 +11,10 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <linux/limits.h> // NOTE: I think you must have linux-headers installed, but i still need to look for that up.
+
+void Window::MessageBox(const char* title, const char* message) {
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title, message, nullptr);
+}
 
 struct alloc_header {
     size_t allocation_size;
