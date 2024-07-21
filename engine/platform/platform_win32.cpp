@@ -10,12 +10,19 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+#ifdef MessageBox
+#undef MessageBox
+#endif
 
 struct alloc_header {
     size_t allocation_size;
 };
 
 static Platform* platform_ptr = nullptr;
+
+void Window::MessageBox(const char* title, const char* message) {
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title, message, nullptr);
+}
 
 static inline void* from_header_to_memory(alloc_header* header) {
     return ((uint8_t*)header) + sizeof(alloc_header);
@@ -111,6 +118,54 @@ void* Platform::create_vulkan_surface(Window* window, void* instance) {
     }
 
     return surface;
+}
+
+binary_info Platform::read_binary(const char* path) {
+    HANDLE file = CreateFileA(
+        path,
+        GENERIC_READ,
+        0,
+        nullptr,
+        OPEN_EXISTING,
+        FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY,
+        nullptr
+    );
+
+    if (!file) {
+        Logger::debug("Failed to open file %s", path);
+        return {};
+    }
+
+    int64_t size = 0;
+    if (!GetFileSizeEx(file, (PLARGE_INTEGER)&size)) {
+        Logger::debug("Failed to get file size of %s", path);
+        CloseHandle(file);
+        return {};
+    }
+
+    char* buffer = (char*)Platform::ualloc(size);
+
+    DWORD bytes_read;
+
+    if (!ReadFile(
+        file,
+        buffer,
+        size,
+        &bytes_read,
+        nullptr
+    )) {
+        Logger::debug("Failed to read file %s");
+        CloseHandle(file);
+        return {};
+    }
+
+    CloseHandle(file);
+
+    binary_info info;
+    info.binary = buffer;
+    info.size = size;
+
+    return info;
 }
 
 #endif

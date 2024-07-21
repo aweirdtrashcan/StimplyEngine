@@ -10,7 +10,7 @@ extern "C" {
 internal_vulkan_renderer_state* state = nullptr;
 
 /* public functions */
-bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, const char* name, void* sdl_window) {
+bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, const char* name, void* sdl_window) noexcept(false) {
     if (!required_size) return false;
     if (*required_size == 0) {
         *required_size = sizeof(internal_vulkan_renderer_state);
@@ -168,6 +168,11 @@ bool vulkan_begin_frame() {
 
     VkResult result;
 
+    if (!state->swapchain) {
+        recreate_swapchain(state);
+        return false;
+    }
+
     result = vkAcquireNextImageKHR(
         state->logical_device, 
         state->swapchain, 
@@ -196,7 +201,7 @@ bool vulkan_begin_frame() {
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-    begin_render_pass(renderpass, command_buffer, framebuffer, scissor, std::size(state->clear_values), clear_values);
+    begin_render_pass(renderpass, command_buffer, framebuffer, scissor, (uint32_t)std::size(state->clear_values), clear_values);
 
     return true;
 }

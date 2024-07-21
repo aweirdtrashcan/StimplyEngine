@@ -90,6 +90,9 @@ project "Stimply-Renderer-Backend-Vulkan"
         libdirs { "$(VULKAN_SDK)/Lib", "vendor/SDL2" }
         links { "SDL2main", "SDL2", "vulkan-1", "Stimply-Engine" }
         flags { "MultiProcessorCompile" }
+        postbuildcommands {
+            "PowerShell .\\compile_shaders.ps1"
+        }
     elseif os.host() == "linux" then
         defines { "DYNAMIC_RENDERER= ", "RAPI= " }
         libdirs { os.findlib("SDL2main") }

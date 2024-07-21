@@ -82,7 +82,6 @@ bool create_swapchain(internal_vulkan_renderer_state* state, const VkSurfaceCapa
 
 bool destroy_swapchain(internal_vulkan_renderer_state* state) {
     vkDestroySwapchainKHR(state->logical_device, state->swapchain, state->allocator);
-
     return true;
 }
 
@@ -121,8 +120,9 @@ bool create_swapchain_back_buffer_views(internal_vulkan_renderer_state* state) {
 }
 
 bool destroy_swapchain_image_views(internal_vulkan_renderer_state* state) {
-    for (VkImageView view : state->back_buffer_views) {
+    for (VkImageView& view : state->back_buffer_views) {
         vkDestroyImageView(state->logical_device, view, state->allocator);
+        view = nullptr;
     }
 
     return true;
@@ -196,6 +196,7 @@ bool create_swapchain_framebuffers(internal_vulkan_renderer_state* state, const 
 bool destroy_swapchain_framebuffers(internal_vulkan_renderer_state* state) {
     for (uint32_t i = 0; i < state->num_frames; i++) {
         vkDestroyFramebuffer(state->logical_device, state->swapchain_framebuffers[i], state->allocator);
+        state->swapchain_framebuffers[i] = nullptr;
     }
 
     return true;

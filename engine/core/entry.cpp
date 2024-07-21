@@ -35,9 +35,7 @@ RAPI void initialize_engine(void) {
         void* render_item = renderer.CreateRenderItem(&create_info);
 
         while (window.ProcessMessages()) {
-            if (!renderer.Draw()) {
-                break;
-            }
+            renderer.Draw();
         }
 
         renderer.DestroyRenderItem(render_item);

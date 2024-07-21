@@ -116,7 +116,10 @@ void* Platform::create_vulkan_surface(Window* window, void* instance) {
 binary_info Platform::read_binary(const char* path) {
     FILE* file = fopen(path, "rb");
 
-    if (!file) return {0, nullptr};
+    if (!file) {
+        Logger::debug("Failed to open file %s", path);
+        return {};
+    }
 
     binary_info info{};
 

@@ -1,6 +1,6 @@
 #include <exception>
 
-class RendererException : public std::exception {
+class RAPI RendererException : public std::exception {
 public:
     RendererException(const char* error, ...);
     virtual ~RendererException();
