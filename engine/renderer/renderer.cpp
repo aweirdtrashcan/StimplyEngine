@@ -3,23 +3,7 @@
 #include "renderer_interface.h"
 #include "window/window.h"
 #include "platform/platform.h"
-
-#include <cstdlib>
-#include <cstring>
-#include <exception>
-#include <string>
-
-class RendererException : public std::exception {
-public:
-    RendererException(const char* error) 
-    :
-    m_What(error) {}
-
-    virtual const char* what() const noexcept { return m_What.c_str(); }
-
-private:
-    std::string m_What;
-};
+#include "renderer_exception.h"
 
 Renderer::Renderer(RendererType type, Window* window) {
     uint64_t allocation_size = 0;
@@ -38,7 +22,7 @@ Renderer::Renderer(RendererType type, Window* window) {
     m_Interface = LoadRendererFunctions(type);
 
     if (!m_Interface.initialize) {
-        throw RendererException("Failed to load library");
+        throw RendererException("Failed to load library: %s", library_name);
     }     
     
     if (!m_Interface.initialize(&allocation_size, nullptr, "Stimply Engine", window->get_internal_handle())) {

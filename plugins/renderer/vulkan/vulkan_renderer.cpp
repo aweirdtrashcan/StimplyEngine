@@ -3,6 +3,7 @@
 
 #include <core/logger.h>
 #include <renderer/render_item_utils.h>
+#include <renderer/renderer_exception.h>
 
 extern "C" {
 
@@ -26,35 +27,30 @@ bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, 
     state->window = sdl_window;
 
     if (!create_vulkan_instance(state, name)) {
-        Logger::fatal("Failed to create vulkan instance");
-        return false;
+        throw RendererException("Failed to create vulkan instance");
     }    
 
     if (!enable_validation_layer(state)) {
-        Logger::fatal("Validaiton Layer was not enabled!");
+        throw RendererException("Validaiton Layer was not enabled!");
     }
 
     if (!select_physical_device(state)) {
-        Logger::fatal("Failed to select physical device");
-        return false;
+        throw RendererException("Failed to select physical device");
     }
 
     VkPhysicalDeviceFeatures features{};
     features.depthClamp = VK_TRUE;
 
     if (!create_logical_device(state, &features)) {
-        Logger::fatal("Failed to create logical device");
-        return false;
+        throw RendererException("Failed to create logical device");
     }
 
     if (!get_physical_device_queues(state)) {
-        Logger::fatal("Failed to get physical device queues");
-        return false;
+        throw RendererException("Failed to get physical device queues");
     }
 
     if (!create_surface(state)) {
-        Logger::fatal("Failed to create surface");
-        return false;
+        throw RendererException("Failed to create surface");
     }
 
     vk_result(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
@@ -63,59 +59,52 @@ bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, 
         &state->surface_capabilities));
 
     if (!create_swapchain(state, state->surface_capabilities)) {
-        Logger::fatal("Failed to create swapchain");
-        return false;
+        throw RendererException("Failed to create swapchain");
     }
 
     if (!get_swapchain_back_buffers(state)) {
-        Logger::fatal("Failed to get swapchain backbuffers");
-        return false;
+        throw RendererException("Failed to get swapchain backbuffers");
     }
 
     if (!create_swapchain_back_buffer_views(state)) {
-        Logger::fatal("Failed to create swapchain backbuffer views");
-        return false;
+        throw RendererException("Failed to create swapchain backbuffer views");
     }
 
     if (!create_swapchain_semaphores_and_fences(state)) {
-        Logger::fatal("Failed to create swapchain semaphores and fences");
-        return false;
+        throw RendererException("Failed to create swapchain semaphores and fences");
     }
 
     if (!create_depth_buffer(state, state->surface_capabilities)) {
-        Logger::fatal("Failed to create depth buffer");
-        return false;
+        throw RendererException("Failed to create depth buffer");
     }
 
     if (!create_descriptor_pool(state, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, true, &state->uniform_descriptor_pool)) {
-        Logger::fatal("Failed to create uniform buffer descriptor pool");
-        return false;
+        throw RendererException("Failed to create uniform buffer descriptor pool");
     }
 
     if (!create_command_pool(state, &state->command_pool, state->graphics_queue_index)) {
-        Logger::fatal("Failed to create graphics command pool");
-        return false;
+        throw RendererException("Failed to create graphics command pool");
     }
 
     state->graphics_command_buffers.resize(state->num_frames);
     if (!allocate_command_buffers(state, state->command_pool, state->num_frames, state->graphics_command_buffers.data())) {
-        Logger::fatal("Failed to allocate graphics command buffers");
-        return false;
+        throw RendererException("Failed to allocate graphics command buffers");
     }
 
     if (!create_render_pass(state)) {
-        Logger::fatal("Failed to create main render pass");
-        return false;
+        throw RendererException("Failed to create main render pass");
+    }
+
+    if (!create_naked_graphics_pipeline_layout(state)) {
+        throw RendererException("Failed to create naked graphics pipeline layout");
     }
 
     if (!create_naked_graphics_pipeline_state(state, state->surface_capabilities)) {
-        Logger::fatal("Failed to create naked graphics pipeline");
-        return false;
+        throw RendererException("Failed to create naked graphics pipeline");
     }
 
     if (!create_swapchain_framebuffers(state, state->surface_capabilities)) {
-        Logger::fatal("Failed to create swapchain framebuffers");
-        return false;
+        throw RendererException("Failed to create swapchain framebuffers");
     }
 
     VkClearValue color_clear_value{};

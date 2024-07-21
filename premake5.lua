@@ -26,7 +26,7 @@ project "Stimply-Engine"
     elseif os.host() == "linux" then
         cppdialect "gnu++17"
         toolset "clang"
-        defines { "DYNAMIC_RENDERER= ", 'RAPI=__attribute__((visibility("default")))' }
+        defines { "DYNAMIC_RENDERER= ", "RAPI= " }
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
         links { "SDL2main", "SDL2" }
@@ -37,7 +37,7 @@ project "Stimply-Engine"
     files { "engine/**.cpp", "engine/**.h" }
     floatingpoint "Fast"
 
-    includedirs { "engine/", "vendor/", "$(VULKAN_SDK)/include", "plugins/renderer" }
+    includedirs { "engine/", "vendor/", "$(VULKAN_SDK)/include", "./" }
 
     filter "configurations:Debug"
         defines { "DEBUG", platform_define }

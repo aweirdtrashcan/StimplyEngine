@@ -96,7 +96,9 @@ bool allocate_command_buffers(const internal_vulkan_renderer_state* state, VkCom
 bool free_command_buffers(const internal_vulkan_renderer_state* state, uint32_t command_buffer_count, VkCommandPool command_pool, VkCommandBuffer* command_buffers);
 bool create_render_pass(internal_vulkan_renderer_state* state);
 bool destroy_render_pass(internal_vulkan_renderer_state* state);
+bool create_naked_graphics_pipeline_layout(internal_vulkan_renderer_state* state);
 bool create_naked_graphics_pipeline_state(internal_vulkan_renderer_state* state, const VkSurfaceCapabilitiesKHR& surface_capabilities);
+bool destroy_naked_graphics_pipeline_layout(internal_vulkan_renderer_state* state);
 bool destroy_naked_graphics_pipeline_state(internal_vulkan_renderer_state* state);
 bool destroy_pipeline(internal_vulkan_renderer_state* state, VkPipeline pipeline);
 bool get_viewport_and_scissor(const VkSurfaceCapabilitiesKHR& surface_capabilities, VkViewport* out_viewport, VkRect2D* out_scissor);
@@ -119,5 +121,8 @@ bool destroy_gpu_buffer(const internal_vulkan_renderer_state* state, gpu_buffer*
 bool create_one_time_command_buffer(const internal_vulkan_renderer_state* state, VkCommandBuffer* out_command_buffer);
 bool end_one_time_command_buffer(const internal_vulkan_renderer_state* state, VkCommandBuffer command_buffer, VkQueue queue);
 VkResult submit_command_queue(VkSemaphore wait_semaphore, VkSemaphore signal_semaphore, VkFence fence, VkQueue queue, VkCommandBuffer command_buffer);
+
+bool create_mvp_pipeline_layout();
+bool create_mvp_pipeline();
 
 }
