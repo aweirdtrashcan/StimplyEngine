@@ -217,6 +217,7 @@ public:
     }
 	
 	size_t size() const { return m_Size; }
+	uint32_t size_u32() const { return (uint32_t)m_Size; }
 
 	ConstElementRef operator[](size_t index) const { 
 		assert(index < m_Capacity);

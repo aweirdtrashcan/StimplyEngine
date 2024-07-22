@@ -1,9 +1,12 @@
 #include "vulkan_renderer.h"
+#include "vulkan_defines.h"
 #include "vulkan_internals.h"
 
 #include <core/logger.h>
+#include <iterator>
 #include <renderer/render_item_utils.h>
 #include <renderer/renderer_exception.h>
+#include <vulkan/vulkan_core.h>
 
 extern "C" {
 
@@ -95,16 +98,27 @@ bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, 
         throw RendererException("Failed to create main render pass");
     }
 
-    if (!create_naked_graphics_pipeline_layout(state)) {
-        throw RendererException("Failed to create naked graphics pipeline layout");
-    }
-
-    if (!create_naked_graphics_pipeline_state(state, state->surface_capabilities)) {
-        throw RendererException("Failed to create naked graphics pipeline");
-    }
-
     if (!create_swapchain_framebuffers(state, state->surface_capabilities)) {
         throw RendererException("Failed to create swapchain framebuffers");
+    }
+
+    VkDescriptorSetLayoutBinding bindings[1];
+    bindings[0].binding = 0;
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    bindings[0].descriptorCount = 1;
+    bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    bindings[0].pImmutableSamplers = nullptr;
+
+    if (!create_descriptor_set_layout(state, std::size(bindings), bindings, &state->graphics_set_layouts[LAYOUT_MVP])) {
+        throw RendererException("Failed to create MVP descriptor set layout");
+    }
+
+    if (!create_mvp_pipeline_layout(state)) {
+        throw RendererException("Failed to create MVP pipeline layout");
+    }
+
+    if (!create_mvp_pipeline(state, state->surface_capabilities)) {
+        throw RendererException("Failed to create MVP graphics pipeline");
     }
 
     VkClearValue color_clear_value{};
@@ -128,9 +142,10 @@ void vulkan_backend_shutdown() {
     vkDeviceWaitIdle(state->logical_device);
     Logger::info("Shutting Down Vulkan Renderer");
 
+    destroy_pipeline(state, state->graphics_pipelines[LAYOUT_MVP]);
+    destroy_graphics_pipeline_layout(state, state->graphics_pipeline_layouts[LAYOUT_MVP]);
+    destroy_descriptor_set_layout(state, state->graphics_set_layouts[LAYOUT_MVP]);
     destroy_swapchain_framebuffers(state);
-    destroy_naked_graphics_pipeline_state(state);
-    destroy_naked_graphics_pipeline_layout(state);
     destroy_render_pass(state);
     destroy_command_pool(state, state->command_pool);
     destroy_descriptor_pool(state, state->uniform_descriptor_pool);

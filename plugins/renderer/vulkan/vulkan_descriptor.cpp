@@ -1,4 +1,5 @@
 #include "vulkan_internals.h"
+#include <vulkan/vulkan_core.h>
 
 bool create_descriptor_pool(const internal_vulkan_renderer_state* state, VkDescriptorType type, bool can_be_freed, VkDescriptorPool* out_descriptor_pool, uint32_t max_sets) {
     if (out_descriptor_pool == nullptr) {
@@ -53,6 +54,12 @@ bool create_descriptor_set_layout(const internal_vulkan_renderer_state* state, u
     create_info.pBindings = bindings;
 
     vk_result(vkCreateDescriptorSetLayout(state->logical_device, &create_info, state->allocator, out_set_layout));
+
+    return true;
+}
+
+bool destroy_descriptor_set_layout(const internal_vulkan_renderer_state* state, VkDescriptorSetLayout layout) {
+    vkDestroyDescriptorSetLayout(state->logical_device, layout, state->allocator);
 
     return true;
 }

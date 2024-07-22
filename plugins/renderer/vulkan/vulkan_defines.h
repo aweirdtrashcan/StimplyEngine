@@ -19,7 +19,6 @@ struct gpu_buffer {
 };
 
 enum vulkan_layouts {
-    LAYOUT_NAKED,
     LAYOUT_MVP,
 
     LAYOUT_MAX

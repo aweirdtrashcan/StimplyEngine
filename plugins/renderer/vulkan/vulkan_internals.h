@@ -102,7 +102,7 @@ bool create_descriptor_set(const internal_vulkan_renderer_state* state, VkDescri
 bool free_descriptor_set(const internal_vulkan_renderer_state* state, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
 bool create_mvp_set_layout_binding();
 bool create_descriptor_set_layout(const internal_vulkan_renderer_state* state, uint32_t binding_count, const VkDescriptorSetLayoutBinding* bindings, VkDescriptorSetLayout* out_set_layout);
-bool destroy_descriptor_set_layout(const VkDescriptorSetLayout* set_layout);
+bool destroy_descriptor_set_layout(const internal_vulkan_renderer_state* state, VkDescriptorSetLayout set_layout);
 
 bool create_command_pool(const internal_vulkan_renderer_state* state, VkCommandPool* out_command_pool, uint32_t queueIndex);
 bool destroy_command_pool(const internal_vulkan_renderer_state* state, VkCommandPool command_pool);
@@ -112,10 +112,7 @@ bool free_command_buffers(const internal_vulkan_renderer_state* state, uint32_t 
 bool create_render_pass(internal_vulkan_renderer_state* state);
 bool destroy_render_pass(internal_vulkan_renderer_state* state);
 
-bool create_naked_graphics_pipeline_layout(internal_vulkan_renderer_state* state);
-bool create_naked_graphics_pipeline_state(internal_vulkan_renderer_state* state, const VkSurfaceCapabilitiesKHR& surface_capabilities);
-bool destroy_naked_graphics_pipeline_layout(internal_vulkan_renderer_state* state);
-bool destroy_naked_graphics_pipeline_state(internal_vulkan_renderer_state* state);
+bool destroy_graphics_pipeline_layout(internal_vulkan_renderer_state* state, VkPipelineLayout pipeline_layout);
 bool destroy_pipeline(internal_vulkan_renderer_state* state, VkPipeline pipeline);
 
 bool get_viewport_and_scissor(const VkSurfaceCapabilitiesKHR& surface_capabilities, VkViewport* out_viewport, VkRect2D* out_scissor);
@@ -145,7 +142,7 @@ bool end_one_time_command_buffer(const internal_vulkan_renderer_state* state, Vk
 
 VkResult submit_command_queue(VkSemaphore wait_semaphore, VkSemaphore signal_semaphore, VkFence fence, VkQueue queue, VkCommandBuffer command_buffer);
 
-bool create_mvp_pipeline_layout();
-bool create_mvp_pipeline();
+bool create_mvp_pipeline_layout(internal_vulkan_renderer_state* state);
+bool create_mvp_pipeline(internal_vulkan_renderer_state* state, const VkSurfaceCapabilitiesKHR& surface_capabilities);
 
 }
