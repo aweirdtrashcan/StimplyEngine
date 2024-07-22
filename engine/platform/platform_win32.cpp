@@ -3,6 +3,7 @@
 #if defined (PLATFORM_WINDOWS)
 #include "defines.h"
 #include "window/window.h"
+#include "renderer/renderer_exception.h"
 
 #include <vulkan/vulkan.h>
 #include <SDL2/SDL_vulkan.h>
@@ -84,7 +85,7 @@ void Platform::log(log_level level, const char* message) {
 void* Platform::load_library(const char* libraryPath) {
     char library_name[1024]{};
 
-    std::string path = std::filesystem::current_path().generic_string();
+    throw RendererException("Configure current path");
     
     for (size_t i = 0; i < path.size(); i++) {
         if (path[i] == '/') {
