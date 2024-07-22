@@ -43,3 +43,16 @@ bool create_descriptor_set(const internal_vulkan_renderer_state* state, VkDescri
 
     return true;
 }
+
+bool create_descriptor_set_layout(const internal_vulkan_renderer_state* state, uint32_t binding_count, const VkDescriptorSetLayoutBinding* bindings, VkDescriptorSetLayout* out_set_layout) {
+    VkDescriptorSetLayoutCreateInfo create_info;
+    create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    create_info.pNext = nullptr;
+    create_info.flags = 0;
+    create_info.bindingCount = binding_count;
+    create_info.pBindings = bindings;
+
+    vk_result(vkCreateDescriptorSetLayout(state->logical_device, &create_info, state->allocator, out_set_layout));
+
+    return true;
+}

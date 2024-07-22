@@ -204,10 +204,25 @@ bool destroy_naked_graphics_pipeline_state(internal_vulkan_renderer_state* state
     return true;
 }
 
-bool create_mvp_pipeline_layout() {
+bool create_mvp_pipeline_layout(internal_vulkan_renderer_state* state) {
+    VkPipelineLayoutCreateInfo create_info;
+    create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    create_info.pNext = nullptr;
+    create_info.flags = 0;
+    create_info.setLayoutCount = 0;
+    create_info.pSetLayouts = nullptr;
+    create_info.pushConstantRangeCount = 0;
+    create_info.pPushConstantRanges = nullptr;
+
+    vk_result(vkCreatePipelineLayout(
+        state->logical_device,
+        &create_info,
+        state->allocator,
+        &state->graphics_pipeline_layouts[LAYOUT_NAKED]));
+
     return true;
 }
 
-bool create_mvp_pipeline() {
+bool create_mvp_pipeline(internal_vulkan_renderer_state* state, const VkSurfaceCapabilitiesKHR& surface_capabilities) {
     return true;
 }

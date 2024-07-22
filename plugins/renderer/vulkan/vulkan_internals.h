@@ -43,6 +43,7 @@ struct internal_vulkan_renderer_state {
     VkDescriptorPool uniform_descriptor_pool;
     uint32_t current_frame_index;
     uint32_t image_index;
+    VkDescriptorSetLayout graphics_set_layouts[LAYOUT_MAX];
     VkPipeline graphics_pipelines[LAYOUT_MAX];
     VkPipelineLayout graphics_pipeline_layouts[LAYOUT_MAX];
     VkRenderPass main_renderpass;
@@ -99,6 +100,9 @@ bool create_descriptor_pool(const internal_vulkan_renderer_state* state, VkDescr
 bool destroy_descriptor_pool(const internal_vulkan_renderer_state* state, VkDescriptorPool descriptor_pool);
 bool create_descriptor_set(const internal_vulkan_renderer_state* state, VkDescriptorPool descriptor_pool, VkDescriptorSet* out_descriptor_set);
 bool free_descriptor_set(const internal_vulkan_renderer_state* state, VkDescriptorPool descriptor_pool, VkDescriptorSet descriptor_set);
+bool create_mvp_set_layout_binding();
+bool create_descriptor_set_layout(const internal_vulkan_renderer_state* state, uint32_t binding_count, const VkDescriptorSetLayoutBinding* bindings, VkDescriptorSetLayout* out_set_layout);
+bool destroy_descriptor_set_layout(const VkDescriptorSetLayout* set_layout);
 
 bool create_command_pool(const internal_vulkan_renderer_state* state, VkCommandPool* out_command_pool, uint32_t queueIndex);
 bool destroy_command_pool(const internal_vulkan_renderer_state* state, VkCommandPool command_pool);
