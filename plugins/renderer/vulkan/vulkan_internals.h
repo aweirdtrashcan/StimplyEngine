@@ -53,7 +53,7 @@ struct internal_vulkan_renderer_state {
     list<VkFramebuffer> swapchain_framebuffers;
     VkSurfaceCapabilitiesKHR surface_capabilities;
     VkClearValue clear_values[2];
-    list<render_item*> render_items;
+    list<render_item> render_items;
     uint64_t geometry_vertex_offset;
     uint64_t geometry_index_offset;
     gpu_buffer vertex_buffer;

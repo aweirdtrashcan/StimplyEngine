@@ -165,7 +165,7 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
     create_info.indicesCount = std::size(indices);
     create_info.pIndices = &indices;
     create_info.shader = &state->light_shader;
-    state->render_items.push_back((render_item*)vulkan_create_render_item(&create_info));
+    vulkan_create_render_item(&create_info);
 
     Logger::info("Vulkan Backend Initialized");
 
@@ -178,7 +178,6 @@ void vulkan_backend_shutdown() {
 
     destroy_gpu_buffer(state, &state->index_buffer);
     destroy_gpu_buffer(state, &state->vertex_buffer);
-    vulkan_destroy_render_item(state->render_items[0]);
     destroy_vulkan_shader(state, &state->light_shader);
     destroy_swapchain_framebuffers(state);
     destroy_render_pass(state);
@@ -262,7 +261,7 @@ bool vulkan_draw_items() {
     VkCommandBuffer command_buffer = state->graphics_command_buffers[state->current_frame_index];
 
     for (uint32_t i = 0; i < state->render_items.size_u32(); i++) {
-        render_item* item = state->render_items[i];
+        render_item* item = &state->render_items[i];
 
         vkCmdBindIndexBuffer(command_buffer, state->index_buffer.buffer, item->index_buffer_offset, VK_INDEX_TYPE_UINT32);
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &state->vertex_buffer.buffer, &item->vertex_buffer_offset);
@@ -340,7 +339,9 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
     gpu_buffer vertex_uploader;
     gpu_buffer index_uploader;
 
-    render_item* r_item = (render_item*)Platform::ualloc(sizeof(render_item));
+    // push an empty render item to the list, and the get the index of it.
+    state->render_items.push_back(render_item());
+    render_item* r_item = &state->render_items[state->render_items.size() - 1];
     r_item->shader_object = (vulkan_shader*)pRenderItemCreateInfo->shader;
     r_item->index_count = pRenderItemCreateInfo->indicesCount;
     r_item->vertices_count = pRenderItemCreateInfo->verticesCount;
@@ -354,7 +355,7 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
         Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");
         return nullptr;
     }
-
+    
     if (!create_uploader_buffer(state, pRenderItemCreateInfo->indexSize, &index_uploader)) {
         Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");
         return nullptr;
@@ -371,25 +372,15 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
     destroy_gpu_buffer(state, &vertex_uploader);
     destroy_gpu_buffer(state, &index_uploader);
 
-    // state->render_items[pRenderItemCreateInfo->shaderBundle.pipelineType].push_back(r_item);
-
     return r_item;
 }
 
 void vulkan_destroy_render_item(HANDLE item_handle) {
     render_item* r_item = (render_item*)item_handle;
-    r_item->index_buffer_offset = -1;
-    r_item->vertex_buffer_offset = -1;
-
     Platform::zero_memory(r_item, sizeof(*r_item));
 
-    for (uint32_t i = 0; i < PipelineTypeMAX; i++) {
-        // if (state->render_items[r_item->pipeline_type][i] == r_item) {
-        //     state->render_items[r_item->pipeline_type].remove_at(i);
-        // }
-    }
-
-    Platform::ufree(r_item);
+    r_item->index_buffer_offset = -1;
+    r_item->vertex_buffer_offset = -1;
 }
 
 /****************************************** INTERNAL FUNCTIONS ********************************************* */
