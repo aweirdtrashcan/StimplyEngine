@@ -1,4 +1,7 @@
+#include "core/logger.h"
 #include "vulkan_internals.h"
+#include <cstdint>
+#include <vulkan/vulkan_core.h>
 
 bool find_memory_type_index(const internal_vulkan_renderer_state* state, uint32_t supported_memory_type, VkMemoryPropertyFlags property_flags, uint32_t* out_memory_type_index) {
     if (out_memory_type_index == nullptr) {
@@ -45,11 +48,13 @@ bool create_uploader_buffer(internal_vulkan_renderer_state* state, size_t size, 
     VkMemoryRequirements memory_requirements;
     vkGetBufferMemoryRequirements(state->logical_device, out_gpu_buffer->buffer, &memory_requirements);
 
+    uint32_t property_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+
     uint32_t memory_index;
     if (!find_memory_type_index(
         state,
         memory_requirements.memoryTypeBits, 
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, 
+        property_flags, 
         &memory_index)) {
         return false;    
     }
@@ -65,6 +70,7 @@ bool create_uploader_buffer(internal_vulkan_renderer_state* state, size_t size, 
     vk_result(vkBindBufferMemory(state->logical_device, out_gpu_buffer->buffer, out_gpu_buffer->memory, 0));
 
     out_gpu_buffer->size = memory_requirements.size;
+    out_gpu_buffer->memory_property_flags = property_flags;
 
     vk_result(vkMapMemory(state->logical_device, out_gpu_buffer->memory, 0, out_gpu_buffer->size, 0, &out_gpu_buffer->memory_pointer));
 
@@ -72,6 +78,11 @@ bool create_uploader_buffer(internal_vulkan_renderer_state* state, size_t size, 
 }
 
 bool copy_to_upload_buffer(internal_vulkan_renderer_state* state, void* source, size_t size, gpu_buffer* buffer) {
+    if (!(buffer->memory_property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+        Logger::debug("copy_to_upload_buffer can't be called on a buffer that's not host visible");
+        return false;
+    }
+    
     memcpy(buffer->memory_pointer, source, size);
 
     VkMappedMemoryRange memory_range;
@@ -155,6 +166,7 @@ bool create_gpu_buffer(const internal_vulkan_renderer_state* state, size_t size,
     }
 
     out_gpu_buffer->size = memory_requirements.size;
+    out_gpu_buffer->memory_property_flags = memory_properties;
 
     return true;
 

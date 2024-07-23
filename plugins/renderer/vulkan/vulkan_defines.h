@@ -17,6 +17,7 @@ struct gpu_buffer {
     uint64_t size;
     VkBuffer buffer;
     VkDeviceMemory memory;
+    uint32_t memory_property_flags;
     void* memory_pointer;
 };
 

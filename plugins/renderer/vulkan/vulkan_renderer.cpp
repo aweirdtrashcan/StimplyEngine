@@ -133,11 +133,12 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
     // TODO: Test
     DirectX::XMFLOAT3 vertices[] = {
         { -0.5f, -0.5f, 0.0f },
-        { -0.0f, 0.5f, 0.0f },
-        { 0.5f, -0.5f, 0.0f },
+        { -0.5f,  0.5f, 0.0f },
+        {  0.5f, -0.5f, 0.0f },
+        {  0.5f,  0.5f, 0.0f },
     };
 
-    uint32_t indices[] = { 0, 1, 2 };
+    uint32_t indices[] = { 0, 1, 2, 2, 1, 3 };
 
     RenderItemCreateInfo create_info;
     create_info.verticesSize = sizeof(vertices);
