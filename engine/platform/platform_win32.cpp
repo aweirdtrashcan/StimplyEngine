@@ -7,7 +7,6 @@
 
 #include <vulkan/vulkan.h>
 #include <SDL2/SDL_vulkan.h>
-#include <filesystem>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -85,19 +84,27 @@ void Platform::log(log_level level, const char* message) {
 void* Platform::load_library(const char* libraryPath) {
     char library_name[1024]{};
 
-    throw RendererException("Configure current path");
-    
-    for (size_t i = 0; i < path.size(); i++) {
-        if (path[i] == '/') {
-            path[i] = '\\';
-        }
+    DWORD path_size = 0;
+
+    path_size = GetCurrentDirectoryA(path_size, nullptr);
+
+    if (path_size == 0) {
+        Logger::debug("Failed to get current directory while trying to read binary in %s", libraryPath);
+        return false;
     }
 
-    snprintf(library_name, sizeof(library_name), "%s\\%s.dll", path.c_str(), libraryPath);
+    list<char> path(path_size);
+
+    if (GetCurrentDirectoryA(path_size, path.data()) == 0) {
+        Logger::debug("Failed to get current directory while trying to read binary in %s", libraryPath);
+        return false;
+    }
+
+    snprintf(library_name, sizeof(library_name), "%s\\%s.dll", path.data(), libraryPath);
 
     void* library = LoadLibraryA(library_name);
     
-    // TODO: Error message
+    Logger::debug("Failed to load library %s", library_name);
 
     return library;
 }
@@ -151,7 +158,7 @@ binary_info Platform::read_binary(const char* path) {
     if (!ReadFile(
         file,
         buffer,
-        size,
+        (DWORD)size,
         &bytes_read,
         nullptr
     )) {

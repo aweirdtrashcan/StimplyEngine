@@ -39,7 +39,7 @@ project "Stimply-Engine"
     includedirs { "engine/", "vendor/", "vendor/DirectXMath/Inc", "$(VULKAN_SDK)/include", "./" }
 
     -- defines for DirectXMath
-    defines { "_XM_AVX2_INTRINSICS_", "_XM_SSE_INTRINSICS_"  }
+    defines { "_XM_AVX2_INTRINSICS_", "_XM_AVX_INTRINSICS_", "_XM_SSE_INTRINSICS_", "_XM_SSE3_INTRINSICS_", "_XM_SSE4_INTRINSICS_", "_XM_FMA3_INTRINSICS_"  }
 
     filter "configurations:Debug"
         defines { "DEBUG", platform_define }
@@ -118,7 +118,7 @@ project "Stimply-Renderer-Backend-Vulkan"
     includedirs { "engine/", "$(VULKAN_SDK)/include", "vendor/", "vendor/DirectXMath/Inc" }
 
     -- defines for DirectXMath
-    defines { "_XM_AVX2_INTRINSICS_", "_XM_SSE_INTRINSICS_"  }
+    defines { "_XM_AVX2_INTRINSICS_", "_XM_AVX_INTRINSICS_", "_XM_SSE_INTRINSICS_", "_XM_SSE3_INTRINSICS_", "_XM_SSE4_INTRINSICS_", "_XM_FMA3_INTRINSICS_"  }
 
     filter "configurations:Debug"
         if os.host() == "windows" then
@@ -161,7 +161,7 @@ project "Stimply-Renderer-Backend-DX12"
     includedirs { "engine/", "vendor/", "vendor/DirectXMath/Inc" }
 
     -- defines for DirectXMath
-    defines { "_XM_AVX2_INTRINSICS_", "_XM_SSE_INTRINSICS_"  }
+    defines { "_XM_AVX2_INTRINSICS_", "_XM_AVX_INTRINSICS_", "_XM_SSE_INTRINSICS_", "_XM_SSE3_INTRINSICS_", "_XM_SSE4_INTRINSICS_", "_XM_FMA3_INTRINSICS_"  }
 
     filter "configurations:Debug"
         if os.host() == "windows" then

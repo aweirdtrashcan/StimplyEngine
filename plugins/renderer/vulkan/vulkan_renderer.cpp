@@ -39,6 +39,12 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
         throw RendererException("Your CPU does not support AVX2 Instruction Set, which is required by this application.");
     }
 
+    // TODO: Test code
+    DirectX::XMMATRIX m0 = DirectX::XMMatrixIdentity();
+    DirectX::XMMATRIX m1 = DirectX::XMMatrixIdentity();
+
+    DirectX::XMMATRIX m2 = DirectX::AVX2::XMMatrixMultiply(m0, m1);
+
     state->window = sdl_window;
 
     if (!create_vulkan_instance(state, name)) {
