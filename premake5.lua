@@ -22,7 +22,7 @@ project "Stimply-Engine"
         libdirs { "vendor/SDL2" }
         links { "SDL2main", "SDL2" }
         flags { "MultiProcessorCompile" }
-        defines { "DYNAMIC_RENDERER=__declspec(dllimport)", "RAPI=__declspec(dllexport)" }
+        defines { "DYNAMIC_RENDERER=__declspec(dllimport)", "RAPI=__declspec(dllexport)", "_CRT_SECURE_NO_WARNINGS" }
     elseif os.host() == "linux" then
         cppdialect "gnu++17"
         toolset "clang"

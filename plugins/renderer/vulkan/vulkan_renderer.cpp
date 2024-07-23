@@ -124,6 +124,17 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
         throw RendererException("Failed to load light shader");
     }
 
+    uint32_t memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    uint32_t buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+    if (!create_gpu_buffer(state, sizeof(DirectX::XMFLOAT3) * 1024 * 1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | buffer_usage, memory_properties, &state->vertex_buffer)) {
+        throw RendererException("Failed to create engine's global vertex buffer");
+    }
+
+    if (!create_gpu_buffer(state, sizeof(uint32_t) * 1024 * 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | buffer_usage, memory_properties, &state->index_buffer)) {
+        throw RendererException("Failed to create engine's global index buffer");
+    }
+
     VkClearValue color_clear_value{};
     color_clear_value.color.float32[0] = 0.8f;
     color_clear_value.color.float32[1] = 0.3f;
@@ -147,10 +158,10 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
     uint32_t indices[] = { 0, 1, 2, 2, 1, 3 };
 
     RenderItemCreateInfo create_info;
-    create_info.verticesSize = sizeof(vertices);
+    create_info.vertexSize = sizeof(vertices);
     create_info.pVertices = &vertices;
     create_info.verticesCount = std::size(vertices);
-    create_info.indicesSize = sizeof(indices);
+    create_info.indexSize = sizeof(indices);
     create_info.indicesCount = std::size(indices);
     create_info.pIndices = &indices;
     create_info.shader = &state->light_shader;
@@ -165,6 +176,8 @@ void vulkan_backend_shutdown() {
     vkDeviceWaitIdle(state->logical_device);
     Logger::info("Shutting Down Vulkan Renderer");
 
+    destroy_gpu_buffer(state, &state->index_buffer);
+    destroy_gpu_buffer(state, &state->vertex_buffer);
     vulkan_destroy_render_item(state->render_items[0]);
     destroy_vulkan_shader(state, &state->light_shader);
     destroy_swapchain_framebuffers(state);
@@ -250,10 +263,9 @@ bool vulkan_draw_items() {
 
     for (uint32_t i = 0; i < state->render_items.size_u32(); i++) {
         render_item* item = state->render_items[i];
-        VkDeviceSize offsets[] = { 0 };
 
-        vkCmdBindIndexBuffer(command_buffer, item->index_buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, &item->vertex_buffer.buffer, offsets);
+        vkCmdBindIndexBuffer(command_buffer, state->index_buffer.buffer, item->index_buffer_offset, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, &state->vertex_buffer.buffer, &item->vertex_buffer_offset);
         vulkan_shader_use(state, command_buffer, item->shader_object);
 
         vkCmdDrawIndexed(command_buffer, item->index_count, 1, 0, 0, 0);
@@ -332,42 +344,27 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
     r_item->shader_object = (vulkan_shader*)pRenderItemCreateInfo->shader;
     r_item->index_count = pRenderItemCreateInfo->indicesCount;
     r_item->vertices_count = pRenderItemCreateInfo->verticesCount;
+    r_item->vertex_buffer_offset = state->geometry_vertex_offset;
+    r_item->index_buffer_offset = state->geometry_index_offset;
 
-    if (!create_uploader_buffer(state, pRenderItemCreateInfo->verticesSize, &vertex_uploader)) {
+    state->geometry_vertex_offset += pRenderItemCreateInfo->vertexSize;
+    state->geometry_index_offset += pRenderItemCreateInfo->indexSize;
+
+    if (!create_uploader_buffer(state, pRenderItemCreateInfo->vertexSize, &vertex_uploader)) {
         Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");
         return nullptr;
     }
 
-    if (!create_uploader_buffer(state, pRenderItemCreateInfo->indicesSize, &index_uploader)) {
+    if (!create_uploader_buffer(state, pRenderItemCreateInfo->indexSize, &index_uploader)) {
         Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");
         return nullptr;
     }
 
-    if (!create_gpu_buffer(
-        state,
-        pRenderItemCreateInfo->verticesSize, 
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        &r_item->vertex_buffer)) {
-        Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");
-        return nullptr;
-    }
+    copy_to_upload_buffer(state, pRenderItemCreateInfo->pVertices, pRenderItemCreateInfo->vertexSize, &vertex_uploader);
+    copy_to_upload_buffer(state, pRenderItemCreateInfo->pIndices, pRenderItemCreateInfo->indexSize, &index_uploader);
 
-    if (!create_gpu_buffer(
-        state,
-        pRenderItemCreateInfo->indicesSize, 
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        &r_item->index_buffer)) {
-        Logger::debug("vulkan_create_render_item: Failed to create index buffer");
-        return nullptr;
-    }
-
-    copy_to_upload_buffer(state, pRenderItemCreateInfo->pVertices, pRenderItemCreateInfo->verticesSize, &vertex_uploader);
-    copy_to_upload_buffer(state, pRenderItemCreateInfo->pIndices, pRenderItemCreateInfo->indicesSize, &index_uploader);
-
-    copy_to_gpu_buffer(command_buffer, &vertex_uploader, &r_item->vertex_buffer);
-    copy_to_gpu_buffer(command_buffer, &index_uploader, &r_item->index_buffer);
+    copy_to_gpu_buffer(command_buffer, &vertex_uploader, &state->vertex_buffer, r_item->vertex_buffer_offset);
+    copy_to_gpu_buffer(command_buffer, &index_uploader, &state->index_buffer, r_item->index_buffer_offset);
 
     end_one_time_command_buffer(state, command_buffer, state->graphics_queue);
 
@@ -381,8 +378,8 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
 
 void vulkan_destroy_render_item(HANDLE item_handle) {
     render_item* r_item = (render_item*)item_handle;
-    destroy_gpu_buffer(state, &r_item->vertex_buffer);
-    destroy_gpu_buffer(state, &r_item->index_buffer);
+    r_item->index_buffer_offset = -1;
+    r_item->vertex_buffer_offset = -1;
 
     Platform::zero_memory(r_item, sizeof(*r_item));
 

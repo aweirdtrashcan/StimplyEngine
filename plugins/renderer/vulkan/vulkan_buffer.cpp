@@ -97,11 +97,11 @@ bool copy_to_upload_buffer(internal_vulkan_renderer_state* state, void* source, 
     return true;
 }
 
-bool copy_to_gpu_buffer(VkCommandBuffer command_buffer, const gpu_buffer* source_upload_buffer, gpu_buffer* gpu_buffer) {
+bool copy_to_gpu_buffer(VkCommandBuffer command_buffer, const gpu_buffer* source_upload_buffer, gpu_buffer* gpu_buffer, uint64_t destination_offset, uint64_t source_offset) {
     VkBufferCopy region;
-    region.srcOffset = 0;
+    region.srcOffset = source_offset;
     region.size = source_upload_buffer->size;
-    region.dstOffset = 0;
+    region.dstOffset = destination_offset;
 
     vkCmdCopyBuffer(command_buffer, source_upload_buffer->buffer, gpu_buffer->buffer, 1, &region);
     return true;

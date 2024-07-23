@@ -40,10 +40,10 @@ struct ShaderBundle {
 };
 
 struct RenderItemCreateInfo {
-    uint64_t verticesSize;
+    uint64_t vertexSize;
     HANDLE pVertices;
     uint32_t verticesCount;
-    uint64_t indicesSize;
+    uint64_t indexSize;
     HANDLE pIndices;
     uint32_t indicesCount;
     list<ShaderBundle> shaderBundles;

@@ -54,6 +54,10 @@ struct internal_vulkan_renderer_state {
     VkSurfaceCapabilitiesKHR surface_capabilities;
     VkClearValue clear_values[2];
     list<render_item*> render_items;
+    uint64_t geometry_vertex_offset;
+    uint64_t geometry_index_offset;
+    gpu_buffer vertex_buffer;
+    gpu_buffer index_buffer;
 };
 
 VkBool32 debug_utils_callback(VkDebugUtilsMessageSeverityFlagBitsEXT           messageSeverity,
@@ -137,7 +141,7 @@ bool end_render_pass(VkCommandBuffer command_buffer);
 
 bool create_uploader_buffer(internal_vulkan_renderer_state* state, size_t size, gpu_buffer* out_gpu_buffer);
 bool copy_to_upload_buffer(internal_vulkan_renderer_state* state, void* source, size_t size, gpu_buffer* buffer);
-bool copy_to_gpu_buffer(VkCommandBuffer command_buffer, const gpu_buffer* source_upload_buffer, gpu_buffer* gpu_buffer);
+bool copy_to_gpu_buffer(VkCommandBuffer command_buffer, const gpu_buffer* source_upload_buffer, gpu_buffer* gpu_buffer, uint64_t destination_offset = 0, uint64_t source_offset = 0);
 bool create_gpu_buffer(const internal_vulkan_renderer_state* state, size_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties, gpu_buffer* out_gpu_buffer);
 bool destroy_gpu_buffer(const internal_vulkan_renderer_state* state, gpu_buffer* buffer);
 
