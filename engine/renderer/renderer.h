@@ -1,5 +1,6 @@
 #pragma once
 
+#include "renderer/renderer_types.h"
 #include "renderer_interface.h"
 
 class Window;
@@ -16,14 +17,14 @@ public:
     ~Renderer();
 
     bool Draw();
-    void* CreateRenderItem(const RenderItemCreateInfo* render_item);
-    void DestroyRenderItem(void* render_item);
-
+    inline HANDLE CreateRenderItem(const RenderItemCreateInfo* renderItem) { return m_Interface.renderer_create_render_item(renderItem); }
+    inline void DestroyRenderItem(HANDLE renderItem) { m_Interface.renderer_destroy_render_item(renderItem); }
+    
 private:
     [[nodiscard]] renderer_interface LoadRendererFunctions(RendererType type);
 
 private:
     renderer_interface m_Interface;
-    void* m_Library = nullptr;
+    HANDLE m_Library = nullptr;
     static inline renderer_state m_Renderer_Memory = nullptr;
 };

@@ -35,9 +35,8 @@ project "Stimply-Engine"
        
     architecture("x86_64")
     files { "engine/**.cpp", "engine/**.h" }
-    floatingpoint "Fast"
 
-    includedirs { "engine/", "vendor/", "$(VULKAN_SDK)/include", "./" }
+    includedirs { "engine/", "vendor/", "vendor/DirectXMath/Inc", "$(VULKAN_SDK)/include", "./" }
 
     filter "configurations:Debug"
         defines { "DEBUG", platform_define }
@@ -65,11 +64,10 @@ project "Stimply-Game"
 
     architecture("x86_64")
     files { "game/**.cpp", "game/**.h" }
-    floatingpoint "Fast"
 
     links { "Stimply-Engine" }
 
-    includedirs { "engine/", "vendor/" }
+    includedirs { "engine/" }
 
     filter "configurations:Debug"
         defines { "DEBUG", platform_define }
@@ -104,14 +102,20 @@ project "Stimply-Renderer-Backend-Vulkan"
         postbuildcommands {
             "./compile_shaders.sh"
         }
+        buildoptions {
+            "-mavx2",
+            "-mfma"
+        }
     end
     targetdir "bin/%{cfg.buildcfg}"
 
     architecture("x86_64")
     files { "plugins/renderer/vulkan/*.cpp", "plugins/renderer/vulkan/*.h" }
-    floatingpoint "Fast"
 
-    includedirs { "engine/", "$(VULKAN_SDK)/include", "vendor/" }
+    includedirs { "engine/", "$(VULKAN_SDK)/include", "vendor/", "vendor/DirectXMath/Inc" }
+
+    -- defines for DirectXMath
+    defines { "_XM_AVX2_INTRINSICS_", "_XM_SSE_INTRINSICS_"  }
 
     filter "configurations:Debug"
         if os.host() == "windows" then
@@ -150,9 +154,8 @@ project "Stimply-Renderer-Backend-DX12"
 
     architecture("x86_64")
     files { "plugins/renderer/directx/*.cpp", "plugins/renderer/directx/*.h" }
-    floatingpoint "Fast"
 
-    includedirs { "engine/", "vendor/" }
+    includedirs { "engine/", "vendor/", "vendor/DirectXMath/Inc" }
 
     filter "configurations:Debug"
         if os.host() == "windows" then

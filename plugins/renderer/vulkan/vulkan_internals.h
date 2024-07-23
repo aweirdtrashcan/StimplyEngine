@@ -4,7 +4,9 @@
 #include "vulkan_defines.h"
 #include "../render_item.h"
 
+#include <renderer/renderer_types.h>
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 
 #define vk_result(result)                       \
@@ -43,16 +45,15 @@ struct internal_vulkan_renderer_state {
     VkDescriptorPool uniform_descriptor_pool;
     uint32_t current_frame_index;
     uint32_t image_index;
-    VkDescriptorSetLayout graphics_set_layouts[LAYOUT_MAX];
-    VkPipeline graphics_pipelines[LAYOUT_MAX];
-    VkPipelineLayout graphics_pipeline_layouts[LAYOUT_MAX];
+    vulkan_shader light_shader;
+    list<vulkan_pipeline> pipelines;
     VkRenderPass main_renderpass;
     VkViewport viewport;
     VkRect2D scissor;
     list<VkFramebuffer> swapchain_framebuffers;
     VkSurfaceCapabilitiesKHR surface_capabilities;
     VkClearValue clear_values[2];
-    list<render_item> render_items;
+    list<render_item*> render_items[PipelineTypeMAX];
 };
 
 VkBool32 debug_utils_callback(VkDebugUtilsMessageSeverityFlagBitsEXT           messageSeverity,
@@ -112,13 +113,16 @@ bool free_command_buffers(const internal_vulkan_renderer_state* state, uint32_t 
 bool create_render_pass(internal_vulkan_renderer_state* state);
 bool destroy_render_pass(internal_vulkan_renderer_state* state);
 
-bool destroy_graphics_pipeline_layout(internal_vulkan_renderer_state* state, VkPipelineLayout pipeline_layout);
-bool destroy_pipeline(internal_vulkan_renderer_state* state, VkPipeline pipeline);
+bool create_pipeline_layout(internal_vulkan_renderer_state* state, VkDescriptorSetLayout* set_layouts, uint32_t set_layout_count, VkPipelineLayout* out_pipeline_layout);
+bool create_pipeline(vulkan_pipeline_create_info* create_info, vulkan_pipeline* out_pipeline);
+bool destroy_pipeline_layout(internal_vulkan_renderer_state* state, VkPipelineLayout pipeline_layout);
+bool destroy_pipeline(internal_vulkan_renderer_state* state, vulkan_pipeline* pipeline);
+bool pipeline_bind(VkCommandBuffer command_buffer, VkPipelineBindPoint bind_point, vulkan_pipeline* pipeline);
 
 bool get_viewport_and_scissor(const VkSurfaceCapabilitiesKHR& surface_capabilities, VkViewport* out_viewport, VkRect2D* out_scissor);
 
-bool create_shader_module(const internal_vulkan_renderer_state* state, const char* shader_path, VkShaderModule* out_shader_module);
-bool destroy_shader_module(const internal_vulkan_renderer_state* state, VkShaderModule shader_module);
+bool create_shader_module(const internal_vulkan_renderer_state* state, const char* shader_path, VkShaderStageFlagBits shader_stage_flag, uint32_t stage_index, vulkan_shader_stage* shader_stage);
+bool destroy_shader_module(const internal_vulkan_renderer_state* state, vulkan_shader_stage* shader_stage);
 
 bool create_framebuffer(const internal_vulkan_renderer_state* state, VkRenderPass renderpass, uint32_t attachment_count, VkImageView* attachments, uint32_t width, uint32_t height, VkFramebuffer* out_framebuffer);
 bool create_swapchain_framebuffers(internal_vulkan_renderer_state* state, const VkSurfaceCapabilitiesKHR& surface_capabilities);
@@ -142,7 +146,8 @@ bool end_one_time_command_buffer(const internal_vulkan_renderer_state* state, Vk
 
 VkResult submit_command_queue(VkSemaphore wait_semaphore, VkSemaphore signal_semaphore, VkFence fence, VkQueue queue, VkCommandBuffer command_buffer);
 
-bool create_mvp_pipeline_layout(internal_vulkan_renderer_state* state);
-bool create_mvp_pipeline(internal_vulkan_renderer_state* state, const VkSurfaceCapabilitiesKHR& surface_capabilities);
+bool create_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader* out_shader);
+bool destroy_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader* shader);
+bool vulkan_shader_use(internal_vulkan_renderer_state* state, vulkan_shader* shader);
 
 }

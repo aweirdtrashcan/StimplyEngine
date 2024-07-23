@@ -1,38 +1,19 @@
 #include "core/logger.h"
-#include "platform/platform.h"
 #include "vulkan_defines.h"
 #include "vulkan_internals.h"
 #include <cstdint>
+#include <cstring>
 #include <vulkan/vulkan_core.h>
 
-bool internal_create_graphics_pipeline(internal_vulkan_renderer_state* state, const VkSurfaceCapabilitiesKHR& surface_capabilities,
-    const char** vertex_shader_paths, uint32_t vertex_shader_count, const char** fragment_shader_paths, uint32_t fragment_shader_count,
-    const VkPipelineVertexInputStateCreateInfo* vertex_input, VkPipelineLayout pipeline_layout, VkPipeline* out_pipeline);
+#include <DirectXMath.h>
 
-bool destroy_graphics_pipeline_layout(internal_vulkan_renderer_state* state, VkPipelineLayout pipeline_layout) {
-    vkDestroyPipelineLayout(state->logical_device, pipeline_layout, state->allocator);
-
-    return true;
-}
-
-bool destroy_pipeline(internal_vulkan_renderer_state* state, VkPipeline pipeline) {
-    vkDestroyPipeline(state->logical_device, pipeline, state->allocator);
-
-    return true;
-}
-
-bool create_mvp_pipeline_layout(internal_vulkan_renderer_state* state) {
-    if (!state->graphics_set_layouts[LAYOUT_MVP]) {
-        Logger::fatal("MVP Descriptor Set Layout is nullptr");
-        return false;
-    }
-
+bool create_pipeline_layout(internal_vulkan_renderer_state* state, VkDescriptorSetLayout* set_layouts, uint32_t set_layout_count, VkPipelineLayout* out_pipeline_layout) {
     VkPipelineLayoutCreateInfo create_info;
     create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     create_info.pNext = nullptr;
     create_info.flags = 0;
-    create_info.setLayoutCount = 1;
-    create_info.pSetLayouts = &state->graphics_set_layouts[LAYOUT_MVP];
+    create_info.setLayoutCount = set_layout_count;
+    create_info.pSetLayouts = set_layouts;
     create_info.pushConstantRangeCount = 0;
     create_info.pPushConstantRanges = nullptr;
 
@@ -40,88 +21,32 @@ bool create_mvp_pipeline_layout(internal_vulkan_renderer_state* state) {
         state->logical_device,
         &create_info,
         state->allocator,
-        &state->graphics_pipeline_layouts[LAYOUT_MVP]));
+        out_pipeline_layout));
 
     return true;
 }
 
-bool create_mvp_pipeline(internal_vulkan_renderer_state* state, const VkSurfaceCapabilitiesKHR& surface_capabilities) {
-    if (state->graphics_pipelines[LAYOUT_MVP]) {
-        Logger::fatal("create_mvp_pipeline: pipeline state is already created");
+bool create_pipeline(vulkan_pipeline_create_info* create_info, vulkan_pipeline* out_pipeline) {
+    if (!create_info || !out_pipeline) {
+        Logger::debug("create_pipeline: either create_info or out_pipeline are nullptr");
         return false;
     }
+
+    internal_vulkan_renderer_state* state = (internal_vulkan_renderer_state*)create_info->state;
+
+    VkVertexInputBindingDescription vertex_input_bindings[1];
+    vertex_input_bindings[0].binding = 0;
+    vertex_input_bindings[0].stride = sizeof(DirectX::XMFLOAT3);
+    vertex_input_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkPipelineVertexInputStateCreateInfo vertex_input;
     vertex_input.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input.pNext = nullptr;
     vertex_input.flags = 0;
-    vertex_input.vertexBindingDescriptionCount = 0;
-    vertex_input.pVertexBindingDescriptions = nullptr;
-    vertex_input.vertexAttributeDescriptionCount = 0;
-    vertex_input.pVertexAttributeDescriptions = nullptr;
-
-    list<const char*> vertex_shader_paths;
-    list<const char*> fragment_shader_paths;
-
-    vertex_shader_paths.push_back("./mvp_vert.spv");
-    fragment_shader_paths.push_back("./mvp_frag.spv");
-
-    return internal_create_graphics_pipeline(state, surface_capabilities, vertex_shader_paths.data(), 
-        vertex_shader_paths.size_u32(), fragment_shader_paths.data(), 
-        fragment_shader_paths.size_u32(), &vertex_input, state->graphics_pipeline_layouts[LAYOUT_MVP], &state->graphics_pipelines[LAYOUT_MVP]);
-}
-
-bool internal_create_graphics_pipeline(internal_vulkan_renderer_state* state, const VkSurfaceCapabilitiesKHR& surface_capabilities,
-    const char** vertex_shader_paths, uint32_t vertex_shader_count, const char** fragment_shader_paths, uint32_t fragment_shader_count,
-    const VkPipelineVertexInputStateCreateInfo* vertex_input, VkPipelineLayout pipeline_layout, VkPipeline* out_pipeline) {
-
-    uint32_t shader_count = vertex_shader_count + fragment_shader_count;
-    list<VkShaderModule> vertex_shaders(vertex_shader_count);
-    list<VkShaderModule> fragment_shaders(fragment_shader_count);
-
-    list<VkPipelineShaderStageCreateInfo> shaders(shader_count);
-
-    for (uint32_t i = 0; i < vertex_shader_count; i++) {
-        VkShaderModule vert;
-        if (!create_shader_module(state, vertex_shader_paths[i], &vert)) {
-            Logger::fatal("Failed to create shader module: %s", vertex_shader_paths[i]);
-            return false;
-        }
-
-        vertex_shaders.push_back(vert);
-
-        VkPipelineShaderStageCreateInfo vertex_create_info;
-        vertex_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vertex_create_info.pNext = nullptr;
-        vertex_create_info.flags = 0;
-        vertex_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        vertex_create_info.module = vertex_shaders[i];
-        vertex_create_info.pName = "main";
-        vertex_create_info.pSpecializationInfo = nullptr;
-
-        shaders.push_back(vertex_create_info);
-    }
-
-    for (uint32_t i = 0; i < fragment_shader_count; i++) {
-        VkShaderModule frag;
-        if (!create_shader_module(state, fragment_shader_paths[i], &frag)) {
-            Logger::fatal("Failed to create shader module: %s", fragment_shader_paths[i]);
-            return false;
-        }
-
-        fragment_shaders.push_back(frag);
-
-        VkPipelineShaderStageCreateInfo fragment_create_info;
-        fragment_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        fragment_create_info.pNext = nullptr;
-        fragment_create_info.flags = 0;
-        fragment_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;  
-        fragment_create_info.module = fragment_shaders[i];
-        fragment_create_info.pName = "main";
-        fragment_create_info.pSpecializationInfo = nullptr;
-
-        shaders.push_back(fragment_create_info);
-    }
+    vertex_input.vertexBindingDescriptionCount = (uint32_t)std::size(vertex_input_bindings);
+    vertex_input.pVertexBindingDescriptions = vertex_input_bindings;
+    vertex_input.vertexAttributeDescriptionCount = create_info->attribute_count;
+    vertex_input.pVertexAttributeDescriptions = create_info->attributes;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly;
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -136,18 +61,14 @@ bool internal_create_graphics_pipeline(internal_vulkan_renderer_state* state, co
     tesselation.flags = 0;
     tesselation.patchControlPoints = 0;
 
-    VkViewport vp;
-    VkRect2D scissor;
-    get_viewport_and_scissor(surface_capabilities, &vp, &scissor);
-
     VkPipelineViewportStateCreateInfo viewport;
     viewport.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewport.pNext = nullptr;
     viewport.flags = 0;
     viewport.viewportCount = 1;
-    viewport.pViewports = &vp;
+    viewport.pViewports = &create_info->viewport;
     viewport.scissorCount = 1;
-    viewport.pScissors = &scissor;
+    viewport.pScissors = &create_info->scissor;
 
     VkPipelineRasterizationStateCreateInfo rasterization;
     rasterization.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -155,7 +76,7 @@ bool internal_create_graphics_pipeline(internal_vulkan_renderer_state* state, co
     rasterization.flags = 0;
     rasterization.depthClampEnable = VK_TRUE;
     rasterization.rasterizerDiscardEnable = VK_FALSE;
-    rasterization.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterization.polygonMode = create_info->is_wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
     rasterization.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE;
     rasterization.depthBiasEnable = VK_FALSE;
@@ -192,21 +113,22 @@ bool internal_create_graphics_pipeline(internal_vulkan_renderer_state* state, co
     depth_stencil.maxDepthBounds = 1.0f;
 
     VkPipelineColorBlendAttachmentState color_attachment;
-    color_attachment.blendEnable = VK_FALSE;
-    color_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-    color_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+    color_attachment.blendEnable = VK_TRUE;
+    color_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    color_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     color_attachment.colorBlendOp = VK_BLEND_OP_ADD;
-    color_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    color_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    color_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    color_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
     color_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
-    color_attachment.colorWriteMask = VK_COLOR_COMPONENT_A_BIT;
+    color_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                      VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 
     VkPipelineColorBlendStateCreateInfo color_blend;
     color_blend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     color_blend.pNext = nullptr;
     color_blend.flags = 0;
     color_blend.logicOpEnable = VK_FALSE;
-    color_blend.logicOp = VK_LOGIC_OP_CLEAR;
+    color_blend.logicOp = VK_LOGIC_OP_COPY;
     color_blend.attachmentCount = 1;
     color_blend.pAttachments = &color_attachment;
     memset(&color_blend.blendConstants, 0,  4 * sizeof(float));
@@ -220,49 +142,70 @@ bool internal_create_graphics_pipeline(internal_vulkan_renderer_state* state, co
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamic_state.pNext = nullptr;
     dynamic_state.flags = 0;
-    dynamic_state.dynamicStateCount = std::size(states);
+    dynamic_state.dynamicStateCount = (uint32_t)std::size(states);
     dynamic_state.pDynamicStates = states;
 
-    VkGraphicsPipelineCreateInfo create_info;
-    create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    create_info.pNext = nullptr;
-    create_info.flags = 0;
-    create_info.stageCount = shader_count;
-    create_info.pStages = shaders.data();
-    create_info.pVertexInputState = vertex_input;
-    create_info.pInputAssemblyState = &input_assembly;
-    create_info.pTessellationState = &tesselation;
-    create_info.pViewportState = &viewport;
-    create_info.pRasterizationState = &rasterization;
-    create_info.pMultisampleState = &multisample;
-    create_info.pDepthStencilState = &depth_stencil;
-    create_info.pColorBlendState = &color_blend;
-    create_info.pDynamicState = &dynamic_state;
-    create_info.layout = pipeline_layout;
-    create_info.renderPass = state->main_renderpass;
-    create_info.subpass = 0;
-    create_info.basePipelineHandle = nullptr;
-    create_info.basePipelineIndex = 0;
+    if (!create_pipeline_layout(state, create_info->descriptor_set_layouts, create_info->descriptor_set_layout_count, &out_pipeline->layout)) {
+        return false;
+    }
+
+    VkGraphicsPipelineCreateInfo pipeline_create_info;
+    pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeline_create_info.pNext = nullptr;
+    pipeline_create_info.flags = 0;
+    pipeline_create_info.stageCount = create_info->stage_count;
+    pipeline_create_info.pStages = create_info->stages;
+    pipeline_create_info.pVertexInputState = &vertex_input;
+    pipeline_create_info.pInputAssemblyState = &input_assembly;
+    pipeline_create_info.pTessellationState = &tesselation;
+    pipeline_create_info.pViewportState = &viewport;
+    pipeline_create_info.pRasterizationState = &rasterization;
+    pipeline_create_info.pMultisampleState = &multisample;
+    pipeline_create_info.pDepthStencilState = &depth_stencil;
+    pipeline_create_info.pColorBlendState = &color_blend;
+    pipeline_create_info.pDynamicState = &dynamic_state;
+    pipeline_create_info.layout = out_pipeline->layout;
+    pipeline_create_info.renderPass = state->main_renderpass;
+    pipeline_create_info.subpass = 0;
+    pipeline_create_info.basePipelineHandle = nullptr;
+    pipeline_create_info.basePipelineIndex = 0;
 
     VkResult result = vkCreateGraphicsPipelines(
         state->logical_device, 
         nullptr, 
         1, 
-        &create_info, 
+        &pipeline_create_info, 
         state->allocator, 
-        out_pipeline);
-
-    for (VkShaderModule module : vertex_shaders) {
-        vkDestroyShaderModule(state->logical_device, module, state->allocator);
-    }
-
-    for (VkShaderModule module : fragment_shaders) {
-        vkDestroyShaderModule(state->logical_device, module, state->allocator);
-    }
+        &out_pipeline->pipeline);
 
     if (result != VK_SUCCESS) {
+        if (out_pipeline->layout) {
+            destroy_pipeline_layout(state, out_pipeline->layout);
+            out_pipeline->layout = nullptr;
+        }
         return false;
     }
 
+    return true;
+}
+
+bool destroy_pipeline_layout(internal_vulkan_renderer_state* state, VkPipelineLayout pipeline_layout) {
+    vkDestroyPipelineLayout(state->logical_device, pipeline_layout, state->allocator);
+
+    return true;
+}
+
+bool destroy_pipeline(internal_vulkan_renderer_state* state, vulkan_pipeline* pipeline) {
+    vkDestroyPipeline(state->logical_device, pipeline->pipeline, state->allocator);
+    destroy_pipeline_layout(state, pipeline->layout);
+
+    pipeline->pipeline = nullptr;
+    pipeline->layout = nullptr;
+
+    return true;
+}
+
+bool pipeline_bind(VkCommandBuffer command_buffer, VkPipelineBindPoint bind_point, vulkan_pipeline* pipeline) {
+    vkCmdBindPipeline(command_buffer, bind_point, pipeline->pipeline);
     return true;
 }

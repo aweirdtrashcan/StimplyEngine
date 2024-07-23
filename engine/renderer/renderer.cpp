@@ -44,18 +44,11 @@ Renderer::~Renderer() {
 
 bool Renderer::Draw() {
     if (m_Interface.begin_frame()) {
+        if (!m_Interface.renderer_draw_items()) return false;
         m_Interface.end_frame();
         return true;
     }
     return false;
-}
-
-void* Renderer::CreateRenderItem(const RenderItemCreateInfo* render_item) {
-    return m_Interface.renderer_create_render_item(render_item);
-}
-
-void Renderer::DestroyRenderItem(void* render_item) {
-    m_Interface.renderer_destroy_render_item(render_item);
 }
 
 renderer_interface Renderer::LoadRendererFunctions(RendererType type) {
@@ -76,6 +69,7 @@ renderer_interface Renderer::LoadRendererFunctions(RendererType type) {
     interface.end_frame = (PFN_renderer_end_frame)Platform::load_library_function(m_Library, renderer_placeholder + "_end_frame");
     interface.renderer_create_render_item = (PFN_renderer_create_render_item)Platform::load_library_function(m_Library, renderer_placeholder + "_create_render_item");
     interface.renderer_destroy_render_item = (PFN_renderer_destroy_render_item)Platform::load_library_function(m_Library, renderer_placeholder + "_destroy_render_item");
+    interface.renderer_draw_items = (PFN_renderer_draw_items)Platform::load_library_function(m_Library, renderer_placeholder + "_draw_items");
 
     return interface;
 }

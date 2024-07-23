@@ -1,5 +1,7 @@
 #pragma once
 
+#include <defines.h>
+#include <cstdint>
 #include <vulkan/vulkan_core.h>
 
 struct vulkan_image {
@@ -18,8 +20,34 @@ struct gpu_buffer {
     void* memory_pointer;
 };
 
-enum vulkan_layouts {
-    LAYOUT_MVP,
+struct vulkan_shader_stage {
+    VkShaderModuleCreateInfo create_info;
+    VkShaderModule shader_module;
+    VkPipelineShaderStageCreateInfo shader_stage_create_info;
+};
 
-    LAYOUT_MAX
+static inline constexpr int32_t OBJECT_SHADER_STAGE_COUNT = 2;
+
+struct vulkan_pipeline {
+    VkPipeline pipeline;
+    VkPipelineLayout layout;
+};
+
+struct vulkan_shader {
+    vulkan_shader_stage stages[OBJECT_SHADER_STAGE_COUNT];
+    vulkan_pipeline pipeline;
+};
+
+struct vulkan_pipeline_create_info {
+    HANDLE state;
+    VkRenderPass renderpass;
+    uint32_t attribute_count;
+    VkVertexInputAttributeDescription* attributes;
+    uint32_t descriptor_set_layout_count;
+    VkDescriptorSetLayout* descriptor_set_layouts;
+    uint32_t stage_count;
+    VkPipelineShaderStageCreateInfo* stages;
+    VkViewport viewport;
+    VkRect2D scissor;
+    bool is_wireframe;
 };

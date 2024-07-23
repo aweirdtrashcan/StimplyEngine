@@ -168,7 +168,7 @@ public:
 
 	void remove_at(size_t index) {
 		assert(index < m_Size);
-		assert(m_Size <= 0);
+		assert(m_Size > 0);
 		ElementRef el = m_Elements[index];
 		el.~Element();
 		Platform::zero_memory(&m_Elements[index], sizeof(Element));

@@ -1,4 +1,4 @@
-#include "renderer/render_item_utils.h"
+#include "renderer/renderer_types.h"
 #include "renderer/renderer.h"
 #include "window/window.h"
 #include "test.h"
@@ -27,9 +27,11 @@ RAPI void initialize_engine(void) {
         uint32_t indices[] = { 0, 1, 2 };
 
         RenderItemCreateInfo create_info;
-        create_info.meshSize = sizeof(vertices);
-        create_info.pMeshes = &vertices;
+        create_info.verticesSize = sizeof(vertices);
+        create_info.pVertices = &vertices;
+        create_info.verticesCount = std::size(vertices);
         create_info.indicesSize = sizeof(indices);
+        create_info.indicesCount = std::size(indices);
         create_info.pIndices = &indices;
 
         void* render_item = renderer.CreateRenderItem(&create_info);

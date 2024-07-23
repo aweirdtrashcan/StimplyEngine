@@ -6,5 +6,6 @@
     "files.associations": {
         "*.rh": "cpp",
         "future": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": false
 }

@@ -3,17 +3,21 @@
 #include "vulkan_internals.h"
 
 #include <core/logger.h>
+#include <cstdint>
 #include <iterator>
-#include <renderer/render_item_utils.h>
 #include <renderer/renderer_exception.h>
+#include <renderer/renderer_types.h>
 #include <vulkan/vulkan_core.h>
+
+#include <DirectXMath.h>
+#include <DirectXMath/Extensions/DirectXMathAVX2.h>
 
 extern "C" {
 
 internal_vulkan_renderer_state* state = nullptr;
 
 /* public functions */
-bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, const char* name, void* sdl_window) noexcept(false) {
+bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory, const char* name, HANDLE sdl_window) noexcept(false) {
     if (!required_size) return false;
     if (*required_size == 0) {
         *required_size = sizeof(internal_vulkan_renderer_state);
@@ -23,9 +27,17 @@ bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, 
         return false;
     }
 
-    state = (internal_vulkan_renderer_state*)allocated_memory;
+    state = new (allocated_memory) internal_vulkan_renderer_state;
 
     Logger::info("Initializing Vulkan Backend");
+
+    if (!DirectX::XMVerifyCPUSupport()) {
+        throw RendererException("Your CPU does not support SSE/SSE2 Instruction Sets, which is required by this application.");
+    }
+
+    if (!DirectX::AVX2::XMVerifyAVX2Support()) {
+        throw RendererException("Your CPU does not support AVX2 Instruction Set, which is required by this application.");
+    }
 
     state->window = sdl_window;
 
@@ -102,23 +114,8 @@ bool vulkan_backend_initialize(uint64_t* required_size, void* allocated_memory, 
         throw RendererException("Failed to create swapchain framebuffers");
     }
 
-    VkDescriptorSetLayoutBinding bindings[1];
-    bindings[0].binding = 0;
-    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    bindings[0].descriptorCount = 1;
-    bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    bindings[0].pImmutableSamplers = nullptr;
-
-    if (!create_descriptor_set_layout(state, std::size(bindings), bindings, &state->graphics_set_layouts[LAYOUT_MVP])) {
-        throw RendererException("Failed to create MVP descriptor set layout");
-    }
-
-    if (!create_mvp_pipeline_layout(state)) {
-        throw RendererException("Failed to create MVP pipeline layout");
-    }
-
-    if (!create_mvp_pipeline(state, state->surface_capabilities)) {
-        throw RendererException("Failed to create MVP graphics pipeline");
+    if (!create_vulkan_shader(state, &state->light_shader)) {
+        throw RendererException("Failed to load light shader");
     }
 
     VkClearValue color_clear_value{};
@@ -142,9 +139,10 @@ void vulkan_backend_shutdown() {
     vkDeviceWaitIdle(state->logical_device);
     Logger::info("Shutting Down Vulkan Renderer");
 
-    destroy_pipeline(state, state->graphics_pipelines[LAYOUT_MVP]);
-    destroy_graphics_pipeline_layout(state, state->graphics_pipeline_layouts[LAYOUT_MVP]);
-    destroy_descriptor_set_layout(state, state->graphics_set_layouts[LAYOUT_MVP]);
+    //destroy_pipeline(state, state->graphics_pipelines[PipelineTypeMVP]);
+    //destroy_graphics_pipeline_layout(state, state->graphics_pipeline_layouts[PipelineTypeMVP]);
+    //destroy_descriptor_set_layout(state, state->graphics_set_layouts[PipelineTypeMVP]);
+    destroy_vulkan_shader(state, &state->light_shader);
     destroy_swapchain_framebuffers(state);
     destroy_render_pass(state);
     destroy_command_pool(state, state->command_pool);
@@ -166,6 +164,8 @@ void vulkan_backend_shutdown() {
     }
 
     vkDestroyInstance(state->instance, state->allocator);
+
+    state->~internal_vulkan_renderer_state();
 
     memset(state, 0, sizeof(*state));
 }
@@ -216,7 +216,30 @@ bool vulkan_begin_frame() {
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
+
     begin_render_pass(renderpass, command_buffer, framebuffer, scissor, (uint32_t)std::size(state->clear_values), clear_values);
+
+    return true;
+}
+
+bool vulkan_draw_items() {
+    VkCommandBuffer command_buffer = state->graphics_command_buffers[state->current_frame_index];
+
+    for (uint32_t i = 0; i < PipelineTypeMAX; i++) {
+        list<render_item*>& render_items = state->render_items[i];
+        
+        // vkCmdBindPipeline(
+        //     command_buffer, 
+        //     VK_PIPELINE_BIND_POINT_GRAPHICS, 
+        //     state->graphics_pipelines[i]);
+        
+        // for (uint32_t j = 0; j < render_items.size_u32(); j++) {
+        //     VkDeviceSize offset = 0;
+        //     vkCmdBindIndexBuffer(command_buffer, render_items[j]->index_buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+        //     vkCmdBindVertexBuffers(command_buffer, 0, 1, &render_items[j]->vertex_buffer.buffer, &offset);
+        //     vkCmdDrawIndexed(command_buffer, render_items[j]->index_count, 1, 0, 0, 0);
+        // }
+    }
 
     return true;
 }
@@ -267,13 +290,12 @@ bool vulkan_end_frame() {
     return true;
 }
 
-void* vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInfo) {
+HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInfo) {
     if (pRenderItemCreateInfo == nullptr) {
         Logger::debug("vulkan_create_render_item: pRenderItemCreateInfo can't be nullptr");
         return nullptr;
     }
-
-    if (pRenderItemCreateInfo->pIndices == 0 || pRenderItemCreateInfo->pMeshes == 0) {
+    if (pRenderItemCreateInfo->pIndices == 0 || pRenderItemCreateInfo->pVertices == 0) {
         Logger::debug("vulkan_create_render_item: RenderItemCreateInfo->pIndices and/or RenderItemCreateInfo->pMeshes can't be nullptr");
         return nullptr;
     }
@@ -286,7 +308,7 @@ void* vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInf
 
     render_item* r_item = (render_item*)Platform::ualloc(sizeof(render_item));
 
-    if (!create_uploader_buffer(state, pRenderItemCreateInfo->meshSize, &vertex_uploader)) {
+    if (!create_uploader_buffer(state, pRenderItemCreateInfo->verticesSize, &vertex_uploader)) {
         Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");
         return nullptr;
     }
@@ -298,7 +320,7 @@ void* vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInf
 
     if (!create_gpu_buffer(
         state,
-        pRenderItemCreateInfo->meshSize, 
+        pRenderItemCreateInfo->verticesSize, 
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         &r_item->vertex_buffer)) {
@@ -316,7 +338,7 @@ void* vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInf
         return nullptr;
     }
 
-    copy_to_upload_buffer(state, pRenderItemCreateInfo->pMeshes, pRenderItemCreateInfo->meshSize, &vertex_uploader);
+    copy_to_upload_buffer(state, pRenderItemCreateInfo->pVertices, pRenderItemCreateInfo->verticesSize, &vertex_uploader);
     copy_to_upload_buffer(state, pRenderItemCreateInfo->pIndices, pRenderItemCreateInfo->indicesSize, &index_uploader);
 
     copy_to_gpu_buffer(command_buffer, &vertex_uploader, &r_item->vertex_buffer);
@@ -327,13 +349,24 @@ void* vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInf
     destroy_gpu_buffer(state, &vertex_uploader);
     destroy_gpu_buffer(state, &index_uploader);
 
+    // state->render_items[pRenderItemCreateInfo->shaderBundle.pipelineType].push_back(r_item);
+
     return r_item;
 }
 
-void vulkan_destroy_render_item(void* r_item) {
-    destroy_gpu_buffer(state, &(((render_item*)r_item))->vertex_buffer);
-    destroy_gpu_buffer(state, &(((render_item*)r_item))->index_buffer);
-    Platform::zero_memory(r_item, sizeof(render_item));
+void vulkan_destroy_render_item(HANDLE item_handle) {
+    render_item* r_item = (render_item*)item_handle;
+    destroy_gpu_buffer(state, &r_item->vertex_buffer);
+    destroy_gpu_buffer(state, &r_item->index_buffer);
+
+    Platform::zero_memory(r_item, sizeof(*r_item));
+
+    for (uint32_t i = 0; i < PipelineTypeMAX; i++) {
+        // if (state->render_items[r_item->pipeline_type][i] == r_item) {
+        //     state->render_items[r_item->pipeline_type].remove_at(i);
+        // }
+    }
+
     Platform::ufree(r_item);
 }
 
