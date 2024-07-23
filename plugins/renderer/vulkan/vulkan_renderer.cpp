@@ -130,6 +130,25 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
     state->clear_values[0] = color_clear_value;
     state->clear_values[1] = depth_clear_value;
 
+    // TODO: Test
+    DirectX::XMFLOAT3 vertices[] = {
+        { -0.5f, -0.5f, 0.0f },
+        { -0.0f, 0.5f, 0.0f },
+        { 0.5f, -0.5f, 0.0f },
+    };
+
+    uint32_t indices[] = { 0, 1, 2 };
+
+    RenderItemCreateInfo create_info;
+    create_info.verticesSize = sizeof(vertices);
+    create_info.pVertices = &vertices;
+    create_info.verticesCount = std::size(vertices);
+    create_info.indicesSize = sizeof(indices);
+    create_info.indicesCount = std::size(indices);
+    create_info.pIndices = &indices;
+    create_info.shader = &state->light_shader;
+    state->render_items.push_back((render_item*)vulkan_create_render_item(&create_info));
+
     Logger::info("Vulkan Backend Initialized");
 
     return true;
@@ -139,9 +158,7 @@ void vulkan_backend_shutdown() {
     vkDeviceWaitIdle(state->logical_device);
     Logger::info("Shutting Down Vulkan Renderer");
 
-    //destroy_pipeline(state, state->graphics_pipelines[PipelineTypeMVP]);
-    //destroy_graphics_pipeline_layout(state, state->graphics_pipeline_layouts[PipelineTypeMVP]);
-    //destroy_descriptor_set_layout(state, state->graphics_set_layouts[PipelineTypeMVP]);
+    vulkan_destroy_render_item(state->render_items[0]);
     destroy_vulkan_shader(state, &state->light_shader);
     destroy_swapchain_framebuffers(state);
     destroy_render_pass(state);
@@ -216,7 +233,6 @@ bool vulkan_begin_frame() {
     vkCmdSetViewport(command_buffer, 0, 1, &viewport);
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 
-
     begin_render_pass(renderpass, command_buffer, framebuffer, scissor, (uint32_t)std::size(state->clear_values), clear_values);
 
     return true;
@@ -225,20 +241,15 @@ bool vulkan_begin_frame() {
 bool vulkan_draw_items() {
     VkCommandBuffer command_buffer = state->graphics_command_buffers[state->current_frame_index];
 
-    for (uint32_t i = 0; i < PipelineTypeMAX; i++) {
-        list<render_item*>& render_items = state->render_items[i];
-        
-        // vkCmdBindPipeline(
-        //     command_buffer, 
-        //     VK_PIPELINE_BIND_POINT_GRAPHICS, 
-        //     state->graphics_pipelines[i]);
-        
-        // for (uint32_t j = 0; j < render_items.size_u32(); j++) {
-        //     VkDeviceSize offset = 0;
-        //     vkCmdBindIndexBuffer(command_buffer, render_items[j]->index_buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
-        //     vkCmdBindVertexBuffers(command_buffer, 0, 1, &render_items[j]->vertex_buffer.buffer, &offset);
-        //     vkCmdDrawIndexed(command_buffer, render_items[j]->index_count, 1, 0, 0, 0);
-        // }
+    for (uint32_t i = 0; i < state->render_items.size_u32(); i++) {
+        render_item* item = state->render_items[i];
+        VkDeviceSize offsets[] = { 0 };
+
+        vkCmdBindIndexBuffer(command_buffer, item->index_buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, &item->vertex_buffer.buffer, offsets);
+        vulkan_shader_use(state, command_buffer, item->shader_object);
+
+        vkCmdDrawIndexed(command_buffer, item->index_count, 1, 0, 0, 0);
     }
 
     return true;
@@ -299,6 +310,10 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
         Logger::debug("vulkan_create_render_item: RenderItemCreateInfo->pIndices and/or RenderItemCreateInfo->pMeshes can't be nullptr");
         return nullptr;
     }
+    if (pRenderItemCreateInfo->shader == nullptr) {
+        Logger::debug("vulkan_create_render_item: Invalid shader.");
+        return nullptr;
+    }
 
     VkCommandBuffer command_buffer;
     create_one_time_command_buffer(state, &command_buffer);
@@ -307,6 +322,9 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
     gpu_buffer index_uploader;
 
     render_item* r_item = (render_item*)Platform::ualloc(sizeof(render_item));
+    r_item->shader_object = (vulkan_shader*)pRenderItemCreateInfo->shader;
+    r_item->index_count = pRenderItemCreateInfo->indicesCount;
+    r_item->vertices_count = pRenderItemCreateInfo->verticesCount;
 
     if (!create_uploader_buffer(state, pRenderItemCreateInfo->verticesSize, &vertex_uploader)) {
         Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");

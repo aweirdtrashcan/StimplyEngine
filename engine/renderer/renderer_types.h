@@ -47,4 +47,5 @@ struct RenderItemCreateInfo {
     HANDLE pIndices;
     uint32_t indicesCount;
     list<ShaderBundle> shaderBundles;
+    HANDLE shader;
 };

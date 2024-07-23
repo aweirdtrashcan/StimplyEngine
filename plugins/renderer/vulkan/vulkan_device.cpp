@@ -4,8 +4,8 @@
 bool select_physical_device(internal_vulkan_renderer_state* state) {
     uint32_t physical_device_count = 0;
     vk_result(vkEnumeratePhysicalDevices(state->instance, &physical_device_count, nullptr));
-    VkPhysicalDevice* physical_devices = (VkPhysicalDevice*)malloc(physical_device_count);
-    vk_result(vkEnumeratePhysicalDevices(state->instance, &physical_device_count, physical_devices));
+    list<VkPhysicalDevice> physical_devices(physical_device_count);
+    vk_result(vkEnumeratePhysicalDevices(state->instance, &physical_device_count, physical_devices.data()));
 
     // TODO: Better algorithm for GPU Detection
     size_t vram_count = 0;
@@ -124,8 +124,8 @@ bool get_physical_device_queues(internal_vulkan_renderer_state* state) {
     uint32_t queue_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(state->physical_device, &queue_count, nullptr);
 
-    VkQueueFamilyProperties* family_properties = (VkQueueFamilyProperties*)malloc(queue_count * sizeof(VkQueueFamilyProperties));
-    vkGetPhysicalDeviceQueueFamilyProperties(state->physical_device, &queue_count, family_properties);
+    list<VkQueueFamilyProperties> family_properties(queue_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(state->physical_device, &queue_count, family_properties.data());
 
     for (uint32_t i = 0; i < queue_count; i++) {
         if (family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {

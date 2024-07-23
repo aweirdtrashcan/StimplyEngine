@@ -38,6 +38,9 @@ project "Stimply-Engine"
 
     includedirs { "engine/", "vendor/", "vendor/DirectXMath/Inc", "$(VULKAN_SDK)/include", "./" }
 
+    -- defines for DirectXMath
+    defines { "_XM_AVX2_INTRINSICS_", "_XM_SSE_INTRINSICS_"  }
+
     filter "configurations:Debug"
         defines { "DEBUG", platform_define }
         debugdir "bin/Debug"
@@ -156,6 +159,9 @@ project "Stimply-Renderer-Backend-DX12"
     files { "plugins/renderer/directx/*.cpp", "plugins/renderer/directx/*.h" }
 
     includedirs { "engine/", "vendor/", "vendor/DirectXMath/Inc" }
+
+    -- defines for DirectXMath
+    defines { "_XM_AVX2_INTRINSICS_", "_XM_SSE_INTRINSICS_"  }
 
     filter "configurations:Debug"
         if os.host() == "windows" then

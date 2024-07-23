@@ -69,7 +69,7 @@ bool create_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader* 
 
     if (!create_pipeline(&create_info, &out_shader->pipeline)) {
         Logger::fatal("Failed to create graphics pipeline");
-                return false;
+        return false;
     }
 
     return true;
@@ -87,7 +87,8 @@ bool destroy_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader*
     return true;
 }
 
-bool vulkan_shader_use(internal_vulkan_renderer_state* state, vulkan_shader* shader) {
+bool vulkan_shader_use(internal_vulkan_renderer_state* state, VkCommandBuffer command_buffer, vulkan_shader* shader) {
+    pipeline_bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, &shader->pipeline);
     return true;
 }
 

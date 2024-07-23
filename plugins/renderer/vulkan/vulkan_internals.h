@@ -53,7 +53,7 @@ struct internal_vulkan_renderer_state {
     list<VkFramebuffer> swapchain_framebuffers;
     VkSurfaceCapabilitiesKHR surface_capabilities;
     VkClearValue clear_values[2];
-    list<render_item*> render_items[PipelineTypeMAX];
+    list<render_item*> render_items;
 };
 
 VkBool32 debug_utils_callback(VkDebugUtilsMessageSeverityFlagBitsEXT           messageSeverity,
@@ -148,6 +148,6 @@ VkResult submit_command_queue(VkSemaphore wait_semaphore, VkSemaphore signal_sem
 
 bool create_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader* out_shader);
 bool destroy_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader* shader);
-bool vulkan_shader_use(internal_vulkan_renderer_state* state, vulkan_shader* shader);
+bool vulkan_shader_use(internal_vulkan_renderer_state* state, VkCommandBuffer command_buffer, vulkan_shader* shader);
 
 }
