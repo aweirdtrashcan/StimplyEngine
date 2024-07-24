@@ -24,6 +24,8 @@ public:
 
     static void* ualloc(size_t size);
     static void ufree(void* memory);
+    static void* aalloc(size_t alignment, size_t size);
+    static void afree(void* memory);
     static void* zero_memory(void* memory, size_t size);
 
     static void log(log_level level, const char* message);

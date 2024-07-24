@@ -2,6 +2,8 @@
 #include "platform/platform.h"
 #include "vulkan_defines.h"
 #include "vulkan_internals.h"
+#include "../global_uniform_object.h"
+
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
 
@@ -25,10 +27,36 @@ bool create_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader* 
         }  
     }
 
-    VkViewport viewport;
-    VkRect2D scissor;
+    if (!create_descriptor_pool(state, 
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, 
+        &out_shader->global_descriptor_pool, 
+        state->num_frames)) {
+        Logger::debug("Failed to create global descriptor pool");
+        return false;
+    }
 
-    get_viewport_and_scissor(state->surface_capabilities, &viewport, &scissor);
+    VkDescriptorSetLayoutBinding bindings[1];
+    bindings[0].binding = 0;
+    bindings[0].descriptorCount = 1;
+    bindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    bindings[0].pImmutableSamplers = nullptr;
+    bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    if (!create_descriptor_set_layout(state, (uint32_t)std::size(bindings), bindings, &out_shader->global_descriptor_set_layout)) {
+        Logger::debug("Failed to create global descriptor set layout");
+        return false;
+    }
+
+    for (uint32_t i = 0; i < state->num_frames; i++) {
+        out_shader->global_descriptor_sets.resize(state->num_frames);
+        if (!allocate_descriptor_set(state, &out_shader->global_descriptor_pool, out_shader->global_descriptor_set_layout, &out_shader->global_descriptor_sets[i])) {
+            Logger::debug("Failed to create global descriptor sets");
+            return false;
+        }
+        uint64_t offset = i * sizeof(global_uniform_object);
+        update_descriptor_set(state, state->global_uniform_buffer.buffer, offset, sizeof(global_uniform_object), &out_shader->global_descriptor_sets[i], 0);
+    }
 
     uint32_t offset = 0;
     static constexpr uint32_t attribute_count = 1;
@@ -59,12 +87,11 @@ bool create_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader* 
     create_info.renderpass = state->main_renderpass;
     create_info.attribute_count = (uint32_t)std::size(attributes);
     create_info.attributes = attributes;
-    create_info.descriptor_set_layout_count = 0;
-    create_info.descriptor_set_layouts = nullptr;
+    create_info.descriptor_set_layout_count = 1;
+    create_info.descriptor_set_layouts = &out_shader->global_descriptor_set_layout;
     create_info.stage_count = OBJECT_SHADER_STAGE_COUNT;
     create_info.stages = stages;
-    create_info.viewport = viewport;
-    create_info.scissor = scissor;
+    get_viewport_and_scissor(state->surface_capabilities, &create_info.viewport, &create_info.scissor);
     create_info.is_wireframe = false;
 
     if (!create_pipeline(&create_info, &out_shader->pipeline)) {
@@ -80,6 +107,8 @@ bool destroy_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader*
         destroy_shader_module(state, &shader->stages[i]);
     }
 
+    destroy_descriptor_pool(state, &shader->global_descriptor_pool);
+    destroy_descriptor_set_layout(state, shader->global_descriptor_set_layout);
     destroy_pipeline(state, &shader->pipeline);
 
     Platform::zero_memory(shader, sizeof(*shader));
@@ -89,6 +118,7 @@ bool destroy_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader*
 
 bool vulkan_shader_use(internal_vulkan_renderer_state* state, VkCommandBuffer command_buffer, vulkan_shader* shader) {
     pipeline_bind(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, &shader->pipeline);
+    bind_descriptor_set(state, command_buffer, &shader->global_descriptor_sets[state->current_frame_index], &shader->pipeline);
     return true;
 }
 

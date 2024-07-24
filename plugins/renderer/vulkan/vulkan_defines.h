@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
 
+#include <containers/list.h>
+
 struct vulkan_image {
     VkImage image;
     VkImageView view;
@@ -34,9 +36,24 @@ struct vulkan_pipeline {
     VkPipelineLayout layout;
 };
 
+struct vulkan_descriptor_pool {
+    VkDescriptorPool pool;
+    VkDescriptorType type;
+    VkDescriptorPoolCreateFlags flags;
+};  
+
+struct vulkan_descriptor_set {
+    VkDescriptorSet set;
+    VkDescriptorType type;
+    VkDescriptorSetLayout set_layout;
+};
+
 struct vulkan_shader {
-    vulkan_shader_stage stages[OBJECT_SHADER_STAGE_COUNT];
+    vulkan_shader_stage stages[OBJECT_SHADER_STAGE_COUNT];    
     vulkan_pipeline pipeline;
+    vulkan_descriptor_pool global_descriptor_pool;
+    VkDescriptorSetLayout global_descriptor_set_layout;
+    list<vulkan_descriptor_set> global_descriptor_sets;
 };
 
 struct vulkan_pipeline_create_info {

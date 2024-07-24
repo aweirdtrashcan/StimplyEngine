@@ -25,7 +25,7 @@ bool find_memory_type_index(const internal_vulkan_renderer_state* state, uint32_
     return false;
 }
 
-bool create_uploader_buffer(internal_vulkan_renderer_state* state, size_t size, gpu_buffer* out_gpu_buffer) {
+bool create_uploader_buffer(const internal_vulkan_renderer_state* state, size_t size, gpu_buffer* out_gpu_buffer) {
     if (out_gpu_buffer == nullptr) {
         Logger::fatal("create_uploader_buffer: out_gpu_buffer can't be nullptr");
         return false;
@@ -77,7 +77,7 @@ bool create_uploader_buffer(internal_vulkan_renderer_state* state, size_t size, 
     return true;
 }
 
-bool copy_to_upload_buffer(internal_vulkan_renderer_state* state, void* source, size_t size, gpu_buffer* buffer) {
+bool copy_to_upload_buffer(const internal_vulkan_renderer_state* state, void* source, size_t size, gpu_buffer* buffer) {
     if (!(buffer->memory_property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
         Logger::debug("copy_to_upload_buffer can't be called on a buffer that's not host visible");
         return false;

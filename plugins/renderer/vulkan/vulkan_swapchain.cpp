@@ -35,6 +35,8 @@ bool create_swapchain(internal_vulkan_renderer_state* state, const VkSurfaceCapa
         return false;
     }
 
+    get_viewport_and_scissor(state->surface_capabilities, &state->viewport, &state->scissor);
+
     VkSwapchainCreateInfoKHR create_info;
     create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     create_info.pNext = nullptr;
@@ -141,7 +143,7 @@ bool create_swapchain_semaphores_and_fences(internal_vulkan_renderer_state* stat
     memset(state->last_image_fence.data(), 0, sizeof(VkFence) * state->num_frames);
 
     for (uint32_t i = 0; i < state->num_frames; i++) {
-        if (!create_fence(state, state->fences[i], true)) {
+        if (!create_fence(state, &state->fences[i], true)) {
             return false;
         }
         if (!create_semaphore(state, state->image_acquired_semaphore[i])) {

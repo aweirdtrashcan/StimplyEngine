@@ -1,15 +1,20 @@
 #include "vulkan_renderer.h"
+#include "DirectXMath.h"
+#include "platform/platform.h"
 #include "vulkan_defines.h"
 #include "vulkan_internals.h"
 
 #include <core/logger.h>
 #include <cstdint>
-#include <iterator>
+#include <cstring>
 #include <renderer/renderer_exception.h>
 #include <renderer/renderer_types.h>
 #include <vulkan/vulkan_core.h>
 
-#include <DirectXMath.h>
+// Don't change the order of the includes, because global_uniform_object.h
+// includes DirectXMath, and DirectXMath on Unix systems *HAS* to be included
+// after all the STL headers.
+#include "../global_uniform_object.h"
 #include <DirectXMath/Extensions/DirectXMathAVX2.h>
 
 extern "C" {
@@ -99,10 +104,6 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
         throw RendererException("Failed to create depth buffer");
     }
 
-    if (!create_descriptor_pool(state, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, true, &state->uniform_descriptor_pool)) {
-        throw RendererException("Failed to create uniform buffer descriptor pool");
-    }
-
     if (!create_command_pool(state, &state->command_pool, state->graphics_queue_index)) {
         throw RendererException("Failed to create graphics command pool");
     }
@@ -120,10 +121,6 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
         throw RendererException("Failed to create swapchain framebuffers");
     }
 
-    if (!create_vulkan_shader(state, &state->light_shader)) {
-        throw RendererException("Failed to load light shader");
-    }
-
     uint32_t memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     uint32_t buffer_usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 
@@ -133,6 +130,28 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
 
     if (!create_gpu_buffer(state, sizeof(uint32_t) * 1024 * 1024, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | buffer_usage, memory_properties, &state->index_buffer)) {
         throw RendererException("Failed to create engine's global index buffer");
+    }
+
+    state->global_ubo = (global_uniform_object*)Platform::aalloc(16, sizeof(*state->global_ubo) * state->num_frames); 
+
+    if (!create_gpu_buffer(
+        state, 
+        sizeof(*state->global_ubo) * state->num_frames, 
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        &state->global_uniform_buffer)) {
+        throw RendererException("Failed to create global uniform buffer");
+    }
+
+    state->global_ubo->projection = DirectX::XMMatrixIdentity();
+    state->global_ubo->view = DirectX::XMMatrixIdentity();
+
+    for (uint32_t i = 0; i < state->num_frames; i++) {
+        update_uniform_buffer(state, state->global_ubo, &state->global_uniform_buffer, i);
+    }
+
+    if (!create_vulkan_shader(state, &state->object_shader)) {
+        throw RendererException("Failed to load light shader");
     }
 
     VkClearValue color_clear_value{};
@@ -164,7 +183,7 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
     create_info.indexSize = sizeof(indices);
     create_info.indicesCount = std::size(indices);
     create_info.pIndices = &indices;
-    create_info.shader = &state->light_shader;
+    create_info.shader = &state->object_shader;
     vulkan_create_render_item(&create_info);
 
     Logger::info("Vulkan Backend Initialized");
@@ -176,13 +195,14 @@ void vulkan_backend_shutdown() {
     vkDeviceWaitIdle(state->logical_device);
     Logger::info("Shutting Down Vulkan Renderer");
 
+    destroy_vulkan_shader(state, &state->object_shader);
+    destroy_gpu_buffer(state, &state->global_uniform_buffer);
+    Platform::afree(state->global_ubo);
     destroy_gpu_buffer(state, &state->index_buffer);
     destroy_gpu_buffer(state, &state->vertex_buffer);
-    destroy_vulkan_shader(state, &state->light_shader);
     destroy_swapchain_framebuffers(state);
     destroy_render_pass(state);
     destroy_command_pool(state, state->command_pool);
-    destroy_descriptor_pool(state, state->uniform_descriptor_pool);
     destroy_depth_buffer(state);
     destroy_swapchain_semaphores_and_fences(state);
     destroy_swapchain_image_views(state);
@@ -242,17 +262,17 @@ bool vulkan_begin_frame() {
 
     VkFramebuffer framebuffer = state->swapchain_framebuffers[state->image_index];
 
-    VkViewport viewport;
-    VkRect2D scissor;
-    get_viewport_and_scissor(surface_capabilities, &viewport, &scissor);
-
     vkResetCommandBuffer(command_buffer, 0);
     begin_command_buffer(command_buffer);
 
-    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
-    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+    set_viewport_and_scissor(command_buffer, &state->viewport, &state->scissor);
 
-    begin_render_pass(renderpass, command_buffer, framebuffer, scissor, (uint32_t)std::size(state->clear_values), clear_values);
+    begin_render_pass(renderpass, 
+        command_buffer, 
+        framebuffer, 
+        state->scissor, 
+        (uint32_t)std::size(state->clear_values), 
+        clear_values);
 
     return true;
 }
@@ -262,7 +282,7 @@ bool vulkan_draw_items() {
 
     for (uint32_t i = 0; i < state->render_items.size_u32(); i++) {
         render_item* item = &state->render_items[i];
-
+        
         vkCmdBindIndexBuffer(command_buffer, state->index_buffer.buffer, item->index_buffer_offset, VK_INDEX_TYPE_UINT32);
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &state->vertex_buffer.buffer, &item->vertex_buffer_offset);
         vulkan_shader_use(state, command_buffer, item->shader_object);
@@ -419,6 +439,34 @@ bool get_viewport_and_scissor(const VkSurfaceCapabilitiesKHR& surface_capabiliti
 
     out_scissor->extent = surface_capabilities.currentExtent;
     out_scissor->offset = {};
+
+    return true;
+}
+
+bool set_viewport_and_scissor(VkCommandBuffer command_buffer, const VkViewport* viewport, const VkRect2D* scissor) {
+    vkCmdSetViewport(command_buffer, 0, 1, viewport);
+    vkCmdSetScissor(command_buffer, 0, 1, scissor);
+
+    return true;
+}
+
+bool update_uniform_buffer(const internal_vulkan_renderer_state* state, const global_uniform_object* global_ubo, gpu_buffer* uniform_buffer, uint32_t frame_num) {
+    VkCommandBuffer command_buffer;
+    create_one_time_command_buffer(state, &command_buffer);
+
+    static constexpr uint64_t buffer_size = sizeof(*global_ubo);
+    uint64_t destination_offset = frame_num * buffer_size;
+
+    gpu_buffer ubo_uploader;
+    create_uploader_buffer(state, buffer_size, &ubo_uploader);
+
+    memcpy(ubo_uploader.memory_pointer, global_ubo, buffer_size);
+
+    copy_to_gpu_buffer(command_buffer, &ubo_uploader, uniform_buffer, destination_offset);
+
+    end_one_time_command_buffer(state, command_buffer, state->graphics_queue);
+
+    destroy_gpu_buffer(state, &ubo_uploader);
 
     return true;
 }
