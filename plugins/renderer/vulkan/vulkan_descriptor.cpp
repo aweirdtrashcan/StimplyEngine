@@ -57,7 +57,7 @@ bool allocate_descriptor_set(const internal_vulkan_renderer_state* state, vulkan
 
 bool free_descriptor_set(const internal_vulkan_renderer_state* state, const vulkan_descriptor_pool* descriptor_pool, vulkan_descriptor_set* descriptor_set) {
     if (!(descriptor_pool->flags & VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)) {
-        Logger::debug("free_descriptor_set: can't free a descriptor set that's allocated in a pool without the flag: VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT");
+        Logger::warning("free_descriptor_set: can't free a descriptor set that's allocated in a pool without the flag: VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT");
         return false;
     }
 

@@ -127,7 +127,7 @@ bool d3d12_backend_initialize(uint64_t* required_size, void* allocated_memory, c
     state->window = (SDL_Window*)sdl_window;
 
     if (!enable_debug_layer()) {
-        Logger::debug("Failed to enable d3d12 debug layer");
+        Logger::warning("Failed to enable d3d12 debug layer");
     }
 
     if (!create_dxgi_factory()) {

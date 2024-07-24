@@ -14,10 +14,10 @@ RAPI void initialize_engine(void) {
 
         // TODO: Test
         DirectX::XMFLOAT3 vertices[] = {
-            {-0.5f, -0.5f, 0.0f},
-            {-0.5f, 0.5f, 0.0f},
-            {0.5f, -0.5f, 0.0f},
-            {0.5f, 0.5f, 0.0f},
+            { -0.5f, -0.5f, 0.0f },
+            { -0.5f,  0.5f, 0.0f },
+            {  0.5f, -0.5f, 0.0f },
+            {  0.5f,  0.5f, 0.0f },
         };
 
         uint32_t indices[] = {0, 1, 2, 2, 1, 3};
@@ -33,12 +33,13 @@ RAPI void initialize_engine(void) {
 
         HANDLE render_item = renderer.CreateRenderItem(&create_info);
 
-        float offset_x = 0.0f;
+        float rotation_factor = 0.0f;
 
         while (window.ProcessMessages()) {
-            offset_x += 0.0001f;
+            rotation_factor += 0.0001f;
             DirectX::XMMATRIX model_mat = DirectX::XMMatrixIdentity();
-            model_mat = DirectX::AVX2::XMMatrixMultiply(model_mat, DirectX::XMMatrixTranslation(offset_x, 0.0f, 0.0f));
+            DirectX::XMMATRIX rotation_mat = DirectX::XMMatrixRotationRollPitchYaw(0.0f, 0.0f, rotation_factor);
+            model_mat = DirectX::AVX2::XMMatrixMultiply(model_mat, rotation_mat);
                 
             DirectX::XMFLOAT4X4 model;
 
@@ -57,4 +58,6 @@ RAPI void initialize_engine(void) {
         Logger::fatal("Error: %s", exception.what());
         Window::MessageBox("Fatal error", exception.what());
     }
+
+    Logger::info("Leaving engine...");
 }

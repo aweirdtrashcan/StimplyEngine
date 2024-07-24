@@ -79,7 +79,7 @@ bool create_uploader_buffer(const internal_vulkan_renderer_state* state, size_t 
 
 bool copy_to_upload_buffer(const internal_vulkan_renderer_state* state, void* source, size_t size, gpu_buffer* buffer) {
     if (!(buffer->memory_property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
-        Logger::debug("copy_to_upload_buffer can't be called on a buffer that's not host visible");
+        Logger::warning("copy_to_upload_buffer can't be called on a buffer that's not host visible");
         return false;
     }
     
@@ -128,7 +128,7 @@ bool create_gpu_buffer(const internal_vulkan_renderer_state* state, size_t size,
     VkResult res = vkCreateBuffer(state->logical_device, &buffer_create, state->allocator, &out_gpu_buffer->buffer);
 
     if (res != VK_SUCCESS) {
-        Logger::debug("create_gpu_buffer: Failed to create vulkan buffer");
+        Logger::warning("create_gpu_buffer: Failed to create vulkan buffer");
         return false;
     }
 
@@ -141,7 +141,7 @@ bool create_gpu_buffer(const internal_vulkan_renderer_state* state, size_t size,
         memory_requirements.memoryTypeBits, 
         memory_properties, 
         &memory_index)) {
-        Logger::debug("create_gpu_buffer: Failed to find memory type index");
+        Logger::warning("create_gpu_buffer: Failed to find memory type index");
         return false;    
     }
 
@@ -154,21 +154,21 @@ bool create_gpu_buffer(const internal_vulkan_renderer_state* state, size_t size,
     res = vkAllocateMemory(state->logical_device, &allocate_info, state->allocator, &out_gpu_buffer->memory);
 
     if (res != VK_SUCCESS) {
-        Logger::debug("create_gpu_buffer: Failed to allocate buffer memory");
+        Logger::warning("create_gpu_buffer: Failed to allocate buffer memory");
         goto cleanup;
     }
 
     res = vkBindBufferMemory(state->logical_device, out_gpu_buffer->buffer, out_gpu_buffer->memory, 0);
 
     if (res != VK_SUCCESS) {
-        Logger::debug("create_gpu_buffer: Failed to bind buffer memory");
+        Logger::warning("create_gpu_buffer: Failed to bind buffer memory");
         goto cleanup;
     }
 
     if (memory_properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
         res = vkMapMemory(state->logical_device, out_gpu_buffer->memory, 0, VK_WHOLE_SIZE, 0, &out_gpu_buffer->memory_pointer);
         if (res != VK_SUCCESS) {
-            Logger::debug("create_gpu_buffer: Failed to map buffer memory");
+            Logger::warning("create_gpu_buffer: Failed to map buffer memory");
             goto cleanup;
         }
     }

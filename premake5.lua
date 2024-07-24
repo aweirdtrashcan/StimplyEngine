@@ -30,7 +30,7 @@ project "Stimply-Engine"
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
         links { "SDL2main", "SDL2" }
-        includedirs { "vendor/DirectXMath/Inc", "vendor/DirectXMath/Extensions" }
+        includedirs { "vendor/DirectXMath/Inc" }
         buildoptions {
             "-mavx2",
             "-mfma"
@@ -114,7 +114,7 @@ project "Stimply-Renderer-Backend-Vulkan"
         links { "SDL2main", "SDL2", "vulkan", "Stimply-Engine" }
         cppdialect "gnu++17"
         toolset "clang"
-        includedirs { "vendor/DirectXMath/Inc", "vendor/DirectXMath/Extensions" }
+        includedirs { "vendor/DirectXMath/Inc" }
         postbuildcommands {
             "./compile_shaders.sh"
         }
@@ -165,7 +165,7 @@ project "Stimply-Renderer-Backend-DX12"
         links { "SDL2main", "SDL2" }
         cppdialect "gnu++17"
         toolset "clang"
-        includedirs { "vendor/DirectXMath/Inc", "vendor/DirectXMath/Extensions" }
+        includedirs { "vendor/DirectXMath/Inc" }
         buildoptions {
             "-mavx2",
             "-mfma"

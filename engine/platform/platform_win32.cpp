@@ -14,7 +14,7 @@
 #undef MessageBox
 #endif
 
-struct alloc_header {
+struct alignas(MINIMUM_ALIGNMENT_SIZE) alloc_header {
     size_t allocation_size;
     size_t alignment;
 };
@@ -41,6 +41,7 @@ Platform::Platform() {
 }
 
 Platform::~Platform() {
+    Logger::warning("Shutting down platform with %zu allocated!", platform_ptr->m_TotalAllocation);
     platform_ptr = nullptr;
 }
 
@@ -70,7 +71,7 @@ void Platform::ufree(void* memory) {
 
 void* Platform::aalloc(size_t alignment, size_t size) {
     if (alignment < MINIMUM_ALIGNMENT_SIZE) {
-        Logger::debug("Platform::aalloc: alignment size should be greater or equal to %zu bytes", MINIMUM_ALIGNMENT_SIZE);
+        Logger::warning("Platform::aalloc: alignment size should be greater or equal to %zu bytes", MINIMUM_ALIGNMENT_SIZE);
         return nullptr;
     }
 
@@ -81,7 +82,7 @@ void* Platform::aalloc(size_t alignment, size_t size) {
         _get_errno(&error_number);
 
         if (error_number == EINVAL) {
-            Logger::debug("The alignment argument was not a power of two, or was not a multiple of sizeof(void *).");
+            Logger::warning("The alignment argument was not a power of two, or was not a multiple of sizeof(void *).");
         }
         return nullptr;
     }
@@ -136,14 +137,14 @@ void* Platform::load_library(const char* libraryPath) {
     path_size = GetCurrentDirectoryA(path_size, nullptr);
 
     if (path_size == 0) {
-        Logger::debug("Failed to get current directory while trying to read binary in %s", libraryPath);
+        Logger::warning("Failed to get current directory while trying to read binary in %s", libraryPath);
         return false;
     }
 
     list<char> path(path_size);
 
     if (GetCurrentDirectoryA(path_size, path.data()) == 0) {
-        Logger::debug("Failed to get current directory while trying to read binary in %s", libraryPath);
+        Logger::warning("Failed to get current directory while trying to read binary in %s", libraryPath);
         return false;
     }
 
@@ -151,7 +152,7 @@ void* Platform::load_library(const char* libraryPath) {
 
     void* library = LoadLibraryA(library_name);
     
-    Logger::debug("Failed to load library %s", library_name);
+    Logger::warning("Failed to load library %s", library_name);
 
     return library;
 }
@@ -187,13 +188,13 @@ binary_info Platform::read_binary(const char* path) {
     );
 
     if (!file) {
-        Logger::debug("Failed to open file %s", path);
+        Logger::warning("Failed to open file %s", path);
         return {};
     }
 
     int64_t size = 0;
     if (!GetFileSizeEx(file, (PLARGE_INTEGER)&size)) {
-        Logger::debug("Failed to get file size of %s", path);
+        Logger::warning("Failed to get file size of %s", path);
         CloseHandle(file);
         return {};
     }
@@ -209,7 +210,7 @@ binary_info Platform::read_binary(const char* path) {
         &bytes_read,
         nullptr
     )) {
-        Logger::debug("Failed to read file %s");
+        Logger::warning("Failed to read file %s");
         CloseHandle(file);
         return {};
     }

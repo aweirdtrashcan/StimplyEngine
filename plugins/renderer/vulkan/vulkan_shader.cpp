@@ -22,7 +22,7 @@ bool create_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader* 
 
     for (uint32_t i = 0; i < OBJECT_SHADER_STAGE_COUNT; i++) {
         if (!create_shader_module(state, names[i], stage_types[i], i, out_shader->stages)) {
-            Logger::debug("Failed to create shader module for: %s", names[i]);
+            Logger::warning("Failed to create shader module for: %s", names[i]);
             return false;
         }  
     }
@@ -32,7 +32,7 @@ bool create_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader* 
         VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, 
         &out_shader->global_descriptor_pool, 
         state->num_frames)) {
-        Logger::debug("Failed to create global descriptor pool");
+        Logger::warning("Failed to create global descriptor pool");
         return false;
     }
 
@@ -44,14 +44,14 @@ bool create_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader* 
     bindings[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
     if (!create_descriptor_set_layout(state, (uint32_t)std::size(bindings), bindings, &out_shader->global_descriptor_set_layout)) {
-        Logger::debug("Failed to create global descriptor set layout");
+        Logger::warning("Failed to create global descriptor set layout");
         return false;
     }
 
     for (uint32_t i = 0; i < state->num_frames; i++) {
         out_shader->global_descriptor_sets.resize(state->num_frames);
         if (!allocate_descriptor_set(state, &out_shader->global_descriptor_pool, out_shader->global_descriptor_set_layout, &out_shader->global_descriptor_sets[i])) {
-            Logger::debug("Failed to create global descriptor sets");
+            Logger::warning("Failed to create global descriptor sets");
             return false;
         }
         uint64_t offset = i * sizeof(GlobalUniformObject);
@@ -148,6 +148,8 @@ bool create_shader_module(const internal_vulkan_renderer_state* state, const cha
     shader_stage[stage_index].shader_stage_create_info.module = shader_stage[stage_index].shader_module;
     shader_stage[stage_index].shader_stage_create_info.pName = "main";
     shader_stage[stage_index].shader_stage_create_info.pSpecializationInfo = nullptr;
+
+    Platform::ufree(shader.binary);
 
     return true;
 }

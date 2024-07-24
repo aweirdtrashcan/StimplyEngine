@@ -14,8 +14,11 @@
 // Don't change the order of the includes, because global_uniform_object.h
 // includes DirectXMath, and DirectXMath on Unix systems *HAS* to be included
 // after all the STL headers.
+// NOTE: Update -> I've removed the SAL code from the headers i'm actually using
+// so it seems that the order doesn't matter anymore.
 #include <renderer/global_uniform_object.h>
 #include <DirectXMath/Extensions/DirectXMathAVX2.h>
+#include <DirectXColors.h>
 
 extern "C" {
 
@@ -141,11 +144,7 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
         throw RendererException("Failed to load light shader");
     }
 
-    VkClearValue color_clear_value{};
-    color_clear_value.color.float32[0] = 0.8f;
-    color_clear_value.color.float32[1] = 0.3f;
-    color_clear_value.color.float32[2] = 0.8f;
-    color_clear_value.color.float32[3] = 1.0f;
+    VkClearValue color_clear_value = *(VkClearValue*)&DirectX::Colors::BlueViolet;
 
     VkClearValue depth_clear_value{};
     depth_clear_value.depthStencil.depth = 1.0f;
@@ -330,11 +329,11 @@ FrameStatus vulkan_end_frame() {
 
 HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInfo) {
     if (pRenderItemCreateInfo == nullptr) {
-        Logger::debug("vulkan_create_render_item: pRenderItemCreateInfo can't be nullptr");
+        Logger::warning("vulkan_create_render_item: pRenderItemCreateInfo can't be nullptr");
         return nullptr;
     }
     if (pRenderItemCreateInfo->pIndices == 0 || pRenderItemCreateInfo->pVertices == 0) {
-        Logger::debug("vulkan_create_render_item: RenderItemCreateInfo->pIndices and/or RenderItemCreateInfo->pMeshes can't be nullptr");
+        Logger::warning("vulkan_create_render_item: RenderItemCreateInfo->pIndices and/or RenderItemCreateInfo->pMeshes can't be nullptr");
         return nullptr;
     }
     // if (pRenderItemCreateInfo->shader == nullptr) {
@@ -366,12 +365,12 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
     state->geometry_index_offset += pRenderItemCreateInfo->indexSize;
 
     if (!create_uploader_buffer(state, pRenderItemCreateInfo->vertexSize, &vertex_uploader)) {
-        Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");
+        Logger::warning("vulkan_create_render_item: Failed to create vertex buffer");
         return nullptr;
     }
     
     if (!create_uploader_buffer(state, pRenderItemCreateInfo->indexSize, &index_uploader)) {
-        Logger::debug("vulkan_create_render_item: Failed to create vertex buffer");
+        Logger::warning("vulkan_create_render_item: Failed to create vertex buffer");
         return nullptr;
     }
 

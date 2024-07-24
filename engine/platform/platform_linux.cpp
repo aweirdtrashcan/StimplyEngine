@@ -40,6 +40,7 @@ Platform::Platform() {
 }
 
 Platform::~Platform() {
+    Logger::warning("Shutting down platform with %zu allocated!", platform_ptr->m_TotalAllocation);
     platform_ptr = nullptr;
 }
 
@@ -54,6 +55,8 @@ void* Platform::ualloc(size_t size) {
         platform_ptr->m_TotalAllocation += size;
     }
     
+    Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);    
+
     return from_header_to_memory(header);    
 }
 
@@ -66,13 +69,15 @@ void Platform::ufree(void* memory) {
         platform_ptr->m_TotalAllocation -= header->allocation_size;
     }
 
+    Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
+
     memset(header, 0, sizeof(alloc_header) + header->allocation_size);
     free(header);
 }
 
 void* Platform::aalloc(size_t alignment, size_t size) {
     if (alignment < MINIMUM_ALIGNMENT_SIZE) {
-        Logger::debug("Platform::aalloc: alignment size should be greater or equal to %zu bytes", MINIMUM_ALIGNMENT_SIZE);
+        Logger::warning("Platform::aalloc: alignment size should be greater or equal to %zu bytes", MINIMUM_ALIGNMENT_SIZE);
         return nullptr;
     }
     
@@ -80,10 +85,10 @@ void* Platform::aalloc(size_t alignment, size_t size) {
     int result = posix_memalign((void**)&header, alignment, sizeof(alloc_header) + size);
 
     if (result == EINVAL) {
-        Logger::debug("The alignment argument was not a power of two, or was not a multiple of sizeof(void *).");
+        Logger::warning("The alignment argument was not a power of two, or was not a multiple of sizeof(void *).");
         goto cleanup;
     } else if (result == ENOMEM) {
-        Logger::debug("There was insufficient memory to fulfill the allocation request.");
+        Logger::warning("There was insufficient memory to fulfill the allocation request.");
         goto cleanup;
     }
 
@@ -97,6 +102,8 @@ void* Platform::aalloc(size_t alignment, size_t size) {
         platform_ptr->m_TotalAllocation += size;
     }
     
+    Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);  
+
     return from_header_to_memory(header);    
 
 cleanup:
@@ -114,6 +121,8 @@ void Platform::afree(void* memory) {
     } else {
         platform_ptr->m_TotalAllocation -= header->allocation_size;
     }
+
+    Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
 
     memset(header, 0, sizeof(alloc_header) + header->allocation_size);
     free(header);
@@ -133,7 +142,7 @@ void* Platform::load_library(const char* libraryPath) {
 
     char path[PATH_MAX];
     if (getcwd(path, PATH_MAX) == nullptr) {
-        Logger::debug("Platform::load_library: Failed to get current working directory");
+        Logger::warning("Platform::load_library: Failed to get current working directory");
         return nullptr;
     }
 
@@ -180,7 +189,7 @@ binary_info Platform::read_binary(const char* path) {
     FILE* file = fopen(path, "rb");
 
     if (!file) {
-        Logger::debug("Failed to open file %s", path);
+        Logger::warning("Failed to open file %s", path);
         return {};
     }
 

@@ -33,7 +33,7 @@ bool create_pipeline_layout(internal_vulkan_renderer_state* state, VkDescriptorS
 
 bool create_pipeline(vulkan_pipeline_create_info* create_info, vulkan_pipeline* out_pipeline) {
     if (!create_info || !out_pipeline) {
-        Logger::debug("create_pipeline: either create_info or out_pipeline are nullptr");
+        Logger::warning("create_pipeline: either create_info or out_pipeline are nullptr");
         return false;
     }
 
