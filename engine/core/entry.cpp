@@ -36,11 +36,7 @@ RAPI void initialize_engine(void) {
         float offset_x = 0.0f;
 
         while (window.ProcessMessages()) {
-            if (!renderer.Draw()) {
-                Logger::fatal("Some error happened while Drawing, closing the engine...");
-                break;
-            }
-            offset_x += 0.0001f;                
+            offset_x += 0.0001f;
             DirectX::XMMATRIX model_mat = DirectX::XMMatrixIdentity();
             model_mat = DirectX::AVX2::XMMatrixMultiply(model_mat, DirectX::XMMatrixTranslation(offset_x, 0.0f, 0.0f));
                 
@@ -49,6 +45,10 @@ RAPI void initialize_engine(void) {
             DirectX::XMStoreFloat4x4(&model, model_mat);
 
             renderer.SetRenderItemModel(render_item, &model);
+            if (!renderer.Draw()) {
+                Logger::fatal("Some error happened while Drawing, closing the engine...");
+                break;
+            }
         }
 
         renderer.DestroyRenderItem(render_item);
