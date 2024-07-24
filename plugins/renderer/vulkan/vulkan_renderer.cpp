@@ -14,7 +14,7 @@
 // Don't change the order of the includes, because global_uniform_object.h
 // includes DirectXMath, and DirectXMath on Unix systems *HAS* to be included
 // after all the STL headers.
-#include "../global_uniform_object.h"
+#include <renderer/global_uniform_object.h>
 #include <DirectXMath/Extensions/DirectXMathAVX2.h>
 
 extern "C" {
@@ -43,12 +43,6 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
     if (!DirectX::AVX2::XMVerifyAVX2Support()) {
         throw RendererException("Your CPU does not support AVX2 Instruction Set, which is required by this application.");
     }
-
-    // TODO: Test code
-    DirectX::XMMATRIX m0 = DirectX::XMMatrixIdentity();
-    DirectX::XMMATRIX m1 = DirectX::XMMatrixIdentity();
-
-    DirectX::XMMATRIX m2 = DirectX::AVX2::XMMatrixMultiply(m0, m1);
 
     state->window = sdl_window;
 
@@ -132,22 +126,15 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
         throw RendererException("Failed to create engine's global index buffer");
     }
 
-    state->global_ubo = (global_uniform_object*)Platform::aalloc(16, sizeof(*state->global_ubo) * state->num_frames); 
+    state->global_ubo = (GlobalUniformObject*)Platform::aalloc(16, sizeof(*state->global_ubo) * state->num_frames); 
 
     if (!create_gpu_buffer(
         state, 
         sizeof(*state->global_ubo) * state->num_frames, 
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         &state->global_uniform_buffer)) {
         throw RendererException("Failed to create global uniform buffer");
-    }
-
-    state->global_ubo->projection = DirectX::XMMatrixIdentity();
-    state->global_ubo->view = DirectX::XMMatrixIdentity();
-
-    for (uint32_t i = 0; i < state->num_frames; i++) {
-        update_uniform_buffer(state, state->global_ubo, &state->global_uniform_buffer, i);
     }
 
     if (!create_vulkan_shader(state, &state->object_shader)) {
@@ -280,16 +267,22 @@ bool vulkan_begin_frame() {
 bool vulkan_draw_items() {
     VkCommandBuffer command_buffer = state->graphics_command_buffers[state->current_frame_index];
 
+    state->current_shader = nullptr;
+    update_uniform_buffer();
+
     for (uint32_t i = 0; i < state->render_items.size_u32(); i++) {
         render_item* item = &state->render_items[i];
         
         vkCmdBindIndexBuffer(command_buffer, state->index_buffer.buffer, item->index_buffer_offset, VK_INDEX_TYPE_UINT32);
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &state->vertex_buffer.buffer, &item->vertex_buffer_offset);
-        vulkan_shader_use(state, command_buffer, item->shader_object);
+        if (item->shader_object != state->current_shader) {
+            vulkan_shader_use(state, command_buffer, item->shader_object);
+            state->current_shader = item->shader_object;
+        }    
 
         vkCmdDrawIndexed(command_buffer, item->index_count, 1, 0, 0, 0);
     }
-
+    
     return true;
 }
 
@@ -403,6 +396,11 @@ void vulkan_destroy_render_item(HANDLE item_handle) {
     r_item->vertex_buffer_offset = -1;
 }
 
+void set_view_projection(const void* view_matrix, const void* projection_matrix) {
+    state->global_ubo->view = DirectX::XMLoadFloat4x4((const DirectX::XMFLOAT4X4*)view_matrix);
+    state->global_ubo->projection = DirectX::XMLoadFloat4x4((const DirectX::XMFLOAT4X4*)projection_matrix);
+}
+
 /****************************************** INTERNAL FUNCTIONS ********************************************* */
 VkBool32 debug_utils_callback(VkDebugUtilsMessageSeverityFlagBitsEXT           messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT                  messageTypes,
@@ -450,23 +448,11 @@ bool set_viewport_and_scissor(VkCommandBuffer command_buffer, const VkViewport* 
     return true;
 }
 
-bool update_uniform_buffer(const internal_vulkan_renderer_state* state, const global_uniform_object* global_ubo, gpu_buffer* uniform_buffer, uint32_t frame_num) {
-    VkCommandBuffer command_buffer;
-    create_one_time_command_buffer(state, &command_buffer);
+bool update_uniform_buffer() {
+    uint8_t* memory_pointer = (uint8_t*)state->global_uniform_buffer.memory_pointer;
+    memory_pointer += state->current_frame_index * sizeof(*state->global_ubo);
 
-    static constexpr uint64_t buffer_size = sizeof(*global_ubo);
-    uint64_t destination_offset = frame_num * buffer_size;
-
-    gpu_buffer ubo_uploader;
-    create_uploader_buffer(state, buffer_size, &ubo_uploader);
-
-    memcpy(ubo_uploader.memory_pointer, global_ubo, buffer_size);
-
-    copy_to_gpu_buffer(command_buffer, &ubo_uploader, uniform_buffer, destination_offset);
-
-    end_one_time_command_buffer(state, command_buffer, state->graphics_queue);
-
-    destroy_gpu_buffer(state, &ubo_uploader);
+    memcpy(memory_pointer, state->global_ubo, sizeof(*state->global_ubo));
 
     return true;
 }

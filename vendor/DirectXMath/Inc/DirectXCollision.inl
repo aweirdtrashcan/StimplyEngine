@@ -33,7 +33,7 @@ namespace MathInternal
     // Return true if any of the elements of a 3 vector are equal to 0xffffffff.
     // Slightly more efficient than using XMVector3EqualInt.
     //-----------------------------------------------------------------------------
-    inline bool XMVector3AnyTrue(_In_ FXMVECTOR V) noexcept
+    inline bool XMVector3AnyTrue(FXMVECTOR V) noexcept
     {
         // Duplicate the fourth element from the first element.
         XMVECTOR C = XMVectorSwizzle<XM_SWIZZLE_X, XM_SWIZZLE_Y, XM_SWIZZLE_Z, XM_SWIZZLE_X>(V);
@@ -46,7 +46,7 @@ namespace MathInternal
     // Return true if all of the elements of a 3 vector are equal to 0xffffffff.
     // Slightly more efficient than using XMVector3EqualInt.
     //-----------------------------------------------------------------------------
-    inline bool XMVector3AllTrue(_In_ FXMVECTOR V) noexcept
+    inline bool XMVector3AllTrue(FXMVECTOR V) noexcept
     {
         // Duplicate the fourth element from the first element.
         XMVECTOR C = XMVectorSwizzle<XM_SWIZZLE_X, XM_SWIZZLE_Y, XM_SWIZZLE_Z, XM_SWIZZLE_X>(V);
@@ -63,7 +63,7 @@ namespace MathInternal
     //-----------------------------------------------------------------------------
     // Return true if the vector is a unit vector (length == 1).
     //-----------------------------------------------------------------------------
-    inline bool XMVector3IsUnit(_In_ FXMVECTOR V) noexcept
+    inline bool XMVector3IsUnit(FXMVECTOR V) noexcept
     {
         XMVECTOR Difference = XMVectorSubtract(XMVector3Length(V), XMVectorSplatOne());
         return XMVector4Less(XMVectorAbs(Difference), g_UnitVectorEpsilon);
@@ -72,7 +72,7 @@ namespace MathInternal
     //-----------------------------------------------------------------------------
     // Return true if the quaterion is a unit quaternion.
     //-----------------------------------------------------------------------------
-    inline bool XMQuaternionIsUnit(_In_ FXMVECTOR Q) noexcept
+    inline bool XMQuaternionIsUnit(FXMVECTOR Q) noexcept
     {
         XMVECTOR Difference = XMVectorSubtract(XMVector4Length(Q), XMVectorSplatOne());
         return XMVector4Less(XMVectorAbs(Difference), g_UnitQuaternionEpsilon);
@@ -81,7 +81,7 @@ namespace MathInternal
     //-----------------------------------------------------------------------------
     // Return true if the plane is a unit plane.
     //-----------------------------------------------------------------------------
-    inline bool XMPlaneIsUnit(_In_ FXMVECTOR Plane) noexcept
+    inline bool XMPlaneIsUnit(FXMVECTOR Plane) noexcept
     {
         XMVECTOR Difference = XMVectorSubtract(XMVector3Length(Plane), XMVectorSplatOne());
         return XMVector4Less(XMVectorAbs(Difference), g_UnitPlaneEpsilon);
@@ -90,7 +90,7 @@ namespace MathInternal
 #endif // _PREFAST_ || !NDEBUG
 
     //-----------------------------------------------------------------------------
-    inline XMVECTOR XMPlaneTransform(_In_ FXMVECTOR Plane, _In_ FXMVECTOR Rotation, _In_ FXMVECTOR Translation) noexcept
+    inline XMVECTOR XMPlaneTransform(FXMVECTOR Plane, FXMVECTOR Rotation, FXMVECTOR Translation) noexcept
     {
         XMVECTOR vNormal = XMVector3Rotate(Plane, Rotation);
         XMVECTOR vD = XMVectorSubtract(XMVectorSplatW(Plane), XMVector3Dot(vNormal, Translation));
@@ -101,7 +101,7 @@ namespace MathInternal
     //-----------------------------------------------------------------------------
     // Return the point on the line segement (S1, S2) nearest the point P.
     //-----------------------------------------------------------------------------
-    inline XMVECTOR PointOnLineSegmentNearestPoint(_In_ FXMVECTOR S1, _In_ FXMVECTOR S2, _In_ FXMVECTOR P) noexcept
+    inline XMVECTOR PointOnLineSegmentNearestPoint(FXMVECTOR S1, FXMVECTOR S2, FXMVECTOR P) noexcept
     {
         XMVECTOR Dir = XMVectorSubtract(S2, S1);
         XMVECTOR Projection = XMVectorSubtract(XMVector3Dot(P, Dir), XMVector3Dot(S1, Dir));
@@ -125,7 +125,7 @@ namespace MathInternal
     // Test if the point (P) on the plane of the triangle is inside the triangle
     // (V0, V1, V2).
     //-----------------------------------------------------------------------------
-    inline XMVECTOR XM_CALLCONV PointOnPlaneInsideTriangle(_In_ FXMVECTOR P, _In_ FXMVECTOR V0, _In_ FXMVECTOR V1, _In_ GXMVECTOR V2) noexcept
+    inline XMVECTOR XM_CALLCONV PointOnPlaneInsideTriangle(FXMVECTOR P, FXMVECTOR V0, FXMVECTOR V1, GXMVECTOR V2) noexcept
     {
         // Compute the triangle normal.
         XMVECTOR N = XMVector3Cross(XMVectorSubtract(V2, V0), XMVectorSubtract(V1, V0));
@@ -148,7 +148,7 @@ namespace MathInternal
     }
 
     //-----------------------------------------------------------------------------
-    inline bool SolveCubic(_In_ float e, _In_ float f, _In_ float g, _Out_ float* t, _Out_ float* u, _Out_ float* v) noexcept
+    inline bool SolveCubic(float e, float f, float g, float* t, float* u, float* v) noexcept
     {
         float p, q, h, rc, d, theta, costh3, sinth3;
 
@@ -188,8 +188,8 @@ namespace MathInternal
     }
 
     //-----------------------------------------------------------------------------
-    inline XMVECTOR CalculateEigenVector(_In_ float m11, _In_ float m12, _In_ float m13,
-        _In_ float m22, _In_ float m23, _In_ float m33, _In_ float e) noexcept
+    inline XMVECTOR CalculateEigenVector(float m11, float m12, float m13,
+        float m22, float m23, float m33, float e) noexcept
     {
         float fTmp[3];
         fTmp[0] = m12 * m23 - m13 * (m22 - e);
@@ -257,10 +257,10 @@ namespace MathInternal
     }
 
     //-----------------------------------------------------------------------------
-    inline bool CalculateEigenVectors(_In_ float m11, _In_ float m12, _In_ float m13,
-        _In_ float m22, _In_ float m23, _In_ float m33,
-        _In_ float e1, _In_ float e2, _In_ float e3,
-        _Out_ XMVECTOR* pV1, _Out_ XMVECTOR* pV2, _Out_ XMVECTOR* pV3) noexcept
+    inline bool CalculateEigenVectors(float m11, float m12, float m13,
+        float m22, float m23, float m33,
+        float e1, float e2, float e3,
+        XMVECTOR* pV1, XMVECTOR* pV2, XMVECTOR* pV3) noexcept
     {
         *pV1 = DirectX::MathInternal::CalculateEigenVector(m11, m12, m13, m22, m23, m33, e1);
         *pV2 = DirectX::MathInternal::CalculateEigenVector(m11, m12, m13, m22, m23, m33, e2);
@@ -352,9 +352,9 @@ namespace MathInternal
     }
 
     //-----------------------------------------------------------------------------
-    inline bool CalculateEigenVectorsFromCovarianceMatrix(_In_ float Cxx, _In_ float Cyy, _In_ float Czz,
-        _In_ float Cxy, _In_ float Cxz, _In_ float Cyz,
-        _Out_ XMVECTOR* pV1, _Out_ XMVECTOR* pV2, _Out_ XMVECTOR* pV3) noexcept
+    inline bool CalculateEigenVectorsFromCovarianceMatrix(float Cxx, float Cyy, float Czz,
+        float Cxy, float Cxz, float Cyz,
+        XMVECTOR* pV1, XMVECTOR* pV2, XMVECTOR* pV3) noexcept
     {
         // Calculate the eigenvalues by solving a cubic equation.
         float e = -(Cxx + Cyy + Czz);
@@ -401,8 +401,8 @@ namespace MathInternal
     }
 
     //-----------------------------------------------------------------------------
-    inline void FastIntersectSpherePlane(_In_ FXMVECTOR Center, _In_ FXMVECTOR Radius, _In_ FXMVECTOR Plane,
-        _Out_ XMVECTOR& Outside, _Out_ XMVECTOR& Inside) noexcept
+    inline void FastIntersectSpherePlane(FXMVECTOR Center, FXMVECTOR Radius, FXMVECTOR Plane,
+        XMVECTOR& Outside, XMVECTOR& Inside) noexcept
     {
         XMVECTOR Dist = XMVector4Dot(Center, Plane);
 
@@ -414,8 +414,8 @@ namespace MathInternal
     }
 
     //-----------------------------------------------------------------------------
-    inline void FastIntersectAxisAlignedBoxPlane(_In_ FXMVECTOR Center, _In_ FXMVECTOR Extents, _In_ FXMVECTOR Plane,
-        _Out_ XMVECTOR& Outside, _Out_ XMVECTOR& Inside) noexcept
+    inline void FastIntersectAxisAlignedBoxPlane(FXMVECTOR Center, FXMVECTOR Extents, FXMVECTOR Plane,
+        XMVECTOR& Outside, XMVECTOR& Inside) noexcept
     {
         // Compute the distance to the center of the box.
         XMVECTOR Dist = XMVector4Dot(Center, Plane);
@@ -436,10 +436,10 @@ namespace MathInternal
 
     //-----------------------------------------------------------------------------
     inline void XM_CALLCONV FastIntersectOrientedBoxPlane(
-        _In_ FXMVECTOR Center, _In_ FXMVECTOR Extents, _In_ FXMVECTOR Axis0,
-        _In_ GXMVECTOR Axis1,
-        _In_ HXMVECTOR Axis2, _In_ HXMVECTOR Plane,
-        _Out_ XMVECTOR& Outside, _Out_ XMVECTOR& Inside) noexcept
+        FXMVECTOR Center, FXMVECTOR Extents, FXMVECTOR Axis0,
+        GXMVECTOR Axis1,
+        HXMVECTOR Axis2, HXMVECTOR Plane,
+        XMVECTOR& Outside, XMVECTOR& Inside) noexcept
     {
         // Compute the distance to the center of the box.
         XMVECTOR Dist = XMVector4Dot(Center, Plane);
@@ -463,11 +463,11 @@ namespace MathInternal
 
     //-----------------------------------------------------------------------------
     inline void XM_CALLCONV FastIntersectFrustumPlane(
-        _In_ FXMVECTOR Point0, _In_ FXMVECTOR Point1, _In_ FXMVECTOR Point2,
-        _In_ GXMVECTOR Point3,
-        _In_ HXMVECTOR Point4, _In_ HXMVECTOR Point5,
-        _In_ CXMVECTOR Point6, _In_ CXMVECTOR Point7, _In_ CXMVECTOR Plane,
-        _Out_ XMVECTOR& Outside, _Out_ XMVECTOR& Inside) noexcept
+        FXMVECTOR Point0, FXMVECTOR Point1, FXMVECTOR Point2,
+        GXMVECTOR Point3,
+        HXMVECTOR Point4, HXMVECTOR Point5,
+        CXMVECTOR Point6, CXMVECTOR Point7, CXMVECTOR Plane,
+        XMVECTOR& Outside, XMVECTOR& Inside) noexcept
     {
         // Find the min/max projection of the frustum onto the plane normal.
         XMVECTOR Min, Max, Dist;

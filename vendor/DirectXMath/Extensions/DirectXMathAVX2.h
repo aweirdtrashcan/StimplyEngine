@@ -62,7 +62,7 @@ inline bool XMVerifyAVX2Support()
 // Vector
 //-------------------------------------------------------------------------------------
 
-inline XMVECTOR XM_CALLCONV XMVectorReplicatePtr( _In_  const float *pValue )
+inline XMVECTOR XM_CALLCONV XMVectorReplicatePtr( const float *pValue )
 {
     return _mm_broadcast_ss( pValue );
 }
@@ -110,7 +110,6 @@ inline XMVECTOR XM_CALLCONV XMVectorNegativeMultiplySubtract
 inline XMVECTOR XM_CALLCONV XMVectorSwizzle( FXMVECTOR V, uint32_t E0, uint32_t E1, uint32_t E2, uint32_t E3 )
 {
     assert( (E0 < 4) && (E1 < 4) && (E2 < 4) && (E3 < 4) );
-    _Analysis_assume_( (E0 < 4) && (E1 < 4) && (E2 < 4) && (E3 < 4) );
 
     unsigned int elem[4] = { E0, E1, E2, E3 };
     __m128i vControl = _mm_loadu_si128( reinterpret_cast<const __m128i *>(&elem[0]) );
@@ -120,7 +119,6 @@ inline XMVECTOR XM_CALLCONV XMVectorSwizzle( FXMVECTOR V, uint32_t E0, uint32_t 
 inline XMVECTOR XM_CALLCONV XMVectorPermute( FXMVECTOR V1, FXMVECTOR V2, uint32_t PermuteX, uint32_t PermuteY, uint32_t PermuteZ, uint32_t PermuteW )
 {
     assert( PermuteX <= 7 && PermuteY <= 7 && PermuteZ <= 7 && PermuteW <= 7 );
-    _Analysis_assume_( PermuteX <= 7 && PermuteY <= 7 && PermuteZ <= 7 && PermuteW <= 7 );
 
     static const XMVECTORU32 three = { { { 3, 3, 3, 3 } } };
 
@@ -142,21 +140,18 @@ inline XMVECTOR XM_CALLCONV XMVectorPermute( FXMVECTOR V1, FXMVECTOR V2, uint32_
 inline XMVECTOR XM_CALLCONV XMVectorShiftLeft(FXMVECTOR V1, FXMVECTOR V2, uint32_t Elements)
 {
     assert( Elements < 4 );
-    _Analysis_assume_( Elements < 4 );
     return AVX2::XMVectorPermute(V1, V2, Elements, ((Elements) + 1), ((Elements) + 2), ((Elements) + 3));
 }
 
 inline XMVECTOR XM_CALLCONV XMVectorRotateLeft(FXMVECTOR V, uint32_t Elements)
 {
     assert( Elements < 4 );
-    _Analysis_assume_( Elements < 4 );
     return AVX2::XMVectorSwizzle( V, Elements & 3, (Elements + 1) & 3, (Elements + 2) & 3, (Elements + 3) & 3 );
 }
 
 inline XMVECTOR XM_CALLCONV XMVectorRotateRight(FXMVECTOR V, uint32_t Elements)
 {
     assert( Elements < 4 );
-    _Analysis_assume_( Elements < 4 );
     return AVX2::XMVectorSwizzle( V, (4 - (Elements)) & 3, (5 - (Elements)) & 3, (6 - (Elements)) & 3, (7 - (Elements)) & 3 );
 }
 
@@ -635,11 +630,11 @@ inline PackedVector::HALF XMConvertFloatToHalf( float Value )
 
 inline float* XMConvertHalfToFloatStream
 (
-    _Out_writes_bytes_(sizeof(float)+OutputStride*(HalfCount-1)) float* pOutputStream, 
-     _In_ size_t      OutputStride, 
-    _In_reads_bytes_(2+InputStride*(HalfCount-1)) const PackedVector::HALF* pInputStream, 
-    _In_ size_t      InputStride, 
-    _In_ size_t      HalfCount
+    float* pOutputStream, 
+    size_t      OutputStride, 
+    const PackedVector::HALF* pInputStream, 
+    size_t      InputStride, 
+    size_t      HalfCount
 )
 {
     using namespace PackedVector;
@@ -817,11 +812,11 @@ inline float* XMConvertHalfToFloatStream
 
 inline PackedVector::HALF* XMConvertFloatToHalfStream
 (
-    _Out_writes_bytes_(2+OutputStride*(FloatCount-1)) PackedVector::HALF* pOutputStream, 
-    _In_ size_t       OutputStride, 
-    _In_reads_bytes_(sizeof(float)+InputStride*(FloatCount-1)) const float* pInputStream, 
-    _In_ size_t       InputStride, 
-    _In_ size_t       FloatCount
+    PackedVector::HALF* pOutputStream, 
+    size_t       OutputStride, 
+    const float* pInputStream, 
+    size_t       InputStride, 
+    size_t       FloatCount
 )
 {
     using namespace PackedVector;
@@ -999,14 +994,14 @@ inline PackedVector::HALF* XMConvertFloatToHalfStream
 // Half2
 //-------------------------------------------------------------------------------------
 
-inline XMVECTOR XM_CALLCONV XMLoadHalf2( _In_ const PackedVector::XMHALF2* pSource )
+inline XMVECTOR XM_CALLCONV XMLoadHalf2( const PackedVector::XMHALF2* pSource )
 {
     assert(pSource);
     __m128 V = _mm_load_ss( reinterpret_cast<const float*>(pSource) );
     return _mm_cvtph_ps( _mm_castps_si128( V ) );
 }
 
-inline void XM_CALLCONV XMStoreHalf2( _Out_ PackedVector::XMHALF2* pDestination, _In_ FXMVECTOR V )
+inline void XM_CALLCONV XMStoreHalf2( PackedVector::XMHALF2* pDestination, FXMVECTOR V )
 {
     assert(pDestination);
     __m128i V1 = _mm_cvtps_ph( V, 0 );
@@ -1018,14 +1013,14 @@ inline void XM_CALLCONV XMStoreHalf2( _Out_ PackedVector::XMHALF2* pDestination,
 // Half4
 //-------------------------------------------------------------------------------------
 
-inline XMVECTOR XM_CALLCONV XMLoadHalf4( _In_ const PackedVector::XMHALF4* pSource )
+inline XMVECTOR XM_CALLCONV XMLoadHalf4( const PackedVector::XMHALF4* pSource )
 {
     assert(pSource);
     __m128i V = _mm_loadl_epi64( reinterpret_cast<const __m128i*>(pSource) );
     return _mm_cvtph_ps( V );
 }
 
-inline void XM_CALLCONV XMStoreHalf4( _Out_ PackedVector::XMHALF4* pDestination, _In_ FXMVECTOR V )
+inline void XM_CALLCONV XMStoreHalf4( PackedVector::XMHALF4* pDestination, FXMVECTOR V )
 {
     assert(pDestination);
     __m128i V1 = _mm_cvtps_ph( V, 0 );

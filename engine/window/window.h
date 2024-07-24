@@ -20,6 +20,8 @@ public:
     void* create_vulkan_surface(void* instance) { return Platform::create_vulkan_surface(this, instance); }
     static void MessageBox(const char* title, const char* message);
 
+    void GetDimensions(int32_t* width, int32_t* height);
+
 private:
     void process_window_messages(const SDL_Event& event);
     void process_key_event(SDL_Keysym key);

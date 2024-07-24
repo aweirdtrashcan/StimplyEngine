@@ -124,7 +124,7 @@ inline XMVECTOR XM_CALLCONV XMVectorReplicate(float Value) noexcept
 
 //------------------------------------------------------------------------------
 // Initialize a vector with a replicated floating point value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorReplicatePtr(const float* pValue) noexcept
 {
 #if defined(_XM_NO_INTRINSICS_)
@@ -165,7 +165,7 @@ inline XMVECTOR XM_CALLCONV XMVectorReplicateInt(uint32_t Value) noexcept
 
 //------------------------------------------------------------------------------
 // Initialize a vector with a replicated integer value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorReplicateIntPtr(const uint32_t* pValue) noexcept
 {
 #if defined(_XM_NO_INTRINSICS_)
@@ -383,7 +383,6 @@ inline XMVECTOR XM_CALLCONV XMVectorSplatSignMask() noexcept
 inline float XM_CALLCONV XMVectorGetByIndex(FXMVECTOR V, size_t i) noexcept
 {
     assert(i < 4);
-    _Analysis_assume_(i < 4);
 #if defined(_XM_NO_INTRINSICS_)
     return V.vector4_f32[i];
 #else
@@ -448,12 +447,11 @@ inline float XM_CALLCONV XMVectorGetW(FXMVECTOR V) noexcept
 //------------------------------------------------------------------------------
 
 // Store a component indexed by i into a 32 bit float location in memory.
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorGetByIndexPtr(float* f, FXMVECTOR V, size_t i) noexcept
 {
     assert(f != nullptr);
     assert(i < 4);
-    _Analysis_assume_(i < 4);
 #if defined(_XM_NO_INTRINSICS_)
     *f = V.vector4_f32[i];
 #else
@@ -466,7 +464,7 @@ inline void XM_CALLCONV XMVectorGetByIndexPtr(float* f, FXMVECTOR V, size_t i) n
 //------------------------------------------------------------------------------
 
 // Store the X component into a 32 bit float location in memory.
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorGetXPtr(float* x, FXMVECTOR V) noexcept
 {
     assert(x != nullptr);
@@ -480,7 +478,7 @@ inline void XM_CALLCONV XMVectorGetXPtr(float* x, FXMVECTOR V) noexcept
 }
 
 // Store the Y component into a 32 bit float location in memory.
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorGetYPtr(float* y, FXMVECTOR V) noexcept
 {
     assert(y != nullptr);
@@ -497,7 +495,7 @@ inline void XM_CALLCONV XMVectorGetYPtr(float* y, FXMVECTOR V) noexcept
 }
 
 // Store the Z component into a 32 bit float location in memory.
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorGetZPtr(float* z, FXMVECTOR V) noexcept
 {
     assert(z != nullptr);
@@ -514,7 +512,7 @@ inline void XM_CALLCONV XMVectorGetZPtr(float* z, FXMVECTOR V) noexcept
 }
 
 // Store the W component into a 32 bit float location in memory.
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorGetWPtr(float* w, FXMVECTOR V) noexcept
 {
     assert(w != nullptr);
@@ -537,7 +535,6 @@ inline void XM_CALLCONV XMVectorGetWPtr(float* w, FXMVECTOR V) noexcept
 inline uint32_t XM_CALLCONV XMVectorGetIntByIndex(FXMVECTOR V, size_t i) noexcept
 {
     assert(i < 4);
-    _Analysis_assume_(i < 4);
 #if defined(_XM_NO_INTRINSICS_)
     return V.vector4_u32[i];
 #else
@@ -612,12 +609,11 @@ inline uint32_t XM_CALLCONV XMVectorGetIntW(FXMVECTOR V) noexcept
 //------------------------------------------------------------------------------
 
 // Store a component indexed by i into a 32 bit integer location in memory.
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorGetIntByIndexPtr(uint32_t* x, FXMVECTOR V, size_t i) noexcept
 {
     assert(x != nullptr);
     assert(i < 4);
-    _Analysis_assume_(i < 4);
 #if defined(_XM_NO_INTRINSICS_)
     *x = V.vector4_u32[i];
 #else
@@ -630,7 +626,7 @@ inline void XM_CALLCONV XMVectorGetIntByIndexPtr(uint32_t* x, FXMVECTOR V, size_
 //------------------------------------------------------------------------------
 
 // Store the X component into a 32 bit integer location in memory.
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorGetIntXPtr(uint32_t* x, FXMVECTOR V) noexcept
 {
     assert(x != nullptr);
@@ -644,7 +640,7 @@ inline void XM_CALLCONV XMVectorGetIntXPtr(uint32_t* x, FXMVECTOR V) noexcept
 }
 
 // Store the Y component into a 32 bit integer location in memory.
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorGetIntYPtr(uint32_t* y, FXMVECTOR V) noexcept
 {
     assert(y != nullptr);
@@ -662,7 +658,7 @@ inline void XM_CALLCONV XMVectorGetIntYPtr(uint32_t* y, FXMVECTOR V) noexcept
 }
 
 // Store the Z component into a 32 bit integer locaCantion in memory.
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorGetIntZPtr(uint32_t* z, FXMVECTOR V) noexcept
 {
     assert(z != nullptr);
@@ -680,7 +676,7 @@ inline void XM_CALLCONV XMVectorGetIntZPtr(uint32_t* z, FXMVECTOR V) noexcept
 }
 
 // Store the W component into a 32 bit integer location in memory.
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorGetIntWPtr(uint32_t* w, FXMVECTOR V) noexcept
 {
     assert(w != nullptr);
@@ -703,7 +699,6 @@ inline void XM_CALLCONV XMVectorGetIntWPtr(uint32_t* w, FXMVECTOR V) noexcept
 inline XMVECTOR XM_CALLCONV XMVectorSetByIndex(FXMVECTOR V, float f, size_t i) noexcept
 {
     assert(i < 4);
-    _Analysis_assume_(i < 4);
     XMVECTORF32 U;
     U.v = V;
     U.f[i] = f;
@@ -824,12 +819,11 @@ inline XMVECTOR XM_CALLCONV XMVectorSetW(FXMVECTOR V, float w) noexcept
 //------------------------------------------------------------------------------
 
 // Sets a component of a vector to a floating point value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorSetByIndexPtr(FXMVECTOR V, const float* f, size_t i) noexcept
 {
     assert(f != nullptr);
     assert(i < 4);
-    _Analysis_assume_(i < 4);
     XMVECTORF32 U;
     U.v = V;
     U.f[i] = *f;
@@ -839,7 +833,7 @@ inline XMVECTOR XM_CALLCONV XMVectorSetByIndexPtr(FXMVECTOR V, const float* f, s
 //------------------------------------------------------------------------------
 
 // Sets the X component of a vector to a floating point value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorSetXPtr(FXMVECTOR V, const float* x) noexcept
 {
     assert(x != nullptr);
@@ -861,7 +855,7 @@ inline XMVECTOR XM_CALLCONV XMVectorSetXPtr(FXMVECTOR V, const float* x) noexcep
 }
 
 // Sets the Y component of a vector to a floating point value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorSetYPtr(FXMVECTOR V, const float* y) noexcept
 {
     assert(y != nullptr);
@@ -889,7 +883,7 @@ inline XMVECTOR XM_CALLCONV XMVectorSetYPtr(FXMVECTOR V, const float* y) noexcep
 }
 
 // Sets the Z component of a vector to a floating point value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorSetZPtr(FXMVECTOR V, const float* z) noexcept
 {
     assert(z != nullptr);
@@ -917,7 +911,7 @@ inline XMVECTOR XM_CALLCONV XMVectorSetZPtr(FXMVECTOR V, const float* z) noexcep
 }
 
 // Sets the W component of a vector to a floating point value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorSetWPtr(FXMVECTOR V, const float* w) noexcept
 {
     assert(w != nullptr);
@@ -950,7 +944,6 @@ inline XMVECTOR XM_CALLCONV XMVectorSetWPtr(FXMVECTOR V, const float* w) noexcep
 inline XMVECTOR XM_CALLCONV XMVectorSetIntByIndex(FXMVECTOR V, uint32_t x, size_t i) noexcept
 {
     assert(i < 4);
-    _Analysis_assume_(i < 4);
     XMVECTORU32 tmp;
     tmp.v = V;
     tmp.u[i] = x;
@@ -1072,12 +1065,11 @@ inline XMVECTOR XM_CALLCONV XMVectorSetIntW(FXMVECTOR V, uint32_t w) noexcept
 //------------------------------------------------------------------------------
 
 // Sets a component of a vector to an integer value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorSetIntByIndexPtr(FXMVECTOR V, const uint32_t* x, size_t i) noexcept
 {
     assert(x != nullptr);
     assert(i < 4);
-    _Analysis_assume_(i < 4);
     XMVECTORU32 tmp;
     tmp.v = V;
     tmp.u[i] = *x;
@@ -1087,7 +1079,7 @@ inline XMVECTOR XM_CALLCONV XMVectorSetIntByIndexPtr(FXMVECTOR V, const uint32_t
 //------------------------------------------------------------------------------
 
 // Sets the X component of a vector to an integer value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorSetIntXPtr(FXMVECTOR V, const uint32_t* x) noexcept
 {
     assert(x != nullptr);
@@ -1109,7 +1101,7 @@ inline XMVECTOR XM_CALLCONV XMVectorSetIntXPtr(FXMVECTOR V, const uint32_t* x) n
 }
 
 // Sets the Y component of a vector to an integer value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorSetIntYPtr(FXMVECTOR V, const uint32_t* y) noexcept
 {
     assert(y != nullptr);
@@ -1137,7 +1129,7 @@ inline XMVECTOR XM_CALLCONV XMVectorSetIntYPtr(FXMVECTOR V, const uint32_t* y) n
 }
 
 // Sets the Z component of a vector to an integer value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorSetIntZPtr(FXMVECTOR V, const uint32_t* z) noexcept
 {
     assert(z != nullptr);
@@ -1165,7 +1157,7 @@ inline XMVECTOR XM_CALLCONV XMVectorSetIntZPtr(FXMVECTOR V, const uint32_t* z) n
 }
 
 // Sets the W component of a vector to an integer value passed by pointer
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorSetIntWPtr(FXMVECTOR V, const uint32_t* w) noexcept
 {
     assert(w != nullptr);
@@ -1204,7 +1196,6 @@ inline XMVECTOR XM_CALLCONV XMVectorSwizzle
 ) noexcept
 {
     assert((E0 < 4) && (E1 < 4) && (E2 < 4) && (E3 < 4));
-    _Analysis_assume_((E0 < 4) && (E1 < 4) && (E2 < 4) && (E3 < 4));
 #if defined(_XM_NO_INTRINSICS_)
 
     XMVECTORF32 Result = { { {
@@ -1266,7 +1257,6 @@ inline XMVECTOR XM_CALLCONV XMVectorPermute
 ) noexcept
 {
     assert(PermuteX <= 7 && PermuteY <= 7 && PermuteZ <= 7 && PermuteW <= 7);
-    _Analysis_assume_(PermuteX <= 7 && PermuteY <= 7 && PermuteZ <= 7 && PermuteW <= 7);
 
 #if defined(_XM_ARM_NEON_INTRINSICS_) && !defined(_XM_NO_INTRINSICS_)
     static const uint32_t ControlElement[8] =
@@ -1382,10 +1372,6 @@ inline XMVECTOR XM_CALLCONV XMVectorSelectControl
     assert(VectorIndex1 < 2);
     assert(VectorIndex2 < 2);
     assert(VectorIndex3 < 2);
-    _Analysis_assume_(VectorIndex0 < 2);
-    _Analysis_assume_(VectorIndex1 < 2);
-    _Analysis_assume_(VectorIndex2 < 2);
-    _Analysis_assume_(VectorIndex3 < 2);
 
     ControlVector.vector4_u32[0] = ControlElement[VectorIndex0];
     ControlVector.vector4_u32[1] = ControlElement[VectorIndex1];
@@ -1480,7 +1466,6 @@ inline XMVECTOR XM_CALLCONV XMVectorMergeZW
 inline XMVECTOR XM_CALLCONV XMVectorShiftLeft(FXMVECTOR V1, FXMVECTOR V2, uint32_t Elements) noexcept
 {
     assert(Elements < 4);
-    _Analysis_assume_(Elements < 4);
     return XMVectorPermute(V1, V2, Elements, ((Elements)+1), ((Elements)+2), ((Elements)+3));
 }
 
@@ -1489,7 +1474,6 @@ inline XMVECTOR XM_CALLCONV XMVectorShiftLeft(FXMVECTOR V1, FXMVECTOR V2, uint32
 inline XMVECTOR XM_CALLCONV XMVectorRotateLeft(FXMVECTOR V, uint32_t Elements) noexcept
 {
     assert(Elements < 4);
-    _Analysis_assume_(Elements < 4);
     return XMVectorSwizzle(V, Elements & 3, (Elements + 1) & 3, (Elements + 2) & 3, (Elements + 3) & 3);
 }
 
@@ -1498,7 +1482,6 @@ inline XMVECTOR XM_CALLCONV XMVectorRotateLeft(FXMVECTOR V, uint32_t Elements) n
 inline XMVECTOR XM_CALLCONV XMVectorRotateRight(FXMVECTOR V, uint32_t Elements) noexcept
 {
     assert(Elements < 4);
-    _Analysis_assume_(Elements < 4);
     return XMVectorSwizzle(V, (4 - (Elements)) & 3, (5 - (Elements)) & 3, (6 - (Elements)) & 3, (7 - (Elements)) & 3);
 }
 
@@ -1544,7 +1527,7 @@ inline XMVECTOR XM_CALLCONV XMVectorEqual
 
 //------------------------------------------------------------------------------
 
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorEqualR
 (
     uint32_t* pCR,
@@ -1642,7 +1625,7 @@ inline XMVECTOR XM_CALLCONV XMVectorEqualInt
 
 //------------------------------------------------------------------------------
 
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorEqualIntR
 (
     uint32_t* pCR,
@@ -1830,7 +1813,7 @@ inline XMVECTOR XM_CALLCONV XMVectorGreater
 
 //------------------------------------------------------------------------------
 
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorGreaterR
 (
     uint32_t* pCR,
@@ -1924,7 +1907,7 @@ inline XMVECTOR XM_CALLCONV XMVectorGreaterOrEqual
 
 //------------------------------------------------------------------------------
 
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorGreaterOrEqualR
 (
     uint32_t* pCR,
@@ -2084,7 +2067,7 @@ inline XMVECTOR XM_CALLCONV XMVectorInBounds
 
 //------------------------------------------------------------------------------
 
-_Use_decl_annotations_
+
 inline XMVECTOR XM_CALLCONV XMVectorInBoundsR
 (
     uint32_t* pCR,
@@ -4390,7 +4373,7 @@ inline XMVECTOR XM_CALLCONV XMVectorCos(FXMVECTOR V) noexcept
 
 //------------------------------------------------------------------------------
 
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorSinCos
 (
     XMVECTOR* pSin,
@@ -5273,7 +5256,7 @@ inline XMVECTOR XM_CALLCONV XMVectorCosEst(FXMVECTOR V) noexcept
 
 //------------------------------------------------------------------------------
 
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVectorSinCosEst
 (
     XMVECTOR* pSin,
@@ -7532,7 +7515,7 @@ inline XMVECTOR XM_CALLCONV XMVector2Transform
 
 //------------------------------------------------------------------------------
 
-_Use_decl_annotations_
+
 inline XMFLOAT4* XM_CALLCONV XMVector2TransformStream
 (
     XMFLOAT4* pOutputStream,
@@ -7547,10 +7530,8 @@ inline XMFLOAT4* XM_CALLCONV XMVector2TransformStream
     assert(pInputStream != nullptr);
 
     assert(InputStride >= sizeof(XMFLOAT2));
-    _Analysis_assume_(InputStride >= sizeof(XMFLOAT2));
 
     assert(OutputStride >= sizeof(XMFLOAT4));
-    _Analysis_assume_(OutputStride >= sizeof(XMFLOAT4));
 
 #if defined(_XM_NO_INTRINSICS_)
 
@@ -7968,7 +7949,7 @@ inline XMVECTOR XM_CALLCONV XMVector2TransformCoord
 
 //------------------------------------------------------------------------------
 
-_Use_decl_annotations_
+
 inline XMFLOAT2* XM_CALLCONV XMVector2TransformCoordStream
 (
     XMFLOAT2* pOutputStream,
@@ -7983,10 +7964,8 @@ inline XMFLOAT2* XM_CALLCONV XMVector2TransformCoordStream
     assert(pInputStream != nullptr);
 
     assert(InputStride >= sizeof(XMFLOAT2));
-    _Analysis_assume_(InputStride >= sizeof(XMFLOAT2));
 
     assert(OutputStride >= sizeof(XMFLOAT2));
-    _Analysis_assume_(OutputStride >= sizeof(XMFLOAT2));
 
 #if defined(_XM_NO_INTRINSICS_)
 
@@ -8511,7 +8490,7 @@ inline XMVECTOR XM_CALLCONV XMVector2TransformNormal
 
 //------------------------------------------------------------------------------
 
-_Use_decl_annotations_
+
 inline XMFLOAT2* XM_CALLCONV XMVector2TransformNormalStream
 (
     XMFLOAT2* pOutputStream,
@@ -8526,10 +8505,8 @@ inline XMFLOAT2* XM_CALLCONV XMVector2TransformNormalStream
     assert(pInputStream != nullptr);
 
     assert(InputStride >= sizeof(XMFLOAT2));
-    _Analysis_assume_(InputStride >= sizeof(XMFLOAT2));
 
     assert(OutputStride >= sizeof(XMFLOAT2));
-    _Analysis_assume_(OutputStride >= sizeof(XMFLOAT2));
 
 #if defined(_XM_NO_INTRINSICS_)
 
@@ -10281,7 +10258,7 @@ inline XMVECTOR XM_CALLCONV XMVector3LinePointDistance
 
 //------------------------------------------------------------------------------
 
-_Use_decl_annotations_
+
 inline void XM_CALLCONV XMVector3ComponentsFromNormal
 (
     XMVECTOR* pParallel,
@@ -10374,7 +10351,7 @@ inline XMVECTOR XM_CALLCONV XMVector3Transform
 #pragma prefast(disable : 26015 26019, "PREfast noise: Esp:1307" )
 #endif
 
-_Use_decl_annotations_
+
 inline XMFLOAT4* XM_CALLCONV XMVector3TransformStream
 (
     XMFLOAT4* pOutputStream,
@@ -10389,10 +10366,8 @@ inline XMFLOAT4* XM_CALLCONV XMVector3TransformStream
     assert(pInputStream != nullptr);
 
     assert(InputStride >= sizeof(XMFLOAT3));
-    _Analysis_assume_(InputStride >= sizeof(XMFLOAT3));
 
     assert(OutputStride >= sizeof(XMFLOAT4));
-    _Analysis_assume_(OutputStride >= sizeof(XMFLOAT4));
 
 #if defined(_XM_NO_INTRINSICS_)
 
@@ -10747,7 +10722,7 @@ inline XMVECTOR XM_CALLCONV XMVector3TransformCoord
 #pragma prefast(disable : 26015 26019, "PREfast noise: Esp:1307" )
 #endif
 
-_Use_decl_annotations_
+
 inline XMFLOAT3* XM_CALLCONV XMVector3TransformCoordStream
 (
     XMFLOAT3* pOutputStream,
@@ -10762,10 +10737,8 @@ inline XMFLOAT3* XM_CALLCONV XMVector3TransformCoordStream
     assert(pInputStream != nullptr);
 
     assert(InputStride >= sizeof(XMFLOAT3));
-    _Analysis_assume_(InputStride >= sizeof(XMFLOAT3));
 
     assert(OutputStride >= sizeof(XMFLOAT3));
-    _Analysis_assume_(OutputStride >= sizeof(XMFLOAT3));
 
 #if defined(_XM_NO_INTRINSICS_)
 
@@ -11262,7 +11235,7 @@ inline XMVECTOR XM_CALLCONV XMVector3TransformNormal
 #pragma prefast(disable : 26015 26019, "PREfast noise: Esp:1307" )
 #endif
 
-_Use_decl_annotations_
+
 inline XMFLOAT3* XM_CALLCONV XMVector3TransformNormalStream
 (
     XMFLOAT3* pOutputStream,
@@ -11277,10 +11250,8 @@ inline XMFLOAT3* XM_CALLCONV XMVector3TransformNormalStream
     assert(pInputStream != nullptr);
 
     assert(InputStride >= sizeof(XMFLOAT3));
-    _Analysis_assume_(InputStride >= sizeof(XMFLOAT3));
 
     assert(OutputStride >= sizeof(XMFLOAT3));
-    _Analysis_assume_(OutputStride >= sizeof(XMFLOAT3));
 
 #if defined(_XM_NO_INTRINSICS_)
 
@@ -11684,7 +11655,7 @@ inline XMVECTOR XM_CALLCONV XMVector3Project
 #pragma prefast(disable : 26015 26019, "PREfast noise: Esp:1307" )
 #endif
 
-_Use_decl_annotations_
+
 inline XMFLOAT3* XM_CALLCONV XMVector3ProjectStream
 (
     XMFLOAT3* pOutputStream,
@@ -11707,10 +11678,8 @@ inline XMFLOAT3* XM_CALLCONV XMVector3ProjectStream
     assert(pInputStream != nullptr);
 
     assert(InputStride >= sizeof(XMFLOAT3));
-    _Analysis_assume_(InputStride >= sizeof(XMFLOAT3));
 
     assert(OutputStride >= sizeof(XMFLOAT3));
-    _Analysis_assume_(OutputStride >= sizeof(XMFLOAT3));
 
 #if defined(_XM_NO_INTRINSICS_)
 
@@ -12229,7 +12198,7 @@ inline XMVECTOR XM_CALLCONV XMVector3Unproject
 #pragma prefast(disable : 26015 26019, "PREfast noise: Esp:1307" )
 #endif
 
-_Use_decl_annotations_
+
 inline XMFLOAT3* XM_CALLCONV XMVector3UnprojectStream
 (
     XMFLOAT3* pOutputStream,
@@ -12252,10 +12221,8 @@ inline XMFLOAT3* XM_CALLCONV XMVector3UnprojectStream
     assert(pInputStream != nullptr);
 
     assert(InputStride >= sizeof(XMFLOAT3));
-    _Analysis_assume_(InputStride >= sizeof(XMFLOAT3));
 
     assert(OutputStride >= sizeof(XMFLOAT3));
-    _Analysis_assume_(OutputStride >= sizeof(XMFLOAT3));
 
 #if defined(_XM_NO_INTRINSICS_)
 
@@ -14281,7 +14248,7 @@ inline XMVECTOR XM_CALLCONV XMVector4Transform
 }
 
 //------------------------------------------------------------------------------
-_Use_decl_annotations_
+
 inline XMFLOAT4* XM_CALLCONV XMVector4TransformStream
 (
     XMFLOAT4* pOutputStream,
@@ -14296,10 +14263,8 @@ inline XMFLOAT4* XM_CALLCONV XMVector4TransformStream
     assert(pInputStream != nullptr);
 
     assert(InputStride >= sizeof(XMFLOAT4));
-    _Analysis_assume_(InputStride >= sizeof(XMFLOAT4));
 
     assert(OutputStride >= sizeof(XMFLOAT4));
-    _Analysis_assume_(OutputStride >= sizeof(XMFLOAT4));
 
 #if defined(_XM_NO_INTRINSICS_)
 

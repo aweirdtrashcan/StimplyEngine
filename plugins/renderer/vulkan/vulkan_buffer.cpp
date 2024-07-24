@@ -165,6 +165,14 @@ bool create_gpu_buffer(const internal_vulkan_renderer_state* state, size_t size,
         goto cleanup;
     }
 
+    if (memory_properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+        res = vkMapMemory(state->logical_device, out_gpu_buffer->memory, 0, VK_WHOLE_SIZE, 0, &out_gpu_buffer->memory_pointer);
+        if (res != VK_SUCCESS) {
+            Logger::debug("create_gpu_buffer: Failed to map buffer memory");
+            goto cleanup;
+        }
+    }
+
     out_gpu_buffer->size = memory_requirements.size;
     out_gpu_buffer->memory_property_flags = memory_properties;
 

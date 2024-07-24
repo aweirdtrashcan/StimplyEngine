@@ -777,7 +777,7 @@ inline XMMATRIX XM_CALLCONV XMMatrixTranspose(FXMMATRIX M) noexcept
 
 //------------------------------------------------------------------------------
 // Return the inverse and the determinant of a 4x4 matrix
-_Use_decl_annotations_
+
 inline XMMATRIX XM_CALLCONV XMMatrixInverse
 (
     XMVECTOR* pDeterminant,
@@ -1107,7 +1107,7 @@ inline XMVECTOR XM_CALLCONV XMMatrixDeterminant(FXMMATRIX M) noexcept
 
 #define XM3_DECOMP_EPSILON 0.0001f
 
-_Use_decl_annotations_
+
 inline bool XM_CALLCONV XMMatrixDecompose
 (
     XMVECTOR* outScale,
@@ -3226,7 +3226,7 @@ inline XMMATRIX::XMMATRIX
 }
 
 //------------------------------------------------------------------------------
-_Use_decl_annotations_
+
 inline XMMATRIX::XMMATRIX(const float* pArray) noexcept
 {
     assert(pArray != nullptr);
@@ -3445,7 +3445,7 @@ inline XMMATRIX XM_CALLCONV operator*
  ****************************************************************************/
 
  //------------------------------------------------------------------------------
-_Use_decl_annotations_
+
 inline XMFLOAT3X3::XMFLOAT3X3(const float* pArray) noexcept
 {
     assert(pArray != nullptr);
@@ -3465,7 +3465,7 @@ inline XMFLOAT3X3::XMFLOAT3X3(const float* pArray) noexcept
  ****************************************************************************/
 
  //------------------------------------------------------------------------------
-_Use_decl_annotations_
+
 inline XMFLOAT4X3::XMFLOAT4X3(const float* pArray) noexcept
 {
     assert(pArray != nullptr);
@@ -3494,7 +3494,7 @@ inline XMFLOAT4X3::XMFLOAT4X3(const float* pArray) noexcept
 ****************************************************************************/
 
 //------------------------------------------------------------------------------
-_Use_decl_annotations_
+
 inline XMFLOAT3X4::XMFLOAT3X4(const float* pArray) noexcept
 {
     assert(pArray != nullptr);
@@ -3522,7 +3522,7 @@ inline XMFLOAT3X4::XMFLOAT3X4(const float* pArray) noexcept
  ****************************************************************************/
 
  //------------------------------------------------------------------------------
-_Use_decl_annotations_
+
 inline XMFLOAT4X4::XMFLOAT4X4(const float* pArray) noexcept
 {
     assert(pArray != nullptr);

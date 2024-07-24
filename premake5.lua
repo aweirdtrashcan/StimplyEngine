@@ -30,6 +30,10 @@ project "Stimply-Engine"
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
         links { "SDL2main", "SDL2" }
+        buildoptions {
+            "-mavx2",
+            "-mfma"
+        }
     end
     targetdir "bin/%{cfg.buildcfg}"
        
@@ -62,6 +66,10 @@ project "Stimply-Game"
         defines { "RAPI= " }
         cppdialect "gnu++17"
         toolset "clang"
+        buildoptions {
+            "-mavx2",
+            "-mfma"
+        }
     end
     targetdir "bin/%{cfg.buildcfg}"
 
@@ -71,6 +79,9 @@ project "Stimply-Game"
     links { "Stimply-Engine" }
 
     includedirs { "engine/" }
+    
+    -- defines for DirectXMath
+    defines { "_XM_AVX2_INTRINSICS_", "_XM_AVX_INTRINSICS_", "_XM_SSE_INTRINSICS_", "_XM_SSE3_INTRINSICS_", "_XM_SSE4_INTRINSICS_", "_XM_FMA3_INTRINSICS_"  }
 
     filter "configurations:Debug"
         defines { "DEBUG", platform_define }
@@ -152,6 +163,10 @@ project "Stimply-Renderer-Backend-DX12"
         links { "SDL2main", "SDL2" }
         cppdialect "gnu++17"
         toolset "clang"
+        buildoptions {
+            "-mavx2",
+            "-mfma"
+        }
     end
     targetdir "bin/%{cfg.buildcfg}"
 

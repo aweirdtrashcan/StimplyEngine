@@ -60,8 +60,10 @@ struct internal_vulkan_renderer_state {
 
     // allocated per-frame aligned in 16 bits because of the DirectXMath
     // on top of that, Nvidia GPUs requires an alignment of 256 bits.
-    struct global_uniform_object* global_ubo;
+    struct GlobalUniformObject* global_ubo;
     gpu_buffer global_uniform_buffer;    
+
+    vulkan_shader* current_shader;
 };
 
 VkBool32 debug_utils_callback(VkDebugUtilsMessageSeverityFlagBitsEXT           messageSeverity,
@@ -160,6 +162,5 @@ bool end_one_time_command_buffer(const internal_vulkan_renderer_state* state, Vk
 
 VkResult submit_command_queue(VkSemaphore wait_semaphore, VkSemaphore signal_semaphore, VkFence fence, VkQueue queue, VkCommandBuffer command_buffer);
 
-bool update_uniform_buffer(const internal_vulkan_renderer_state* state, const global_uniform_object* global_ubo, gpu_buffer* uniform_buffer, uint32_t frame_num);
-
+bool update_uniform_buffer();
 }

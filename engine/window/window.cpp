@@ -1,5 +1,6 @@
 #include "window.h"
 
+#include "SDL2/SDL_video.h"
 #include "core/logger.h"
 #include "platform/platform.h"
 
@@ -47,6 +48,10 @@ list<const char*> Window::get_vulkan_required_instance_layers() const {
     SDL_Vulkan_GetInstanceExtensions(m_Window, &extension_count, extensions.data());
 
     return extensions;
+}
+
+void Window::GetDimensions(int32_t* width, int32_t* height) {
+    SDL_GetWindowSize(m_Window, width, height);
 }
 
 void Window::process_window_messages(const SDL_Event& event) {

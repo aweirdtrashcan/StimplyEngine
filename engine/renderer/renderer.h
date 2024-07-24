@@ -19,6 +19,9 @@ public:
     bool Draw();
     inline HANDLE CreateRenderItem(const RenderItemCreateInfo* renderItem) { return m_Interface.renderer_create_render_item(renderItem); }
     inline void DestroyRenderItem(HANDLE renderItem) { m_Interface.renderer_destroy_render_item(renderItem); }
+    inline void SetViewProjection(const void* view, const void* projection) {
+        
+    }
     
 private:
     [[nodiscard]] renderer_interface LoadRendererFunctions(RendererType type);

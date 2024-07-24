@@ -2,7 +2,7 @@
 #include "platform/platform.h"
 #include "vulkan_defines.h"
 #include "vulkan_internals.h"
-#include "../global_uniform_object.h"
+#include <renderer/global_uniform_object.h>
 
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
@@ -54,8 +54,8 @@ bool create_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader* 
             Logger::debug("Failed to create global descriptor sets");
             return false;
         }
-        uint64_t offset = i * sizeof(global_uniform_object);
-        update_descriptor_set(state, state->global_uniform_buffer.buffer, offset, sizeof(global_uniform_object), &out_shader->global_descriptor_sets[i], 0);
+        uint64_t offset = i * sizeof(GlobalUniformObject);
+        update_descriptor_set(state, state->global_uniform_buffer.buffer, offset, sizeof(GlobalUniformObject), &out_shader->global_descriptor_sets[i], 0);
     }
 
     uint32_t offset = 0;

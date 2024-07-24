@@ -15,5 +15,6 @@ DYNAMIC_RENDERER bool vulkan_draw_items();
 DYNAMIC_RENDERER bool vulkan_end_frame();
 DYNAMIC_RENDERER HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInfo);
 DYNAMIC_RENDERER void vulkan_destroy_render_item(HANDLE render_item);
+DYNAMIC_RENDERER void set_view_projection(const void* view_matrix, const void* projection_matrix);
 DYNAMIC_RENDERER HANDLE vulkan_create_texture(HANDLE state, uint32_t width, uint32_t height);
 }
