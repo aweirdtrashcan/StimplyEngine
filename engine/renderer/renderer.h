@@ -3,6 +3,8 @@
 #include "renderer/renderer_types.h"
 #include "renderer_interface.h"
 
+#include <DirectXMath.h>
+
 class Window;
 struct RenderItemCreateInfo;
 
@@ -19,7 +21,7 @@ public:
     bool Draw();
     inline HANDLE CreateRenderItem(const RenderItemCreateInfo* renderItem) { return m_Interface.renderer_create_render_item(renderItem); }
     inline void DestroyRenderItem(HANDLE renderItem) { m_Interface.renderer_destroy_render_item(renderItem); }
-    inline void SetViewProjection(const void* view, const void* projection) {
+    inline void SetViewProjection(const DirectX::XMFLOAT4X4* view, const DirectX::XMFLOAT4X4* projection) {
         
     }
     

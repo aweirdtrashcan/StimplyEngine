@@ -30,6 +30,7 @@ project "Stimply-Engine"
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
         links { "SDL2main", "SDL2" }
+        includedirs { "vendor/DirectXMath/Inc" }
         buildoptions {
             "-mavx2",
             "-mfma"
@@ -40,7 +41,7 @@ project "Stimply-Engine"
     architecture("x86_64")
     files { "engine/**.cpp", "engine/**.h" }
 
-    includedirs { "engine/", "vendor/", "vendor/DirectXMath/Inc", "$(VULKAN_SDK)/include", "./" }
+    includedirs { "engine/", "vendor/", "$(VULKAN_SDK)/include", "./" }
 
     -- defines for DirectXMath
     defines { "_XM_AVX2_INTRINSICS_", "_XM_AVX_INTRINSICS_", "_XM_SSE_INTRINSICS_", "_XM_SSE3_INTRINSICS_", "_XM_SSE4_INTRINSICS_", "_XM_FMA3_INTRINSICS_"  }
@@ -113,6 +114,7 @@ project "Stimply-Renderer-Backend-Vulkan"
         links { "SDL2main", "SDL2", "vulkan", "Stimply-Engine" }
         cppdialect "gnu++17"
         toolset "clang"
+        includedirs { "vendor/DirectXMath/Inc" }
         postbuildcommands {
             "./compile_shaders.sh"
         }
@@ -126,7 +128,7 @@ project "Stimply-Renderer-Backend-Vulkan"
     architecture("x86_64")
     files { "plugins/renderer/vulkan/*.cpp", "plugins/renderer/vulkan/*.h" }
 
-    includedirs { "engine/", "$(VULKAN_SDK)/include", "vendor/", "vendor/DirectXMath/Inc" }
+    includedirs { "engine/", "$(VULKAN_SDK)/include", "vendor/", }
 
     -- defines for DirectXMath
     defines { "_XM_AVX2_INTRINSICS_", "_XM_AVX_INTRINSICS_", "_XM_SSE_INTRINSICS_", "_XM_SSE3_INTRINSICS_", "_XM_SSE4_INTRINSICS_", "_XM_FMA3_INTRINSICS_"  }
@@ -163,6 +165,7 @@ project "Stimply-Renderer-Backend-DX12"
         links { "SDL2main", "SDL2" }
         cppdialect "gnu++17"
         toolset "clang"
+        includedirs { "vendor/DirectXMath/Inc" }
         buildoptions {
             "-mavx2",
             "-mfma"
@@ -173,7 +176,7 @@ project "Stimply-Renderer-Backend-DX12"
     architecture("x86_64")
     files { "plugins/renderer/directx/*.cpp", "plugins/renderer/directx/*.h" }
 
-    includedirs { "engine/", "vendor/", "vendor/DirectXMath/Inc" }
+    includedirs { "engine/", "vendor/" }
 
     -- defines for DirectXMath
     defines { "_XM_AVX2_INTRINSICS_", "_XM_AVX_INTRINSICS_", "_XM_SSE_INTRINSICS_", "_XM_SSE3_INTRINSICS_", "_XM_SSE4_INTRINSICS_", "_XM_FMA3_INTRINSICS_"  }
