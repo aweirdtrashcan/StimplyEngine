@@ -5,7 +5,7 @@
 #include "window/window.h"
 
 #include <exception>
-#include <DirectXMathAVX2.h>
+#include <DirectXMath/Extensions/DirectXMathAVX2.h>
 
 RAPI void initialize_engine(void) {
     try {

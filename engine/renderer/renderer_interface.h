@@ -18,7 +18,7 @@ typedef renderer_image(*PFN_create_texture)(HANDLE state, uint32_t width, uint32
 typedef HANDLE(*PFN_renderer_create_render_item)(const struct RenderItemCreateInfo* render_item);
 typedef void(*PFN_renderer_destroy_render_item)(HANDLE render_item);
 typedef FrameStatus(*PFN_renderer_draw_items)();
-typedef void(*PFN_renderer_set_view_projection)(DirectX::CXMMATRIX view_matrix, DirectX::CXMMATRIX projection_matrix);
+typedef void(*PFN_renderer_set_view_projection)(DirectX::XMMATRIX view_matrix, DirectX::CXMMATRIX projection_matrix);
 typedef void(*PFN_renderer_set_render_item_model)(HANDLE render_item, const DirectX::XMFLOAT4X4* model_matrix);
 
 typedef struct renderer_interface {

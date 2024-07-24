@@ -12,6 +12,8 @@ struct binary_info {
     char* binary;
 };
 
+static inline constexpr uint64_t MINIMUM_ALIGNMENT_SIZE = 16;
+
 class RAPI Platform {
 public:
     Platform();

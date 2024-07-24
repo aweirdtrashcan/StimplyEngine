@@ -3,6 +3,7 @@
 
 #include "containers/list.h"
 #include "core/logger.h"
+#include "renderer/renderer_exception.h"
 
 #include <d3d12.h>
 #include <d3dcompiler.h>
@@ -12,6 +13,9 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
+
+#include <DirectXMath.h>
+#include <DirectXMath/Extensions/DirectXMathAVX2.h>
 
 #pragma comment(lib, "DXGI.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -96,7 +100,7 @@ static bool wait_for_fence(ID3D12Fence* fence, uint64_t value_to_wait);
 static bool wait_device_idle();
 
 /* public functions */
-bool d3d12_backend_initialize(uint64_t* required_size, void* allocated_memory, const char* name, void* sdl_window) {
+bool d3d12_backend_initialize(uint64_t* required_size, void* allocated_memory, const char* name, void* sdl_window) noexcept(false) {
     if (required_size == nullptr) return false;
     if (*required_size == 0) {
         *required_size = sizeof(internal_d3d12_renderer_state);

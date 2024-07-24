@@ -1,5 +1,4 @@
 
-#include <cerrno>
 #if defined (PLATFORM_LINUX)
 #include "platform.h"
 #include "window/window.h"
@@ -11,13 +10,12 @@
 #include <dlfcn.h>
 #include <unistd.h>
 #include <linux/limits.h> // NOTE: I think you must have linux-headers installed, but i still need to look for that up.
+#include <cerrno>
 #include <cstdlib>
 
 void Window::MessageBox(const char* title, const char* message) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title, message, nullptr);
 }
-
-static inline constexpr uint64_t MINIMUM_ALIGNMENT_SIZE = 16;
 
 struct alignas(MINIMUM_ALIGNMENT_SIZE) alloc_header {
     size_t allocation_size;

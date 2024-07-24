@@ -397,7 +397,7 @@ void vulkan_destroy_render_item(HANDLE item_handle) {
     r_item->vertex_buffer_offset = -1;
 }
 
-void vulkan_set_view_projection(DirectX::CXMMATRIX view_matrix, DirectX::CXMMATRIX projection_matrix) {
+void vulkan_set_view_projection(DirectX::XMMATRIX view_matrix, DirectX::CXMMATRIX projection_matrix) {
     state->global_ubo->view = view_matrix;
     state->global_ubo->projection = projection_matrix;
 }

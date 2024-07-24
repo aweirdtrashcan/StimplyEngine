@@ -14,15 +14,15 @@ bool select_physical_device(internal_vulkan_renderer_state* state) {
     uint32_t max_push_constant_size = 0;
 
     for (uint32_t i = 0; i < physical_device_count; i++) {
-        VkPhysicalDeviceProperties device_properties;
-        VkPhysicalDeviceMemoryProperties memory_properties;
-        VkPhysicalDeviceFeatures device_features;
-
-        max_push_constant_size = device_properties.limits.maxPushConstantsSize;
+        VkPhysicalDeviceProperties device_properties{};
+        VkPhysicalDeviceMemoryProperties memory_properties{};
+        VkPhysicalDeviceFeatures device_features{};
 
         vkGetPhysicalDeviceProperties(physical_devices[i], &device_properties);
         vkGetPhysicalDeviceMemoryProperties(physical_devices[i], &memory_properties);
         vkGetPhysicalDeviceFeatures(physical_devices[i], &device_features);
+
+        max_push_constant_size = device_properties.limits.maxPushConstantsSize;
 
         size_t device_vram = 0;
         for (uint32_t h = 0; h < memory_properties.memoryHeapCount; h++) {

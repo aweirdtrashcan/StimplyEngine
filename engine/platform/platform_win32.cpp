@@ -16,6 +16,7 @@
 
 struct alloc_header {
     size_t allocation_size;
+    size_t alignment;
 };
 
 static Platform* platform_ptr = nullptr;
@@ -65,6 +66,52 @@ void Platform::ufree(void* memory) {
     }
 
     free(header);
+}
+
+void* Platform::aalloc(size_t alignment, size_t size) {
+    if (alignment < MINIMUM_ALIGNMENT_SIZE) {
+        Logger::debug("Platform::aalloc: alignment size should be greater or equal to %zu bytes", MINIMUM_ALIGNMENT_SIZE);
+        return nullptr;
+    }
+
+    alloc_header* header = (alloc_header*)_aligned_malloc(size + sizeof(alloc_header), alignment);
+    
+    if (!header) {
+        int error_number = 0;
+        _get_errno(&error_number);
+
+        if (error_number == EINVAL) {
+            Logger::debug("The alignment argument was not a power of two, or was not a multiple of sizeof(void *).");
+        }
+        return nullptr;
+    }
+
+    memset(header, 0, size + sizeof(alloc_header));
+    header->allocation_size = size;
+    header->alignment = alignment;
+
+    if (!platform_ptr) {
+        Logger::warning("Allocating %zu bytes before initializing platform", size);
+    }
+    else {
+        platform_ptr->m_TotalAllocation += size;
+    }
+
+    return from_header_to_memory(header);
+}
+
+void Platform::afree(void* memory) {
+    alloc_header* header = from_memory_to_header(memory);
+
+    if (!platform_ptr) {
+        Logger::warning("Freeing %zu bytes before initializing platform", header->allocation_size);
+    }
+    else {
+        platform_ptr->m_TotalAllocation -= header->allocation_size;
+    }
+
+    memset(header, 0, sizeof(alloc_header) + header->allocation_size);
+    _aligned_free(header);
 }
 
 void* Platform::zero_memory(void* memory, size_t size) {
