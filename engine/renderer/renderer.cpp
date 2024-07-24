@@ -1,11 +1,15 @@
 #include "renderer.h"
 
+#include "renderer/global_uniform_object.h"
+#include "renderer/renderer_types.h"
 #include "renderer_interface.h"
 #include "window/window.h"
 #include "platform/platform.h"
 #include "renderer_exception.h"
 
-Renderer::Renderer(RendererType type, Window* window) {
+Renderer::Renderer(RendererType type, Window* window) 
+    :
+    m_Window(window) {
     uint64_t allocation_size = 0;
 
     // load the .dll/.so
@@ -43,9 +47,33 @@ Renderer::~Renderer() {
 }
 
 bool Renderer::Draw() {
-    if (m_Interface.begin_frame()) {
-        if (!m_Interface.renderer_draw_items()) return false;
-        m_Interface.end_frame();
+    GlobalUniformObject ubo;
+
+    if (m_Interface.begin_frame() == FRAME_STATUS_SUCCESS) {
+        int32_t width, height;
+        m_Window->GetDimensions(&width, &height);
+        float aspect_ratio = (float)width / (float)height;
+        GlobalUniformObject ubo;
+    
+        ubo.projection = DirectX::XMMatrixPerspectiveFovLH(45.f, aspect_ratio, 0.1f, 1000.f);
+
+        DirectX::XMVECTOR eye_position = DirectX::XMVectorSet(0.0f, 0.0f, -3.0f, 0.0f);
+        DirectX::XMVECTOR focus_position = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+        DirectX::XMVECTOR up_direction = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+        ubo.view = DirectX::XMMatrixLookAtLH(eye_position, focus_position, up_direction);
+
+        SetViewProjection(ubo.view, ubo.projection);
+        
+        if (m_Interface.renderer_draw_items() == FRAME_STATUS_FAILED) {
+            Logger::fatal("Failed to render draw items");
+            return false;
+        }
+        
+        if (m_Interface.end_frame() == FRAME_STATUS_FAILED) {
+            Logger::fatal("Failed to end frame");
+            return false;
+        }
+
         return true;
     }
     return false;
@@ -70,6 +98,7 @@ renderer_interface Renderer::LoadRendererFunctions(RendererType type) {
     interface.renderer_create_render_item = (PFN_renderer_create_render_item)Platform::load_library_function(m_Library, renderer_placeholder + "_create_render_item");
     interface.renderer_destroy_render_item = (PFN_renderer_destroy_render_item)Platform::load_library_function(m_Library, renderer_placeholder + "_destroy_render_item");
     interface.renderer_draw_items = (PFN_renderer_draw_items)Platform::load_library_function(m_Library, renderer_placeholder + "_draw_items");
+    interface.set_view_projection = (PFN_set_view_projection)Platform::load_library_function(m_Library, renderer_placeholder + "_set_view_projection");
 
     return interface;
 }

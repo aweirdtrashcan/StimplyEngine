@@ -49,3 +49,9 @@ struct RenderItemCreateInfo {
     list<ShaderBundle> shaderBundles;
     HANDLE shader;
 };
+
+enum FrameStatus {
+    FRAME_STATUS_FAILED,
+    FRAME_STATUS_SUCCESS,
+    FRAME_STATUS_SKIP
+};

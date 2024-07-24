@@ -21,9 +21,7 @@ public:
     bool Draw();
     inline HANDLE CreateRenderItem(const RenderItemCreateInfo* renderItem) { return m_Interface.renderer_create_render_item(renderItem); }
     inline void DestroyRenderItem(HANDLE renderItem) { m_Interface.renderer_destroy_render_item(renderItem); }
-    inline void SetViewProjection(const DirectX::XMFLOAT4X4* view, const DirectX::XMFLOAT4X4* projection) {
-        
-    }
+    inline void SetViewProjection(DirectX::CXMMATRIX view, DirectX::CXMMATRIX projection) { m_Interface.set_view_projection(view, projection); }
     
 private:
     [[nodiscard]] renderer_interface LoadRendererFunctions(RendererType type);
@@ -32,4 +30,5 @@ private:
     renderer_interface m_Interface;
     HANDLE m_Library = nullptr;
     static inline renderer_state m_Renderer_Memory = nullptr;
+    Window* m_Window;
 };

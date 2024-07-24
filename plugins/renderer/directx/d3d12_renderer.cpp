@@ -113,6 +113,14 @@ bool d3d12_backend_initialize(uint64_t* required_size, void* allocated_memory, c
 
     Logger::info("Initializing D3D12 Backend");
 
+    if (!DirectX::XMVerifyCPUSupport()) {
+        throw RendererException("Your CPU does not support SSE Instruction Set, which is required by this application.");
+    }
+
+    if (!DirectX::AVX2::XMVerifyAVX2Support()) {
+        throw RendererException("Your CPU does not support AVX2 Instruction Set, which is required by this application.");
+    }
+
     state->window = (SDL_Window*)sdl_window;
 
     if (!enable_debug_layer()) {

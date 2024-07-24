@@ -37,7 +37,7 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
     Logger::info("Initializing Vulkan Backend");
 
     if (!DirectX::XMVerifyCPUSupport()) {
-        throw RendererException("Your CPU does not support SSE/SSE2 Instruction Sets, which is required by this application.");
+        throw RendererException("Your CPU does not support SSE Instruction Set, which is required by this application.");
     }
 
     if (!DirectX::AVX2::XMVerifyAVX2Support()) {
@@ -213,7 +213,7 @@ void vulkan_backend_shutdown() {
     memset(state, 0, sizeof(*state));
 }
 
-bool vulkan_begin_frame() {
+FrameStatus vulkan_begin_frame() {
     VkFence fence = state->fences[state->current_frame_index];
     VkSemaphore queue_complete = state->queue_complete_semaphore[state->current_frame_index];
     VkSemaphore image_acquired = state->image_acquired_semaphore[state->current_frame_index];
@@ -222,13 +222,17 @@ bool vulkan_begin_frame() {
     const VkSurfaceCapabilitiesKHR& surface_capabilities = state->surface_capabilities;
     const VkClearValue* clear_values = state->clear_values;
 
-    vk_result(vkWaitForFences(state->logical_device, 1, &fence, VK_TRUE, UINT64_MAX));
-
     VkResult result;
+
+    result = vkWaitForFences(state->logical_device, 1, &fence, VK_TRUE, UINT64_MAX);
+
+    if (result != VK_SUCCESS) {
+        return FRAME_STATUS_FAILED;
+    }
 
     if (!state->swapchain) {
         recreate_swapchain(state);
-        return false;
+        return FRAME_STATUS_SKIP;
     }
 
     result = vkAcquireNextImageKHR(
@@ -242,10 +246,14 @@ bool vulkan_begin_frame() {
     if (result != VK_SUCCESS) {
         // TODO: Resize
         recreate_swapchain(state);
-        return false;
+        return FRAME_STATUS_SKIP;
     }
 
-    vk_result(vkResetFences(state->logical_device, 1, &fence));
+    result = vkResetFences(state->logical_device, 1, &fence);
+
+    if (result != VK_SUCCESS) {
+        return FRAME_STATUS_FAILED;
+    }
 
     VkFramebuffer framebuffer = state->swapchain_framebuffers[state->image_index];
 
@@ -261,10 +269,10 @@ bool vulkan_begin_frame() {
         (uint32_t)std::size(state->clear_values), 
         clear_values);
 
-    return true;
+    return FRAME_STATUS_SUCCESS;
 }
 
-bool vulkan_draw_items() {
+FrameStatus vulkan_draw_items() {
     VkCommandBuffer command_buffer = state->graphics_command_buffers[state->current_frame_index];
 
     state->current_shader = nullptr;
@@ -283,10 +291,10 @@ bool vulkan_draw_items() {
         vkCmdDrawIndexed(command_buffer, item->index_count, 1, 0, 0, 0);
     }
     
-    return true;
+    return FRAME_STATUS_SUCCESS;
 }
 
-bool vulkan_end_frame() {
+FrameStatus vulkan_end_frame() {
     VkResult result;
     VkCommandBuffer command_buffer = state->graphics_command_buffers[state->current_frame_index];
     VkSemaphore image_acquired = state->image_acquired_semaphore[state->current_frame_index];
@@ -301,9 +309,9 @@ bool vulkan_end_frame() {
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         recreate_swapchain(state);
-        return false;
+        return FRAME_STATUS_SKIP;
     } else if (result != VK_SUCCESS) {
-        return false;
+        return FRAME_STATUS_FAILED;
     }
 
     VkPresentInfoKHR present_info;
@@ -324,12 +332,12 @@ bool vulkan_end_frame() {
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
         recreate_swapchain(state);
-        return false;
+        return FRAME_STATUS_SKIP;
     } else if (result != VK_SUCCESS) {
-        return false;
+        return FRAME_STATUS_FAILED;
     }
 
-    return true;
+    return FRAME_STATUS_SUCCESS;
 }
 
 HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInfo) {
@@ -396,9 +404,9 @@ void vulkan_destroy_render_item(HANDLE item_handle) {
     r_item->vertex_buffer_offset = -1;
 }
 
-void set_view_projection(const void* view_matrix, const void* projection_matrix) {
-    state->global_ubo->view = DirectX::XMLoadFloat4x4((const DirectX::XMFLOAT4X4*)view_matrix);
-    state->global_ubo->projection = DirectX::XMLoadFloat4x4((const DirectX::XMFLOAT4X4*)projection_matrix);
+void vulkan_set_view_projection(DirectX::CXMMATRIX view_matrix, DirectX::CXMMATRIX projection_matrix) {
+    state->global_ubo->view = view_matrix;
+    state->global_ubo->projection = projection_matrix;
 }
 
 /****************************************** INTERNAL FUNCTIONS ********************************************* */
