@@ -11,11 +11,14 @@ bool select_physical_device(internal_vulkan_renderer_state* state) {
     size_t vram_count = 0;
     VkPhysicalDevice selected_device = nullptr;
     VkPhysicalDeviceProperties selected_physical_device;
+    uint32_t max_push_constant_size = 0;
 
     for (uint32_t i = 0; i < physical_device_count; i++) {
         VkPhysicalDeviceProperties device_properties;
         VkPhysicalDeviceMemoryProperties memory_properties;
         VkPhysicalDeviceFeatures device_features;
+
+        max_push_constant_size = device_properties.limits.maxPushConstantsSize;
 
         vkGetPhysicalDeviceProperties(physical_devices[i], &device_properties);
         vkGetPhysicalDeviceMemoryProperties(physical_devices[i], &memory_properties);
@@ -39,6 +42,7 @@ bool select_physical_device(internal_vulkan_renderer_state* state) {
     }
 
     state->physical_device = selected_device;
+    state->max_push_constant_size = max_push_constant_size;
 
     return true;
 }

@@ -153,26 +153,6 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
     state->clear_values[0] = color_clear_value;
     state->clear_values[1] = depth_clear_value;
 
-    // TODO: Test
-    DirectX::XMFLOAT3 vertices[] = {
-        { -0.5f, -0.5f, 0.0f },
-        { -0.5f,  0.5f, 0.0f },
-        {  0.5f, -0.5f, 0.0f },
-        {  0.5f,  0.5f, 0.0f },
-    };
-
-    uint32_t indices[] = { 0, 1, 2, 2, 1, 3 };
-
-    RenderItemCreateInfo create_info;
-    create_info.vertexSize = sizeof(vertices);
-    create_info.pVertices = &vertices;
-    create_info.verticesCount = std::size(vertices);
-    create_info.indexSize = sizeof(indices);
-    create_info.indicesCount = std::size(indices);
-    create_info.pIndices = &indices;
-    create_info.shader = &state->object_shader;
-    vulkan_create_render_item(&create_info);
-
     Logger::info("Vulkan Backend Initialized");
 
     return true;
@@ -288,6 +268,14 @@ FrameStatus vulkan_draw_items() {
             state->current_shader = item->shader_object;
         }    
 
+        vkCmdPushConstants(
+            command_buffer, 
+            item->shader_object->pipeline.layout, 
+            VK_SHADER_STAGE_VERTEX_BIT, 
+            0, 
+            sizeof(item->model), 
+            &item->model);
+
         vkCmdDrawIndexed(command_buffer, item->index_count, 1, 0, 0, 0);
     }
     
@@ -349,10 +337,10 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
         Logger::debug("vulkan_create_render_item: RenderItemCreateInfo->pIndices and/or RenderItemCreateInfo->pMeshes can't be nullptr");
         return nullptr;
     }
-    if (pRenderItemCreateInfo->shader == nullptr) {
-        Logger::debug("vulkan_create_render_item: Invalid shader.");
-        return nullptr;
-    }
+    // if (pRenderItemCreateInfo->shader == nullptr) {
+    //     Logger::debug("vulkan_create_render_item: Invalid shader.");
+    //     return nullptr;
+    // }
 
     VkCommandBuffer command_buffer;
     create_one_time_command_buffer(state, &command_buffer);
@@ -364,6 +352,11 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
     state->render_items.push_back(render_item());
     render_item* r_item = &state->render_items[state->render_items.size() - 1];
     r_item->shader_object = (vulkan_shader*)pRenderItemCreateInfo->shader;
+    
+    if (pRenderItemCreateInfo->shader == nullptr) {
+        r_item->shader_object = &state->object_shader;        
+    }
+
     r_item->index_count = pRenderItemCreateInfo->indicesCount;
     r_item->vertices_count = pRenderItemCreateInfo->verticesCount;
     r_item->vertex_buffer_offset = state->geometry_vertex_offset;
@@ -407,6 +400,11 @@ void vulkan_destroy_render_item(HANDLE item_handle) {
 void vulkan_set_view_projection(DirectX::CXMMATRIX view_matrix, DirectX::CXMMATRIX projection_matrix) {
     state->global_ubo->view = view_matrix;
     state->global_ubo->projection = projection_matrix;
+}
+
+void vulkan_set_render_item_model(HANDLE render_item, const DirectX::XMFLOAT4X4* model_matrix) {
+    struct render_item* item = (struct render_item*)render_item;
+    item->model = *model_matrix;
 }
 
 /****************************************** INTERNAL FUNCTIONS ********************************************* */

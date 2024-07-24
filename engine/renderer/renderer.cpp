@@ -98,7 +98,8 @@ renderer_interface Renderer::LoadRendererFunctions(RendererType type) {
     interface.renderer_create_render_item = (PFN_renderer_create_render_item)Platform::load_library_function(m_Library, renderer_placeholder + "_create_render_item");
     interface.renderer_destroy_render_item = (PFN_renderer_destroy_render_item)Platform::load_library_function(m_Library, renderer_placeholder + "_destroy_render_item");
     interface.renderer_draw_items = (PFN_renderer_draw_items)Platform::load_library_function(m_Library, renderer_placeholder + "_draw_items");
-    interface.set_view_projection = (PFN_set_view_projection)Platform::load_library_function(m_Library, renderer_placeholder + "_set_view_projection");
+    interface.renderer_set_view_projection = (PFN_renderer_set_view_projection)Platform::load_library_function(m_Library, renderer_placeholder + "_set_view_projection");
+    interface.renderer_set_render_item_model = (PFN_renderer_set_render_item_model)Platform::load_library_function(m_Library, renderer_placeholder + "_set_render_item_model");
 
     return interface;
 }

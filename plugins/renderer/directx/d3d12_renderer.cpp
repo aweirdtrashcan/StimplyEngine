@@ -1,6 +1,5 @@
-#include "d3d12_renderer.h"
-
 #ifdef PLATFORM_WINDOWS
+#include "d3d12_renderer.h"
 
 #include "containers/list.h"
 #include "core/logger.h"

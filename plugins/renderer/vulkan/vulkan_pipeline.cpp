@@ -8,14 +8,19 @@
 #include <DirectXMath.h>
 
 bool create_pipeline_layout(internal_vulkan_renderer_state* state, VkDescriptorSetLayout* set_layouts, uint32_t set_layout_count, VkPipelineLayout* out_pipeline_layout) {
+    VkPushConstantRange push_constant_range;
+    push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    push_constant_range.offset = 0;
+    push_constant_range.size = sizeof(DirectX::XMFLOAT4X4);
+
     VkPipelineLayoutCreateInfo create_info;
     create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     create_info.pNext = nullptr;
     create_info.flags = 0;
     create_info.setLayoutCount = set_layout_count;
     create_info.pSetLayouts = set_layouts;
-    create_info.pushConstantRangeCount = 0;
-    create_info.pPushConstantRanges = nullptr;
+    create_info.pushConstantRangeCount = 1;
+    create_info.pPushConstantRanges = &push_constant_range;
 
     vk_result(vkCreatePipelineLayout(
         state->logical_device,

@@ -155,7 +155,16 @@ void Platform::unload_library(void* library) {
 }
 
 void* Platform::load_library_function(void* library, const std::string& functionName) {
-    return dlsym(library, functionName.c_str());
+    void* function_ptr = dlsym(library, functionName.c_str());
+
+    const char* error_message = dlerror();
+    
+    if (error_message) {
+        Logger::fatal("%s", error_message);
+        return nullptr;
+    }
+
+    return function_ptr;
 }
 
 void* Platform::create_vulkan_surface(Window* window, void* instance) {

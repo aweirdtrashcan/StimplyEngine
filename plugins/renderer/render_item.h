@@ -2,6 +2,7 @@
 
 #include <containers/list.h>
 
+#include "DirectXMath.h"
 #include "vulkan/vulkan_defines.h"
 
 struct render_item {
@@ -10,4 +11,5 @@ struct render_item {
     vulkan_shader* shader_object;
     uint64_t vertex_buffer_offset;
     uint64_t index_buffer_offset;
+    DirectX::XMFLOAT4X4 model;
 };

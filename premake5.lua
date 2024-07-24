@@ -26,11 +26,11 @@ project "Stimply-Engine"
     elseif os.host() == "linux" then
         cppdialect "gnu++17"
         toolset "clang"
-        defines { "DYNAMIC_RENDERER= ", "RAPI= " }
+        defines { "DYNAMIC_RENDERER= ", "RAPI= ", "_XM_NO_XMVECTOR_OVERLOADS_" }
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
         links { "SDL2main", "SDL2" }
-        includedirs { "vendor/DirectXMath/Inc" }
+        includedirs { "vendor/DirectXMath/Inc", "vendor/DirectXMath/Extensions" }
         buildoptions {
             "-mavx2",
             "-mfma"
@@ -64,7 +64,7 @@ project "Stimply-Game"
         defines { "RAPI=__declspec(dllimport)" }
         flags { "MultiProcessorCompile" }
     elseif os.host() == "linux" then
-        defines { "RAPI= " }
+        defines { "RAPI= ", "_XM_NO_XMVECTOR_OVERLOADS_" }
         cppdialect "gnu++17"
         toolset "clang"
         buildoptions {
@@ -107,14 +107,14 @@ project "Stimply-Renderer-Backend-Vulkan"
             "PowerShell .\\compile_shaders.ps1"
         }
     elseif os.host() == "linux" then
-        defines { "DYNAMIC_RENDERER= ", "RAPI= " }
+        defines { "DYNAMIC_RENDERER= ", "RAPI= ", "_XM_NO_XMVECTOR_OVERLOADS_" }
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
         libdirs { "$(VULKAN_SDK)/lib" }
         links { "SDL2main", "SDL2", "vulkan", "Stimply-Engine" }
         cppdialect "gnu++17"
         toolset "clang"
-        includedirs { "vendor/DirectXMath/Inc" }
+        includedirs { "vendor/DirectXMath/Inc", "vendor/DirectXMath/Extensions" }
         postbuildcommands {
             "./compile_shaders.sh"
         }
@@ -159,13 +159,13 @@ project "Stimply-Renderer-Backend-DX12"
         links { "SDL2main", "SDL2", "d3d12", "Stimply-Engine" }
         flags { "MultiProcessorCompile" }
     elseif os.host() == "linux" then
-        defines { "DYNAMIC_RENDERER= ", "RAPI= " }
+        defines { "DYNAMIC_RENDERER= ", "RAPI= ", "_XM_NO_XMVECTOR_OVERLOADS_" }
         libdirs { os.findlib("SDL2main") }
         libdirs { os.findlib("SDL2") }
         links { "SDL2main", "SDL2" }
         cppdialect "gnu++17"
         toolset "clang"
-        includedirs { "vendor/DirectXMath/Inc" }
+        includedirs { "vendor/DirectXMath/Inc", "vendor/DirectXMath/Extensions" }
         buildoptions {
             "-mavx2",
             "-mfma"

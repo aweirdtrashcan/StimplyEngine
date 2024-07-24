@@ -24,6 +24,7 @@ struct internal_vulkan_renderer_state {
     VkAllocationCallbacks* allocator;
     VkPhysicalDevice physical_device;
     VkDevice logical_device;
+    uint32_t max_push_constant_size;
     uint32_t graphics_queue_index;
     VkQueue graphics_queue;
     VkDebugUtilsMessengerEXT messenger;
