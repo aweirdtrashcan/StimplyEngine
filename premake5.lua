@@ -69,6 +69,7 @@ project "Stimply-Game"
         defines { "RAPI= ", "_XM_NO_XMVECTOR_OVERLOADS_" }
         cppdialect "gnu++17"
         toolset "clang"
+        includedirs { "vendor/DirectXMath/Inc" }
         buildoptions {
             "-mavx2",
             "-mfma"

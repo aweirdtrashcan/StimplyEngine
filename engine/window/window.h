@@ -2,7 +2,6 @@
 
 #include <cstdint>
 
-#include "platform/platform.h"
 #include "containers/list.h"
 #include "window/key_defines.h"
 
@@ -35,7 +34,6 @@ private:
 
 private:
     SDL_Window* m_Window;
-    Platform m_Platform;
     bool m_IsRunning = false;
     bool m_IsMouseHiddenByUser = false;
     bool m_IsMouseHidden = false;

@@ -19,6 +19,15 @@
 \
     Platform::log(level, output_message);                                                                   \
 
+// TODO: Save logs to file.
+void Logger::InitializeLogging() {
+    
+}
+
+void Logger::ShutdownLogging() {
+
+}
+
 void Logger::fatal(const char* format, ...) {
     internal_logger(log_level::fatal, format);
 }

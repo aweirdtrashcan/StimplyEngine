@@ -4,14 +4,16 @@
 
 class IGame;
 
-extern void InitializeGame(IGame** out_game);
+extern void InitializeGame(IGame** out_game, const Application* application);
 
 int main(void) {
 	IGame* game = nullptr;
 
-	InitializeGame(&game);
+	Application app;
 
-	Application app(game);
+	InitializeGame(&game, &app);
+
+	app.SetGame(game);
 
 	return app.Run();
 }

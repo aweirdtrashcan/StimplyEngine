@@ -9,6 +9,8 @@ enum log_level : char {
 
 class RAPI Logger {
 public:
+    static void InitializeLogging();
+    static void ShutdownLogging();
     static void fatal(const char* format, ...);
     static void warning(const char* format, ...);
     static void debug(const char* format, ...);

@@ -41,5 +41,6 @@ public:
     static binary_info read_binary(const char* path);
 
 private:
+    static inline Platform* platform_ptr = nullptr;
     size_t m_TotalAllocation = 0;
 };

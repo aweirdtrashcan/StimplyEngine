@@ -1,17 +1,14 @@
 #include "application.h"
 
 #include "game_interface.h"
-#include "DirectXMath.h"
 #include "core/logger.h"
+#include "platform/platform.h"
 #include "renderer/renderer.h"
 #include "window/window.h"
 
 #include <exception>
-#include <DirectXMath/Extensions/DirectXMathAVX2.h>
 
-Application::Application(class IGame* game)
-	:
-	m_Game(game) {}
+Application::Application() {}
 
 Application::~Application() {}
 
@@ -26,74 +23,44 @@ int Application::Run() {
         return -1;
     }
 
-    m_Game->OnBegin();
-
     try {
-        Window window(100, 100, 800, 600, "Stimply Engine");
-        Renderer renderer(RendererType::VULKAN, &window);
+        // TODO: Construct those objects with the allocator.
+        m_Platform = new Platform();
+        Logger::InitializeLogging();
+        m_Window = new (Platform::ualloc(sizeof(Window))) Window(100, 100, 800, 600, "Stimply Engine");
+        m_Renderer = new (Platform::ualloc(sizeof(Renderer))) Renderer(RendererType::VULKAN, m_Window);
+        
+        // By this point, the engine is all initialized.
 
-        // TODO: Test
-        DirectX::XMFLOAT3 vertices[] = {
-            { -0.5f, -0.5f, 0.0f },
-            { -0.5f,  0.5f, 0.0f },
-            {  0.5f, -0.5f, 0.0f },
-            {  0.5f,  0.5f, 0.0f },
-        };
+        m_Game->OnBegin();
 
-        uint32_t indices[] = { 0, 1, 2, 2, 1, 3 };
-
-        RenderItemCreateInfo create_info;
-        create_info.vertexSize = sizeof(vertices);
-        create_info.pVertices = &vertices;
-        create_info.verticesCount = std::size(vertices);
-        create_info.indexSize = sizeof(indices);
-        create_info.indicesCount = std::size(indices);
-        create_info.pIndices = &indices;
-        create_info.shader = nullptr;
-
-        HANDLE render_item = renderer.CreateRenderItem(&create_info);
-
-        DirectX::XMFLOAT4X4 model;
-        DirectX::XMStoreFloat4x4(&model, DirectX::XMMatrixIdentity());
-        renderer.SetRenderItemModel(render_item, &model);
-
-        while (window.ProcessMessages()) {
-            const float move_factor = 1.0f;
-
+        while (m_Window->ProcessMessages()) {
             m_Game->OnUpdate();
 
-            if (window.IsMouseConfined()) {
-                if (window.IsKeyPressed(Key::Key_W)) {
-                    renderer.OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, 0.0f, move_factor));
-                }
-                if (window.IsKeyPressed(Key::Key_S)) {
-                    renderer.OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, 0.0f, -move_factor));
-                }
-                if (window.IsKeyPressed(Key::Key_A)) {
-                    renderer.OffsetCameraPosition(DirectX::XMFLOAT3(-move_factor, 0.0f, 0.0f));
-                }
-                if (window.IsKeyPressed(Key::Key_D)) {
-                    renderer.OffsetCameraPosition(DirectX::XMFLOAT3(move_factor, 0.0f, 0.0f));
-                }
-            }
-
-            if (!renderer.Draw()) {
+            if (!m_Renderer->Draw()) {
                 Logger::fatal("Some error happened while Drawing, closing the engine...");
                 break;
             }
         }
 
+        m_Game->OnShutdown();
         // Delete the instance of game. Note that this instance is created in the game's entry point function.
         delete m_Game;
-        renderer.DestroyRenderItem(render_item);
+        
+        Logger::ShutdownLogging();
 
+        m_Renderer->~Renderer();
+        Platform::ufree(m_Renderer);
+        m_Window->~Window();
+        Platform::ufree(m_Window);
+        delete m_Platform;
+        
     }
     catch (const std::exception& exception) {
         Logger::fatal("Error: %s", exception.what());
         Window::MessageBox("Fatal error", exception.what());
     }
 
-    m_Game->OnShutdown();
     Logger::info("Leaving engine...");
 
 	return 0;

@@ -22,8 +22,6 @@ struct alignas(MINIMUM_ALIGNMENT_SIZE) alloc_header {
     size_t alignment;
 };
 
-static Platform* platform_ptr = nullptr;
-
 static inline void* from_header_to_memory(alloc_header* header) {
     return ((uint8_t*)header) + sizeof(alloc_header); 
 }
@@ -52,11 +50,10 @@ void* Platform::ualloc(size_t size) {
     if (!platform_ptr) {
         Logger::warning("Allocating %zu bytes before initializing platform", size);
     } else {
+        Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);    
         platform_ptr->m_TotalAllocation += size;
     }
     
-    Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);    
-
     return from_header_to_memory(header);    
 }
 
@@ -66,10 +63,9 @@ void Platform::ufree(void* memory) {
     if (!platform_ptr) {
         Logger::warning("Freeing %zu bytes before initializing platform", header->allocation_size);
     } else {
+        Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
         platform_ptr->m_TotalAllocation -= header->allocation_size;
     }
-
-    Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
 
     memset(header, 0, sizeof(alloc_header) + header->allocation_size);
     free(header);
@@ -99,10 +95,9 @@ void* Platform::aalloc(size_t alignment, size_t size) {
     if (!platform_ptr) {
         Logger::warning("Allocating %zu bytes before initializing platform", size);
     } else {
+        Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);
         platform_ptr->m_TotalAllocation += size;
-    }
-    
-    Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);  
+    }  
 
     return from_header_to_memory(header);    
 
@@ -119,10 +114,9 @@ void Platform::afree(void* memory) {
     if (!platform_ptr) {
         Logger::warning("Freeing %zu bytes before initializing platform", header->allocation_size);
     } else {
+        Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
         platform_ptr->m_TotalAllocation -= header->allocation_size;
     }
-
-    Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
 
     memset(header, 0, sizeof(alloc_header) + header->allocation_size);
     free(header);

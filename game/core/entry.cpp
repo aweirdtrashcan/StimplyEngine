@@ -2,7 +2,7 @@
 
 #include "game.h"
 
-void InitializeGame(IGame** out_game) {
+void InitializeGame(IGame** out_game, const class Application* application) {
 	// Game is allowed to change this, as long as the class inherits from IGame.
-	*out_game = new Game();
+	*out_game = new Game(application);
 }
