@@ -41,6 +41,8 @@ project "Stimply-Engine"
     architecture("x86_64")
     files { "engine/**.cpp", "engine/**.h" }
 
+    --links { "Stimply-Game" }
+
     includedirs { "engine/", "vendor/", "$(VULKAN_SDK)/include", "./" }
 
     -- defines for DirectXMath

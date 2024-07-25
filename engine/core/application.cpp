@@ -1,3 +1,6 @@
+#include "application.h"
+
+#include "game_interface.h"
 #include "DirectXMath.h"
 #include "core/logger.h"
 #include "renderer/renderer.h"
@@ -6,17 +9,21 @@
 #include <exception>
 #include <DirectXMath/Extensions/DirectXMathAVX2.h>
 
-#include <game/core/game.h>
+Application::Application(class IGame* game)
+	:
+	m_Game(game) {}
 
-int main(void) {
+Application::~Application() {
+    delete m_Game;
+}
+
+int Application::Run() {
     // Logger::fatal("This is a test message!");
     // Logger::warning("This is a test message!");
     // Logger::debug("This is a test message!");
     // Logger::info("This is a test message!");
 
-    Game game_inst;
-
-    game_inst.OnBegin();
+    m_Game->OnBegin();
 
     try {
         Window window(100, 100, 800, 600, "Stimply Engine");
@@ -30,7 +37,7 @@ int main(void) {
             {  0.5f,  0.5f, 0.0f },
         };
 
-        uint32_t indices[] = {0, 1, 2, 2, 1, 3};
+        uint32_t indices[] = { 0, 1, 2, 2, 1, 3 };
 
         RenderItemCreateInfo create_info;
         create_info.vertexSize = sizeof(vertices);
@@ -50,7 +57,7 @@ int main(void) {
         while (window.ProcessMessages()) {
             const float move_factor = 1.0f;
 
-            game_inst.OnUpdate();
+            m_Game->OnUpdate();
 
             if (window.IsMouseConfined()) {
                 if (window.IsKeyPressed(Key::Key_W)) {
@@ -75,13 +82,14 @@ int main(void) {
 
         renderer.DestroyRenderItem(render_item);
 
-    } catch (const std::exception& exception) {
+    }
+    catch (const std::exception& exception) {
         Logger::fatal("Error: %s", exception.what());
         Window::MessageBox("Fatal error", exception.what());
     }
 
-    game_inst.OnShutdown();
+    m_Game->OnShutdown();
     Logger::info("Leaving engine...");
 
-    return 0;
+	return 0;
 }

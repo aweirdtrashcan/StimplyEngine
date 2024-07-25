@@ -5,6 +5,7 @@
 #include "renderer/renderer_exception.h"
 
 #include <vulkan/vulkan.h>
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 
 #define WIN32_LEAN_AND_MEAN
