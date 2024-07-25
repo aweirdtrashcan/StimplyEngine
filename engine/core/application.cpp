@@ -6,6 +6,7 @@
 #include "renderer/renderer.h"
 #include "window/window.h"
 
+#include <cstdint>
 #include <exception>
 
 Application::Application() {}
@@ -18,6 +19,8 @@ int Application::Run() {
     // Logger::debug("This is a test message!");
     // Logger::info("This is a test message!");
 
+    int ret_val = 0;
+
     if (m_Game == nullptr) {
         Logger::fatal("Failed to initialize engine: IGame* is nullptr");
         return -1;
@@ -27,41 +30,49 @@ int Application::Run() {
         // TODO: Construct those objects with the allocator.
         m_Platform = new Platform();
         Logger::InitializeLogging();
-        m_Window = new (Platform::ualloc(sizeof(Window))) Window(100, 100, 800, 600, "Stimply Engine");
-        m_Renderer = new (Platform::ualloc(sizeof(Renderer))) Renderer(RendererType::VULKAN, m_Window);
+        m_Window = new (Platform::UAlloc(sizeof(Window))) Window(100, 100, 800, 600, "Stimply Engine");
+        m_Renderer = new (Platform::UAlloc(sizeof(Renderer))) Renderer(RendererType::VULKAN, m_Window);
         
         // By this point, the engine is all initialized.
 
         m_Game->OnBegin();
 
+        float deltaTime = 0.0f;
+
         while (m_Window->ProcessMessages()) {
-            m_Game->OnUpdate();
+            m_Game->OnUpdate(deltaTime);
+
+            static int64_t last_time = 0;
+            int64_t current_time = Platform::GetTime();
+            Logger::warning("Time: %d", int32_t(current_time - last_time));
+            last_time = current_time;
 
             if (!m_Renderer->Draw()) {
                 Logger::fatal("Some error happened while Drawing, closing the engine...");
+                ret_val = -2;
                 break;
             }
         }
 
         m_Game->OnShutdown();
-        // Delete the instance of game. Note that this instance is created in the game's entry point function.
         delete m_Game;
         
         Logger::ShutdownLogging();
 
         m_Renderer->~Renderer();
-        Platform::ufree(m_Renderer);
+        Platform::UFree(m_Renderer);
         m_Window->~Window();
-        Platform::ufree(m_Window);
+        Platform::UFree(m_Window);
         delete m_Platform;
         
     }
     catch (const std::exception& exception) {
         Logger::fatal("Error: %s", exception.what());
         Window::MessageBox("Fatal error", exception.what());
+        ret_val = -3;
     }
 
     Logger::info("Leaving engine...");
 
-	return 0;
+	return ret_val;
 }

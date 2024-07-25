@@ -25,7 +25,7 @@ Renderer::Renderer(RendererType type, Window* window)
         library_name = "Stimply-Renderer-Backend-DX12";
     }
 
-    m_Library = Platform::load_library(library_name);
+    m_Library = Platform::LoadLibrary(library_name);
 
     m_Interface = LoadRendererFunctions(type);
 
@@ -37,7 +37,7 @@ Renderer::Renderer(RendererType type, Window* window)
         throw RendererException("Failed to get renderer required size for internal state");
     }
 
-    m_Renderer_Memory = Platform::ualloc(allocation_size);
+    m_Renderer_Memory = Platform::UAlloc(allocation_size);
 
     if (!m_Interface.initialize(&allocation_size, m_Renderer_Memory, "Stimply Engine", window->get_internal_handle())) {
         throw RendererException("Failed to initialize renderer");
@@ -52,8 +52,8 @@ Renderer::~Renderer() {
     m_Interface.shutdown();
     m_Window->FreeCursorFromWindow();
     IEvent::UnregisterListener(this, EventType::MouseMoved);
-    Platform::ufree(m_Renderer_Memory);
-    Platform::unload_library(m_Library);
+    Platform::UFree(m_Renderer_Memory);
+    Platform::UnloadLibrary(m_Library);
 }
 
 void Renderer::OnEvent(EventType type, const EventData* pEventData) {
@@ -152,16 +152,16 @@ renderer_interface Renderer::LoadRendererFunctions(RendererType type) {
         renderer_placeholder = "d3d12";
     }
 
-    interface.initialize = (PFN_renderer_backend_initialize)Platform::load_library_function(m_Library, renderer_placeholder + "_backend_initialize");
-    interface.shutdown = (PFN_renderer_backend_shutdown)Platform::load_library_function(m_Library, renderer_placeholder + "_backend_shutdown");
-    interface.create_texture = (PFN_create_texture)Platform::load_library_function(m_Library, renderer_placeholder + "_create_texture");
-    interface.begin_frame = (PFN_renderer_begin_frame)Platform::load_library_function(m_Library, renderer_placeholder + "_begin_frame");
-    interface.end_frame = (PFN_renderer_end_frame)Platform::load_library_function(m_Library, renderer_placeholder + "_end_frame");
-    interface.renderer_create_render_item = (PFN_renderer_create_render_item)Platform::load_library_function(m_Library, renderer_placeholder + "_create_render_item");
-    interface.renderer_destroy_render_item = (PFN_renderer_destroy_render_item)Platform::load_library_function(m_Library, renderer_placeholder + "_destroy_render_item");
-    interface.renderer_draw_items = (PFN_renderer_draw_items)Platform::load_library_function(m_Library, renderer_placeholder + "_draw_items");
-    interface.renderer_set_view_projection = (PFN_renderer_set_view_projection)Platform::load_library_function(m_Library, renderer_placeholder + "_set_view_projection");
-    interface.renderer_set_render_item_model = (PFN_renderer_set_render_item_model)Platform::load_library_function(m_Library, renderer_placeholder + "_set_render_item_model");
+    interface.initialize = (PFN_renderer_backend_initialize)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_backend_initialize");
+    interface.shutdown = (PFN_renderer_backend_shutdown)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_backend_shutdown");
+    interface.create_texture = (PFN_create_texture)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_create_texture");
+    interface.begin_frame = (PFN_renderer_begin_frame)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_begin_frame");
+    interface.end_frame = (PFN_renderer_end_frame)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_end_frame");
+    interface.renderer_create_render_item = (PFN_renderer_create_render_item)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_create_render_item");
+    interface.renderer_destroy_render_item = (PFN_renderer_destroy_render_item)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_destroy_render_item");
+    interface.renderer_draw_items = (PFN_renderer_draw_items)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_draw_items");
+    interface.renderer_set_view_projection = (PFN_renderer_set_view_projection)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_set_view_projection");
+    interface.renderer_set_render_item_model = (PFN_renderer_set_render_item_model)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_set_render_item_model");
 
     return interface;
 }

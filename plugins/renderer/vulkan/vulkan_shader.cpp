@@ -111,7 +111,7 @@ bool destroy_vulkan_shader(internal_vulkan_renderer_state* state, vulkan_shader*
     destroy_descriptor_set_layout(state, shader->global_descriptor_set_layout);
     destroy_pipeline(state, &shader->pipeline);
 
-    Platform::zero_memory(shader, sizeof(*shader));
+    Platform::ZeroMemory(shader, sizeof(*shader));
 
     return true;
 }
@@ -123,7 +123,7 @@ bool vulkan_shader_use(internal_vulkan_renderer_state* state, VkCommandBuffer co
 }
 
 bool create_shader_module(const internal_vulkan_renderer_state* state, const char* shader_path, VkShaderStageFlagBits shader_stage_flag, uint32_t stage_index, vulkan_shader_stage* shader_stage) {
-    binary_info shader = Platform::read_binary(shader_path);
+    binary_info shader = Platform::ReadBinary(shader_path);
     
     if (shader.size <= 0) {
         return false;
@@ -149,13 +149,13 @@ bool create_shader_module(const internal_vulkan_renderer_state* state, const cha
     shader_stage[stage_index].shader_stage_create_info.pName = "main";
     shader_stage[stage_index].shader_stage_create_info.pSpecializationInfo = nullptr;
 
-    Platform::ufree(shader.binary);
+    Platform::UFree(shader.binary);
 
     return true;
 }
 
 bool destroy_shader_module(const internal_vulkan_renderer_state* state, vulkan_shader_stage* shader_stage) {
     vkDestroyShaderModule(state->logical_device, shader_stage->shader_module, state->allocator);
-    Platform::zero_memory(shader_stage, sizeof(*shader_stage));
+    Platform::ZeroMemory(shader_stage, sizeof(*shader_stage));
     return true;
 }

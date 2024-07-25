@@ -9,8 +9,9 @@ class Game : public IGame {
 public:
 	Game(const Application* application);
 	~Game();
+	
 	virtual void OnBegin() override;
-	virtual void OnUpdate() override;
+	virtual void OnUpdate(float deltaTime) override;
 	virtual void OnShutdown() override;
 
 private:

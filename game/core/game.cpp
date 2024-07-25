@@ -43,7 +43,7 @@ void Game::OnBegin() {
     renderer->SetRenderItemModel(m_RenderItem, &model);
 }
 
-void Game::OnUpdate() {
+void Game::OnUpdate(float deltaTime) {
 	const float move_factor = 1.0f;
     if (m_Application->GetWindow()->IsMouseConfined()) {
         if (m_Application->GetWindow()->IsKeyPressed(Key::Key_W)) {

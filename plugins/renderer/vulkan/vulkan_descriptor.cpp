@@ -31,7 +31,7 @@ bool create_descriptor_pool(const internal_vulkan_renderer_state* state, VkDescr
 
 bool destroy_descriptor_pool(const internal_vulkan_renderer_state* state, vulkan_descriptor_pool* descriptor_pool) {
     vkDestroyDescriptorPool(state->logical_device, descriptor_pool->pool, state->allocator);
-    Platform::zero_memory(descriptor_pool, sizeof(*descriptor_pool));
+    Platform::ZeroMemory(descriptor_pool, sizeof(*descriptor_pool));
     return true;
 }
 
@@ -62,7 +62,7 @@ bool free_descriptor_set(const internal_vulkan_renderer_state* state, const vulk
     }
 
     vkFreeDescriptorSets(state->logical_device, descriptor_pool->pool, 1, &descriptor_set->set);
-    Platform::zero_memory(descriptor_set, sizeof(*descriptor_set));
+    Platform::ZeroMemory(descriptor_set, sizeof(*descriptor_set));
 
     return true;
 }

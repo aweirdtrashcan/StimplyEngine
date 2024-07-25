@@ -129,7 +129,7 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
         throw RendererException("Failed to create engine's global index buffer");
     }
 
-    state->global_ubo = (GlobalUniformObject*)Platform::aalloc(16, sizeof(*state->global_ubo) * state->num_frames); 
+    state->global_ubo = (GlobalUniformObject*)Platform::AAlloc(16, sizeof(*state->global_ubo) * state->num_frames); 
 
     if (!create_gpu_buffer(
         state, 
@@ -163,7 +163,7 @@ void vulkan_backend_shutdown() {
 
     destroy_vulkan_shader(state, &state->object_shader);
     destroy_gpu_buffer(state, &state->global_uniform_buffer);
-    Platform::afree(state->global_ubo);
+    Platform::AFree(state->global_ubo);
     destroy_gpu_buffer(state, &state->index_buffer);
     destroy_gpu_buffer(state, &state->vertex_buffer);
     destroy_swapchain_framebuffers(state);
@@ -390,7 +390,7 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
 
 void vulkan_destroy_render_item(HANDLE item_handle) {
     render_item* r_item = (render_item*)item_handle;
-    Platform::zero_memory(r_item, sizeof(*r_item));
+    Platform::ZeroMemory(r_item, sizeof(*r_item));
 
     r_item->index_buffer_offset = -1;
     r_item->vertex_buffer_offset = -1;

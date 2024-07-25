@@ -31,7 +31,7 @@ bool create_uploader_buffer(const internal_vulkan_renderer_state* state, size_t 
         return false;
     }
 
-    Platform::zero_memory(out_gpu_buffer, sizeof(*out_gpu_buffer));
+    Platform::ZeroMemory(out_gpu_buffer, sizeof(*out_gpu_buffer));
 
     VkBufferCreateInfo buffer_create;
     buffer_create.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -113,7 +113,7 @@ bool create_gpu_buffer(const internal_vulkan_renderer_state* state, size_t size,
         return false;
     }
 
-    Platform::zero_memory(out_gpu_buffer, sizeof(*out_gpu_buffer));
+    Platform::ZeroMemory(out_gpu_buffer, sizeof(*out_gpu_buffer));
 
     VkBufferCreateInfo buffer_create;
     buffer_create.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -186,7 +186,7 @@ cleanup:
         vkFreeMemory(state->logical_device, out_gpu_buffer->memory, state->allocator);
     }
 
-    Platform::zero_memory(out_gpu_buffer, sizeof(*out_gpu_buffer));
+    Platform::ZeroMemory(out_gpu_buffer, sizeof(*out_gpu_buffer));
 
     return false;
 }
@@ -194,7 +194,7 @@ cleanup:
 bool destroy_gpu_buffer(const internal_vulkan_renderer_state* state, gpu_buffer* buffer) {
     vkDestroyBuffer(state->logical_device, buffer->buffer, state->allocator);
     vkFreeMemory(state->logical_device, buffer->memory, state->allocator);
-    Platform::zero_memory(buffer, sizeof(*buffer));
+    Platform::ZeroMemory(buffer, sizeof(*buffer));
 
     return true;
 }

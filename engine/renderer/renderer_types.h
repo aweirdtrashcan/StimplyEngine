@@ -19,7 +19,7 @@ struct mat4 {
     float w1, w2, w3, w4;
 
     mat4() {
-        Platform::zero_memory(this, sizeof(*this));
+        Platform::ZeroMemory(this, sizeof(*this));
         x1 = 1.0f;
         y2 = 1.0f;
         z3 = 1.0f;

@@ -1,4 +1,6 @@
 
+#include <cstdint>
+#include <ctime>
 #if defined (PLATFORM_LINUX)
 #include "platform.h"
 #include "window/window.h"
@@ -12,6 +14,7 @@
 #include <linux/limits.h> // NOTE: I think you must have linux-headers installed, but i still need to look for that up.
 #include <cerrno>
 #include <cstdlib>
+#include <time.h>
 
 void Window::MessageBox(const char* title, const char* message) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title, message, nullptr);
@@ -42,7 +45,7 @@ Platform::~Platform() {
     platform_ptr = nullptr;
 }
 
-void* Platform::ualloc(size_t size) {
+void* Platform::UAlloc(size_t size) {
     alloc_header* header = (alloc_header*)malloc(sizeof(alloc_header) + size);
     memset(header, 0, sizeof(alloc_header) + size);
     header->allocation_size = size;
@@ -57,7 +60,7 @@ void* Platform::ualloc(size_t size) {
     return from_header_to_memory(header);    
 }
 
-void Platform::ufree(void* memory) {
+void Platform::UFree(void* memory) {
     alloc_header* header = from_memory_to_header(memory);
 
     if (!platform_ptr) {
@@ -71,7 +74,7 @@ void Platform::ufree(void* memory) {
     free(header);
 }
 
-void* Platform::aalloc(size_t alignment, size_t size) {
+void* Platform::AAlloc(size_t alignment, size_t size) {
     if (alignment < MINIMUM_ALIGNMENT_SIZE) {
         Logger::warning("Platform::aalloc: alignment size should be greater or equal to %zu bytes", MINIMUM_ALIGNMENT_SIZE);
         return nullptr;
@@ -103,12 +106,12 @@ void* Platform::aalloc(size_t alignment, size_t size) {
 
 cleanup:
     if (header) {
-        afree(header);
+        AFree(header);
     }
     return nullptr;
 }
 
-void Platform::afree(void* memory) {
+void Platform::AFree(void* memory) {
     alloc_header* header = from_memory_to_header(memory);
 
     if (!platform_ptr) {
@@ -122,7 +125,7 @@ void Platform::afree(void* memory) {
     free(header);
 }
 
-void* Platform::zero_memory(void* memory, size_t size) {
+void* Platform::ZeroMemory(void* memory, size_t size) {
     return memset(memory, 0, size);
 }
 
@@ -131,7 +134,7 @@ void Platform::log(log_level level, const char *message) {
     printf("\033[%sm%s\033[0m\n", color_string[level], message);
 }
 
-void* Platform::load_library(const char* libraryPath) {
+void* Platform::LoadLibrary(const char* libraryPath) {
     char library_name[1024]{};
 
     char path[PATH_MAX];
@@ -151,11 +154,11 @@ void* Platform::load_library(const char* libraryPath) {
     return library;
 }
 
-void Platform::unload_library(void* library) {
+void Platform::UnloadLibrary(void* library) {
     dlclose(library);
 }
 
-void* Platform::load_library_function(void* library, const std::string& functionName) {
+void* Platform::LoadLibraryFunction(void* library, const std::string& functionName) {
     void* function_ptr = dlsym(library, functionName.c_str());
 
     const char* error_message = dlerror();
@@ -179,7 +182,7 @@ void* Platform::create_vulkan_surface(Window* window, void* instance) {
     return surface;
 }
 
-binary_info Platform::read_binary(const char* path) {
+binary_info Platform::ReadBinary(const char* path) {
     FILE* file = fopen(path, "rb");
 
     if (!file) {
@@ -196,13 +199,20 @@ binary_info Platform::read_binary(const char* path) {
     // get back to the beginning
     fseek(file, 0, SEEK_SET);
 
-    info.binary = (char*)Platform::ualloc(info.size);
+    info.binary = (char*)Platform::UAlloc(info.size);
 
     fread(info.binary, info.size, 1, file);
 
     fclose(file);
 
     return info;
+}
+
+int64_t Platform::GetTime() {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+
+    return int64_t(now.tv_sec) * int64_t(1000000000) + int64_t(now.tv_nsec);
 }
 
 #endif
