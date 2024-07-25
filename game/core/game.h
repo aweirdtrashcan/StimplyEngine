@@ -4,6 +4,8 @@
 
 class Game : public IGame {
 public:
+	Game();
+	~Game();
 	virtual void OnBegin() override;
 	virtual void OnUpdate() override;
 	virtual void OnShutdown() override;

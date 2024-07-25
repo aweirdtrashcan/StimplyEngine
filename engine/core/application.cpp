@@ -13,15 +13,18 @@ Application::Application(class IGame* game)
 	:
 	m_Game(game) {}
 
-Application::~Application() {
-    delete m_Game;
-}
+Application::~Application() {}
 
 int Application::Run() {
     // Logger::fatal("This is a test message!");
     // Logger::warning("This is a test message!");
     // Logger::debug("This is a test message!");
     // Logger::info("This is a test message!");
+
+    if (m_Game == nullptr) {
+        Logger::fatal("Failed to initialize engine: IGame* is nullptr");
+        return -1;
+    }
 
     m_Game->OnBegin();
 
@@ -80,6 +83,8 @@ int Application::Run() {
             }
         }
 
+        // Delete the instance of game. Note that this instance is created in the game's entry point function.
+        delete m_Game;
         renderer.DestroyRenderItem(render_item);
 
     }
