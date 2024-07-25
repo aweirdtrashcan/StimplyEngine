@@ -3,7 +3,7 @@
 #include "event_types.h"
 #include "containers/list.h"
 
-class IEvent {
+class RAPI IEvent {
 public:
 	IEvent() = default;
 	virtual ~IEvent() = default;

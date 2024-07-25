@@ -14,12 +14,18 @@
 #undef MessageBox
 #endif
 
+#ifdef ZeroMemory
+#undef ZeroMemory
+#endif
+
+#ifdef LoadLibrary
+#undef LoadLibrary
+#endif
+
 struct alignas(MINIMUM_ALIGNMENT_SIZE) alloc_header {
     size_t allocation_size;
     size_t alignment;
 };
-
-static Platform* platform_ptr = nullptr;
 
 void Window::MessageBox(const char* title, const char* message) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title, message, nullptr);
@@ -45,31 +51,35 @@ Platform::~Platform() {
     platform_ptr = nullptr;
 }
 
-void* Platform::ualloc(size_t size) {
+void* Platform::UAlloc(size_t size) {
     alloc_header* header = (alloc_header*)malloc(sizeof(alloc_header) + size);
     memset(header, 0, sizeof(alloc_header) + size);
     header->allocation_size = size;
 
     if (!platform_ptr) {
         Logger::warning("Allocating %zu bytes before initializing platform", size);
+    } else {
         platform_ptr->m_TotalAllocation += size;
+        Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);
     }
 
     return from_header_to_memory(header);
 }
 
-void Platform::ufree(void* memory) {
+void Platform::UFree(void* memory) {
     alloc_header* header = from_memory_to_header(memory);
 
     if (!platform_ptr) {
         Logger::warning("Freeing %zu bytes before initializing platform", header->allocation_size);
+    } else {
         platform_ptr->m_TotalAllocation -= header->allocation_size;
+        Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
     }
 
     free(header);
 }
 
-void* Platform::aalloc(size_t alignment, size_t size) {
+void* Platform::AAlloc(size_t alignment, size_t size) {
     if (alignment < MINIMUM_ALIGNMENT_SIZE) {
         Logger::warning("Platform::aalloc: alignment size should be greater or equal to %zu bytes", MINIMUM_ALIGNMENT_SIZE);
         return nullptr;
@@ -93,29 +103,29 @@ void* Platform::aalloc(size_t alignment, size_t size) {
 
     if (!platform_ptr) {
         Logger::warning("Allocating %zu bytes before initializing platform", size);
-    }
-    else {
+    } else {
         platform_ptr->m_TotalAllocation += size;
+        Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);
     }
 
     return from_header_to_memory(header);
 }
 
-void Platform::afree(void* memory) {
+void Platform::AFree(void* memory) {
     alloc_header* header = from_memory_to_header(memory);
 
     if (!platform_ptr) {
         Logger::warning("Freeing %zu bytes before initializing platform", header->allocation_size);
-    }
-    else {
+    } else {
         platform_ptr->m_TotalAllocation -= header->allocation_size;
+        Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
     }
 
     memset(header, 0, sizeof(alloc_header) + header->allocation_size);
     _aligned_free(header);
 }
 
-void* Platform::zero_memory(void* memory, size_t size) {
+void* Platform::ZeroMemory(void* memory, size_t size) {
     return memset(memory, 0, size);
 }
 
@@ -129,7 +139,7 @@ void Platform::log(log_level level, const char* message) {
     SetConsoleTextAttribute(handle, 15);
 }
 
-void* Platform::load_library(const char* libraryPath) {
+void* Platform::LoadLibrary(const char* libraryPath) {
     char library_name[1024]{};
 
     DWORD path_size = 0;
@@ -157,11 +167,11 @@ void* Platform::load_library(const char* libraryPath) {
     return library;
 }
 
-void Platform::unload_library(void* library) {
+void Platform::UnloadLibrary(void* library) {
     FreeLibrary((HMODULE)library);
 }
 
-void* Platform::load_library_function(void* library, const std::string& functionName) {
+void* Platform::LoadLibraryFunction(void* library, const std::string& functionName) {
     return GetProcAddress((HMODULE)library, functionName.c_str());
 }
 
@@ -176,7 +186,7 @@ void* Platform::create_vulkan_surface(Window* window, void* instance) {
     return surface;
 }
 
-binary_info Platform::read_binary(const char* path) {
+binary_info Platform::ReadBinary(const char* path) {
     HANDLE file = CreateFileA(
         path,
         GENERIC_READ,
@@ -199,7 +209,7 @@ binary_info Platform::read_binary(const char* path) {
         return {};
     }
 
-    char* buffer = (char*)Platform::ualloc(size);
+    char* buffer = (char*)Platform::UAlloc(size);
 
     DWORD bytes_read;
 
@@ -222,6 +232,19 @@ binary_info Platform::read_binary(const char* path) {
     info.size = size;
 
     return info;
+}
+
+int64_t Platform::GetTime() {
+    static int64_t performance_frequency = 0;
+    
+    if (!performance_frequency) {
+        QueryPerformanceFrequency((PLARGE_INTEGER)&performance_frequency);
+    }
+
+    int64_t now;
+    QueryPerformanceCounter((PLARGE_INTEGER)&now);
+
+    return (now * 1000000000ui64) / performance_frequency;
 }
 
 #endif

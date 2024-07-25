@@ -44,7 +44,8 @@ int Application::Run() {
 
             static int64_t last_time = 0;
             int64_t current_time = Platform::GetTime();
-            Logger::warning("Time: %d", int32_t(current_time - last_time));
+            deltaTime = float(current_time - last_time) / 1e+9;
+            Logger::warning("Time: %f", deltaTime);
             last_time = current_time;
 
             if (!m_Renderer->Draw()) {

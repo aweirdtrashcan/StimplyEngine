@@ -212,7 +212,7 @@ int64_t Platform::GetTime() {
     struct timespec now;
     clock_gettime(CLOCK_MONOTONIC, &now);
 
-    return int64_t(now.tv_sec) * int64_t(1000000000) + int64_t(now.tv_nsec);
+    return int64_t(now.tv_sec) * 1000000000ui64 + int64_t(now.tv_nsec);
 }
 
 #endif
