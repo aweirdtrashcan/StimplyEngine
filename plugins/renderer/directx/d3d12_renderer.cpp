@@ -307,7 +307,7 @@ bool poll_for_d3d12_messages() {
     
     // i don't want to allocate a new message for each iteration.
     static constexpr size_t message_size = 1024 * 1024;
-    DXGI_INFO_QUEUE_MESSAGE* message = (DXGI_INFO_QUEUE_MESSAGE*)malloc(message_size);
+    DXGI_INFO_QUEUE_MESSAGE* message = (DXGI_INFO_QUEUE_MESSAGE*)Platform::ualloc(message_size);
 
     for (uint64_t i = 0; i < num_messages; i++) {
         memset(message, 0, message_size);
@@ -321,7 +321,7 @@ bool poll_for_d3d12_messages() {
 
     state->info_queue->ClearStoredMessages(DXGI_DEBUG_ALL);
 
-    free(message);
+    Platform::ufree(message);
 
     return true;
 }

@@ -1,5 +1,6 @@
 #include "renderer.h"
 
+#include "DirectXMath.h"
 #include "renderer/global_uniform_object.h"
 #include "renderer/renderer_types.h"
 #include "renderer_interface.h"
@@ -47,30 +48,33 @@ Renderer::~Renderer() {
 }
 
 bool Renderer::Draw() {
-    GlobalUniformObject ubo;
+    DirectX::XMMATRIX view;
+    DirectX::XMMATRIX projection;
+
+    DirectX::XMVECTOR eye_position = DirectX::XMLoadFloat4(&m_EyePosition);
+    DirectX::XMVECTOR focus_position = DirectX::XMLoadFloat4(&m_FocusPosition);
+    DirectX::XMVECTOR up_direction = DirectX::XMLoadFloat4(&m_UpDirection);
+    
+    int32_t width, height;
+    m_Window->GetDimensions(&width, &height);
+
+    // TODO: Move this logic to somewhere else
+    m_AspectRatio = (float)width / (float)height;
 
     if (m_Interface.begin_frame() == FRAME_STATUS_SUCCESS) {
-        int32_t width, height;
-        m_Window->GetDimensions(&width, &height);
-        float aspect_ratio = (float)width / (float)height;
-        GlobalUniformObject ubo;
     
-        ubo.projection = DirectX::XMMatrixPerspectiveFovLH(45.f, aspect_ratio, 0.1f, 1000.f);
+        projection = DirectX::XMMatrixPerspectiveFovLH(m_Fov, m_AspectRatio, m_NearZ, m_FarZ);
+        view = DirectX::XMMatrixLookAtLH(eye_position, focus_position, up_direction);
 
-        DirectX::XMVECTOR eye_position = DirectX::XMVectorSet(0.0f, 0.0f, -3.0f, 0.0f);
-        DirectX::XMVECTOR focus_position = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-        DirectX::XMVECTOR up_direction = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-        ubo.view = DirectX::XMMatrixLookAtLH(eye_position, focus_position, up_direction);
-
-        SetViewProjection(ubo.view, ubo.projection);
+        SetViewProjection(view, projection);
         
         if (m_Interface.renderer_draw_items() == FRAME_STATUS_FAILED) {
-            Logger::fatal("Failed to render draw items");
+            Logger::warning("Failed to render draw items");
             return false;
         }
         
         if (m_Interface.end_frame() == FRAME_STATUS_FAILED) {
-            Logger::fatal("Failed to end frame");
+            Logger::warning("Failed to end frame");
             return false;
         }
 

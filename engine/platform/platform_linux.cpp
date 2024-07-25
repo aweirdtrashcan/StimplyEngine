@@ -167,7 +167,7 @@ void* Platform::load_library_function(void* library, const std::string& function
     const char* error_message = dlerror();
     
     if (error_message) {
-        Logger::fatal("%s", error_message);
+        Logger::warning("%s", error_message);
         return nullptr;
     }
 

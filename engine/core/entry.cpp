@@ -54,7 +54,7 @@ RAPI void initialize_engine(void) {
 
         renderer.DestroyRenderItem(render_item);
 
-    } catch (const std::exception &exception) {
+    } catch (const std::exception& exception) {
         Logger::fatal("Error: %s", exception.what());
         Window::MessageBox("Fatal error", exception.what());
     }

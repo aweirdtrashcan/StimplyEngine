@@ -32,4 +32,12 @@ private:
     HANDLE m_Library = nullptr;
     static inline renderer_state m_Renderer_Memory = nullptr;
     Window* m_Window;
+
+    DirectX::XMFLOAT4 m_EyePosition = DirectX::XMFLOAT4(0.0f, 0.0f, -3.0f, 0.0f);
+    DirectX::XMFLOAT4 m_FocusPosition = DirectX::XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+    DirectX::XMFLOAT4 m_UpDirection = DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
+    float m_AspectRatio = 16.f / 9.f;
+    float m_NearZ = 0.1f;
+    float m_FarZ = 1000.f;
+    float m_Fov = 45.f;
 };

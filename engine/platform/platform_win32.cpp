@@ -1,6 +1,5 @@
-#include "platform.h"
-
 #if defined (PLATFORM_WINDOWS)
+#include "platform.h"
 #include "defines.h"
 #include "window/window.h"
 #include "renderer/renderer_exception.h"
