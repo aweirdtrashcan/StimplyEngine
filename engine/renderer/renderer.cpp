@@ -4,7 +4,9 @@
 #include "DirectXMath/Extensions/DirectXMathAVX2.h"
 #include "core/event.h"
 #include "core/event_types.h"
+#include "core/logger.h"
 #include "renderer_interface.h"
+#include "window/key_defines.h"
 #include "window/window.h"
 #include "platform/platform.h"
 #include "renderer_exception.h"
@@ -59,30 +61,15 @@ void Renderer::OnEvent(EventType type, const EventData* pEventData) {
         case EventType::MouseMoved: {
             if (m_Window->IsMouseConfined()) {
                 MouseEventData* eventData = (MouseEventData*)pEventData;
-                m_CameraRotation.x += eventData->MouseXMotion / 0.25f * 0.0010f;
-                m_CameraRotation.y += eventData->MouseYMotion / 0.25f * 0.0010f;
+                m_CameraYaw += eventData->MouseXMotion / 0.25f * 0.0010f;
+                m_CameraPitch += eventData->MouseYMotion / 0.25f * 0.0010f;
             }
             break;
         }
         case EventType::KeyboardEvent: {
             KeyboardEventData* eventData = (KeyboardEventData*)pEventData;
 
-            if (m_Window->IsMouseConfined()) {
-                if (eventData->Key == 'w' && eventData->Pressed) {
-                    m_EyePosition.z += 1.0f;
-                }
-                if (eventData->Key == 's' && eventData->Pressed) {
-                    m_EyePosition.z -= 1.0f;
-                }
-                if (eventData->Key == 'a' && eventData->Pressed) {
-                    m_EyePosition.x -= 1.0f;
-                }
-                if (eventData->Key == 'd' && eventData->Pressed) {
-                    m_EyePosition.x += 1.0f;
-                }
-            }
-
-            if (eventData->Key == 27 && eventData->Pressed) {
+            if (eventData->Key == Key::Key_ESCAPE && eventData->Pressed) {
                 if (m_Window->IsMouseConfined()) {
                     m_Window->FreeCursorFromWindow();
                 } else {
@@ -125,19 +112,33 @@ void Renderer::CalculateViewMatrix() {
     DirectX::XMMATRIX view;
     DirectX::XMMATRIX projection;
 
-    DirectX::XMVECTOR eye_position = DirectX::XMVectorSet(m_EyePosition.x, m_EyePosition.y, m_EyePosition.z, m_EyePosition.w);
-    DirectX::XMVECTOR focus_position = DirectX::XMLoadFloat4(&m_FocusPosition);
+    DirectX::XMVECTOR forward_vector = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+    DirectX::XMVECTOR camera_direction = DirectX::AVX2::XMVector3Transform(
+        forward_vector, 
+        DirectX::XMMatrixRotationRollPitchYaw(m_CameraPitch, m_CameraYaw, 0.0f));
+
+    DirectX::XMVECTOR camera_position = DirectX::XMLoadFloat4(&m_EyePosition);
+    DirectX::XMVECTOR focus_position = DirectX::XMVectorAdd(camera_position, camera_direction);
     DirectX::XMVECTOR up_direction = DirectX::XMLoadFloat4(&m_UpDirection);
 
     projection = DirectX::XMMatrixPerspectiveFovLH(m_Fov, m_AspectRatio, m_NearZ, m_FarZ);
-    view = DirectX::XMMatrixLookAtLH(eye_position, focus_position, up_direction);
-    
-    view = DirectX::AVX2::XMMatrixMultiply(
-        view, 
-        DirectX::XMMatrixRotationRollPitchYaw(m_CameraRotation.y, m_CameraRotation.x, m_CameraRotation.z)
-    );
+    view = DirectX::XMMatrixLookAtLH(camera_position, focus_position, up_direction);
 
     SetViewProjection(view, projection);
+}
+
+void Renderer::OffsetCameraPosition(DirectX::XMFLOAT3 offset) {
+    DirectX::XMMATRIX direction = DirectX::AVX2::XMMatrixMultiply(
+        DirectX::XMMatrixRotationRollPitchYaw(m_CameraPitch, m_CameraYaw, 0.0f),
+        DirectX::XMMatrixScaling(m_MoveSpeed, m_MoveSpeed, m_MoveSpeed)
+    );
+
+    DirectX::XMFLOAT3 move_direction;
+    DirectX::XMStoreFloat3(&move_direction, DirectX::AVX2::XMVector3Transform(DirectX::XMLoadFloat3(&offset), direction));
+
+    m_EyePosition.x += move_direction.x;
+    m_EyePosition.y += move_direction.y;
+    m_EyePosition.z += move_direction.z;
 }
 
 renderer_interface Renderer::LoadRendererFunctions(RendererType type) {

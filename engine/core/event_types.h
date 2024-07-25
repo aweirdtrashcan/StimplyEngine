@@ -1,5 +1,7 @@
 #pragma once
 
+#include "window/key_defines.h"
+
 enum EventType {
 	MouseMoved,
 	KeyboardEvent,
@@ -22,6 +24,6 @@ struct MouseEventData : EventData {
 };
 
 struct KeyboardEventData : EventData {
-	int Key;
+	Key Key;
 	bool Pressed;
 };

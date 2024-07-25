@@ -4,6 +4,7 @@
 
 #include "platform/platform.h"
 #include "containers/list.h"
+#include "window/key_defines.h"
 
 struct SDL_Window;
 
@@ -24,11 +25,13 @@ public:
     bool ConfineCursorToWindow();
     bool FreeCursorFromWindow();
     bool IsMouseConfined() const;
+    inline bool IsKeyPressed(Key key) const { return m_KeyState[(int)key]; }
 
 private:
     void process_window_messages(const void* pEvent);
     void process_key_event(const void* pKey, bool pressed);
     void process_mouse_motion(const void* pMotion);
+    void process_mouse_confinment();
 
 private:
     SDL_Window* m_Window;
@@ -36,5 +39,6 @@ private:
     bool m_IsRunning = false;
     bool m_IsMouseHiddenByUser = false;
     bool m_IsMouseHidden = false;
+    const uint8_t* m_KeyState = nullptr;
 
 };

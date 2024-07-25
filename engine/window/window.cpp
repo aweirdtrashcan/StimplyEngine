@@ -1,10 +1,5 @@
 #include "window.h"
 
-#include "SDL2/SDL_events.h"
-#include "SDL2/SDL_mouse.h"
-#include "SDL2/SDL_scancode.h"
-#include "SDL2/SDL_stdinc.h"
-#include "SDL2/SDL_video.h"
 #include "core/event_types.h"
 #include "core/logger.h"
 #include "platform/platform.h"
@@ -26,11 +21,13 @@ Window::Window(int32_t x, int32_t y, int32_t width, int32_t height, const char* 
     SDL_assert(m_Window != nullptr);
 
     SDL_ShowWindow(m_Window);
+    m_KeyState = SDL_GetKeyboardState(nullptr);
 
     m_IsRunning = true;
 }
 
 Window::~Window() {
+    m_KeyState = nullptr;
     SDL_DestroyWindow(m_Window);
 }
 
@@ -43,20 +40,7 @@ int Window::ProcessMessages() {
         process_window_messages(&event);
     }
 
-    // check if window has input focus
-    uint32_t flags = SDL_GetWindowFlags(m_Window);
-
-    if (flags & SDL_WINDOW_INPUT_FOCUS) {
-        if (m_IsMouseHiddenByUser && !m_IsMouseHidden) {
-            SDL_SetRelativeMouseMode(SDL_TRUE);
-            m_IsMouseHidden = true;
-        }
-    } else {
-        if (m_IsMouseHiddenByUser && m_IsMouseHidden) {
-            SDL_SetRelativeMouseMode(SDL_FALSE);
-            m_IsMouseHidden = false;
-        }
-    }
+    process_mouse_confinment();
 
     return m_IsRunning;
 }
@@ -130,7 +114,7 @@ void Window::process_key_event(const void* pKey, bool pressed) {
     
     KeyboardEventData eventData;
     // TODO: Translate to engine-specific
-    eventData.Key = key.sym;
+    eventData.Key = (Key)key.scancode;
     eventData.Pressed = pressed;
 
     IEvent::FireEvent(EventType::KeyboardEvent, &eventData);
@@ -149,4 +133,21 @@ void Window::process_mouse_motion(const void* pMotion) {
     eventData.MouseYScreen = event.y;
 
     IEvent::FireEvent(EventType::MouseMoved, &eventData);
+}
+
+void Window::process_mouse_confinment() {
+    // check if window has input focus
+    uint32_t flags = SDL_GetWindowFlags(m_Window);
+
+    if (flags & SDL_WINDOW_INPUT_FOCUS) {
+        if (m_IsMouseHiddenByUser && !m_IsMouseHidden) {
+            SDL_SetRelativeMouseMode(SDL_TRUE);
+            m_IsMouseHidden = true;
+        }
+    } else {
+        if (m_IsMouseHiddenByUser && m_IsMouseHidden) {
+            SDL_SetRelativeMouseMode(SDL_FALSE);
+            m_IsMouseHidden = false;
+        }
+    }
 }

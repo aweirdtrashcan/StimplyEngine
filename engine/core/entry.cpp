@@ -1,13 +1,23 @@
 #include "DirectXMath.h"
 #include "core/logger.h"
 #include "renderer/renderer.h"
-#include "test.h"
 #include "window/window.h"
 
 #include <exception>
 #include <DirectXMath/Extensions/DirectXMathAVX2.h>
 
-RAPI void initialize_engine(void) {
+#include <game/core/game.h>
+
+int main(void) {
+    // Logger::fatal("This is a test message!");
+    // Logger::warning("This is a test message!");
+    // Logger::debug("This is a test message!");
+    // Logger::info("This is a test message!");
+
+    Game game_inst;
+
+    game_inst.OnBegin();
+
     try {
         Window window(100, 100, 800, 600, "Stimply Engine");
         Renderer renderer(RendererType::VULKAN, &window);
@@ -33,19 +43,30 @@ RAPI void initialize_engine(void) {
 
         HANDLE render_item = renderer.CreateRenderItem(&create_info);
 
-        float rotation_factor = 0.0f;
+        DirectX::XMFLOAT4X4 model;
+        DirectX::XMStoreFloat4x4(&model, DirectX::XMMatrixIdentity());
+        renderer.SetRenderItemModel(render_item, &model);
 
         while (window.ProcessMessages()) {
-            rotation_factor += 0.0001f;
-            DirectX::XMMATRIX model_mat = DirectX::XMMatrixIdentity();
-            DirectX::XMMATRIX rotation_mat = DirectX::XMMatrixRotationRollPitchYaw(0.0f, 0.0f, rotation_factor);
-            model_mat = DirectX::AVX2::XMMatrixMultiply(model_mat, rotation_mat);
-                
-            DirectX::XMFLOAT4X4 model;
+            const float move_factor = 1.0f;
 
-            DirectX::XMStoreFloat4x4(&model, model_mat);
+            game_inst.OnUpdate();
 
-            renderer.SetRenderItemModel(render_item, &model);
+            if (window.IsMouseConfined()) {
+                if (window.IsKeyPressed(Key::Key_W)) {
+                    renderer.OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, 0.0f, move_factor));
+                }
+                if (window.IsKeyPressed(Key::Key_S)) {
+                    renderer.OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, 0.0f, -move_factor));
+                }
+                if (window.IsKeyPressed(Key::Key_A)) {
+                    renderer.OffsetCameraPosition(DirectX::XMFLOAT3(-move_factor, 0.0f, 0.0f));
+                }
+                if (window.IsKeyPressed(Key::Key_D)) {
+                    renderer.OffsetCameraPosition(DirectX::XMFLOAT3(move_factor, 0.0f, 0.0f));
+                }
+            }
+
             if (!renderer.Draw()) {
                 Logger::fatal("Some error happened while Drawing, closing the engine...");
                 break;
@@ -59,5 +80,8 @@ RAPI void initialize_engine(void) {
         Window::MessageBox("Fatal error", exception.what());
     }
 
+    game_inst.OnShutdown();
     Logger::info("Leaving engine...");
+
+    return 0;
 }
