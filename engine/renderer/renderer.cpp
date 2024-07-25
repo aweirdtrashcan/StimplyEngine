@@ -1,8 +1,9 @@
 #include "renderer.h"
 
 #include "DirectXMath.h"
-#include "renderer/global_uniform_object.h"
-#include "renderer/renderer_types.h"
+#include "DirectXMath/Extensions/DirectXMathAVX2.h"
+#include "core/event.h"
+#include "core/event_types.h"
 #include "renderer_interface.h"
 #include "window/window.h"
 #include "platform/platform.h"
@@ -39,35 +40,66 @@ Renderer::Renderer(RendererType type, Window* window)
     if (!m_Interface.initialize(&allocation_size, m_Renderer_Memory, "Stimply Engine", window->get_internal_handle())) {
         throw RendererException("Failed to initialize renderer");
     }
+
+    window->ConfineCursorToWindow();
+    IEvent::RegisterListener(this, EventType::MouseMoved);
+    IEvent::RegisterListener(this, EventType::KeyboardEvent);
 }
 
 Renderer::~Renderer() {
     m_Interface.shutdown();
+    m_Window->FreeCursorFromWindow();
+    IEvent::UnregisterListener(this, EventType::MouseMoved);
     Platform::ufree(m_Renderer_Memory);
     Platform::unload_library(m_Library);
 }
 
+void Renderer::OnEvent(EventType type, const EventData* pEventData) {
+    switch (type) {
+        case EventType::MouseMoved: {
+            if (m_Window->IsMouseConfined()) {
+                MouseEventData* eventData = (MouseEventData*)pEventData;
+                m_CameraRotation.x += eventData->MouseXMotion / 0.25f * 0.0010f;
+                m_CameraRotation.y += eventData->MouseYMotion / 0.25f * 0.0010f;
+            }
+            break;
+        }
+        case EventType::KeyboardEvent: {
+            KeyboardEventData* eventData = (KeyboardEventData*)pEventData;
+
+            if (m_Window->IsMouseConfined()) {
+                if (eventData->Key == 'w' && eventData->Pressed) {
+                    m_EyePosition.z += 1.0f;
+                }
+                if (eventData->Key == 's' && eventData->Pressed) {
+                    m_EyePosition.z -= 1.0f;
+                }
+                if (eventData->Key == 'a' && eventData->Pressed) {
+                    m_EyePosition.x -= 1.0f;
+                }
+                if (eventData->Key == 'd' && eventData->Pressed) {
+                    m_EyePosition.x += 1.0f;
+                }
+            }
+
+            if (eventData->Key == 27 && eventData->Pressed) {
+                if (m_Window->IsMouseConfined()) {
+                    m_Window->FreeCursorFromWindow();
+                } else {
+                    m_Window->ConfineCursorToWindow();
+                }
+            }
+
+            break;
+        }
+        default: break;
+    }
+}
+
 bool Renderer::Draw() {
-    DirectX::XMMATRIX view;
-    DirectX::XMMATRIX projection;
+    CalculateViewMatrix();
 
-    DirectX::XMVECTOR eye_position = DirectX::XMLoadFloat4(&m_EyePosition);
-    DirectX::XMVECTOR focus_position = DirectX::XMLoadFloat4(&m_FocusPosition);
-    DirectX::XMVECTOR up_direction = DirectX::XMLoadFloat4(&m_UpDirection);
-    
-    int32_t width, height;
-    m_Window->GetDimensions(&width, &height);
-
-    // TODO: Move this logic to somewhere else
-    m_AspectRatio = (float)width / (float)height;
-
-    if (m_Interface.begin_frame() == FRAME_STATUS_SUCCESS) {
-    
-        projection = DirectX::XMMatrixPerspectiveFovLH(m_Fov, m_AspectRatio, m_NearZ, m_FarZ);
-        view = DirectX::XMMatrixLookAtLH(eye_position, focus_position, up_direction);
-
-        SetViewProjection(view, projection);
-        
+    if (m_Interface.begin_frame() == FRAME_STATUS_SUCCESS) {       
         if (m_Interface.renderer_draw_items() == FRAME_STATUS_FAILED) {
             Logger::warning("Failed to render draw items");
             return false;
@@ -81,6 +113,31 @@ bool Renderer::Draw() {
         return true;
     }
     return false;
+}
+
+void Renderer::CalculateViewMatrix() {
+    int32_t width, height;
+    m_Window->GetDimensions(&width, &height);
+
+    // TODO: Move this logic to somewhere else
+    m_AspectRatio = (float)width / (float)height;
+
+    DirectX::XMMATRIX view;
+    DirectX::XMMATRIX projection;
+
+    DirectX::XMVECTOR eye_position = DirectX::XMVectorSet(m_EyePosition.x, m_EyePosition.y, m_EyePosition.z, m_EyePosition.w);
+    DirectX::XMVECTOR focus_position = DirectX::XMLoadFloat4(&m_FocusPosition);
+    DirectX::XMVECTOR up_direction = DirectX::XMLoadFloat4(&m_UpDirection);
+
+    projection = DirectX::XMMatrixPerspectiveFovLH(m_Fov, m_AspectRatio, m_NearZ, m_FarZ);
+    view = DirectX::XMMatrixLookAtLH(eye_position, focus_position, up_direction);
+    
+    view = DirectX::AVX2::XMMatrixMultiply(
+        view, 
+        DirectX::XMMatrixRotationRollPitchYaw(m_CameraRotation.y, m_CameraRotation.x, m_CameraRotation.z)
+    );
+
+    SetViewProjection(view, projection);
 }
 
 renderer_interface Renderer::LoadRendererFunctions(RendererType type) {

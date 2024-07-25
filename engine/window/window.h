@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <SDL2/SDL.h>
 
 #include "platform/platform.h"
 #include "containers/list.h"
@@ -20,13 +19,22 @@ public:
     void* create_vulkan_surface(void* instance) { return Platform::create_vulkan_surface(this, instance); }
     static void MessageBox(const char* title, const char* message);
 
-    void GetDimensions(int32_t* width, int32_t* height);
+    void GetDimensions(int32_t* width, int32_t* height) const;
+
+    bool ConfineCursorToWindow();
+    bool FreeCursorFromWindow();
+    bool IsMouseConfined() const;
 
 private:
-    void process_window_messages(const SDL_Event& event);
-    void process_key_event(SDL_Keysym key);
+    void process_window_messages(const void* pEvent);
+    void process_key_event(const void* pKey, bool pressed);
+    void process_mouse_motion(const void* pMotion);
+
 private:
     SDL_Window* m_Window;
     Platform m_Platform;
     bool m_IsRunning = false;
+    bool m_IsMouseHiddenByUser = false;
+    bool m_IsMouseHidden = false;
+
 };
