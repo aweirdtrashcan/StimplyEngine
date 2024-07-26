@@ -68,7 +68,7 @@ bool create_swapchain(internal_vulkan_renderer_state* state, const VkSurfaceCapa
     create_info.pQueueFamilyIndices = nullptr;
     create_info.preTransform = surface_capabilities.currentTransform;
     create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    create_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    create_info.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
     create_info.clipped = VK_TRUE;
     create_info.oldSwapchain = VK_NULL_HANDLE;
 

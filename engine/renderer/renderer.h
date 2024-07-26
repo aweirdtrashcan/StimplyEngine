@@ -27,7 +27,6 @@ public:
     inline void SetViewProjection(DirectX::XMMATRIX view, DirectX::CXMMATRIX projection) { m_Interface.renderer_set_view_projection(view, projection); }
     inline void SetRenderItemModel(HANDLE renderItem, const DirectX::XMFLOAT4X4* model) { m_Interface.renderer_set_render_item_model(renderItem, model); }
     void OffsetCameraPosition(DirectX::XMFLOAT3 offset);
-    inline void SetCameraMoveSpeed(float moveSpeed) { m_MoveSpeed = moveSpeed; }
 
 private:
     void CalculateViewMatrix();
@@ -50,6 +49,4 @@ private:
     float m_NearZ = 0.1f;
     float m_FarZ = 1000.f;
     float m_Fov = 45.f;
-
-    float m_MoveSpeed = 1.0f;
 };

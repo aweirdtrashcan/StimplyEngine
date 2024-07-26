@@ -44,7 +44,7 @@ void Game::OnBegin() {
 }
 
 void Game::OnUpdate(float deltaTime) {
-	const float move_factor = 1.0f;
+	const float move_factor = 100.0f * deltaTime;
     if (m_Application->GetWindow()->IsMouseConfined()) {
         if (m_Application->GetWindow()->IsKeyPressed(Key::Key_W)) {
             m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, 0.0f, move_factor));

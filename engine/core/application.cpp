@@ -44,8 +44,10 @@ int Application::Run() {
 
             static int64_t last_time = 0;
             int64_t current_time = Platform::GetTime();
+            
+            // nanoseconds to seconds
             deltaTime = float(current_time - last_time) / 1e+9;
-            Logger::warning("Time: %f", deltaTime);
+            
             last_time = current_time;
 
             if (!m_Renderer->Draw()) {

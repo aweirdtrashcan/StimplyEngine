@@ -128,10 +128,7 @@ void Renderer::CalculateViewMatrix() {
 }
 
 void Renderer::OffsetCameraPosition(DirectX::XMFLOAT3 offset) {
-    DirectX::XMMATRIX direction = DirectX::AVX2::XMMatrixMultiply(
-        DirectX::XMMatrixRotationRollPitchYaw(m_CameraPitch, m_CameraYaw, 0.0f),
-        DirectX::XMMatrixScaling(m_MoveSpeed, m_MoveSpeed, m_MoveSpeed)
-    );
+    DirectX::XMMATRIX direction = DirectX::XMMatrixRotationRollPitchYaw(m_CameraPitch, m_CameraYaw, 0.0f);
 
     DirectX::XMFLOAT3 move_direction;
     DirectX::XMStoreFloat3(&move_direction, DirectX::AVX2::XMVector3Transform(DirectX::XMLoadFloat3(&offset), direction));
