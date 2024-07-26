@@ -59,7 +59,6 @@ int Application::Run() {
         }
 
         m_Game->OnShutdown();
-        delete m_Game;
         
         Logger::ShutdownLogging();
 
