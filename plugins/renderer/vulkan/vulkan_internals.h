@@ -153,7 +153,7 @@ bool begin_render_pass(VkRenderPass render_pass, VkCommandBuffer command_buffer,
 bool end_render_pass(VkCommandBuffer command_buffer);
 
 bool create_uploader_buffer(const internal_vulkan_renderer_state* state, size_t size, gpu_buffer* out_gpu_buffer);
-bool copy_to_upload_buffer(const internal_vulkan_renderer_state* state, void* source, size_t size, gpu_buffer* buffer);
+bool copy_to_upload_buffer(const internal_vulkan_renderer_state* state, const void* source, size_t size, gpu_buffer* buffer);
 bool copy_to_gpu_buffer(VkCommandBuffer command_buffer, const gpu_buffer* source_upload_buffer, gpu_buffer* gpu_buffer, uint64_t destination_offset = 0, uint64_t source_offset = 0);
 bool create_gpu_buffer(const internal_vulkan_renderer_state* state, size_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_properties, gpu_buffer* out_gpu_buffer);
 bool destroy_gpu_buffer(const internal_vulkan_renderer_state* state, gpu_buffer* buffer);
@@ -164,4 +164,11 @@ bool end_one_time_command_buffer(const internal_vulkan_renderer_state* state, Vk
 VkResult submit_command_queue(VkSemaphore wait_semaphore, VkSemaphore signal_semaphore, VkFence fence, VkQueue queue, VkCommandBuffer command_buffer);
 
 bool update_uniform_buffer();
+
+bool create_image(const internal_vulkan_renderer_state* state, VkImageType type, VkFormat format, const VkExtent3D* extent, uint32_t mip_levels, VkImageUsageFlags usage, VkImageLayout initial_layout, vulkan_image* out_image);
+bool create_image_view(const internal_vulkan_renderer_state* state, vulkan_image* image, VkImageViewType type, VkImageAspectFlags image_aspect);
+bool destroy_image(const internal_vulkan_renderer_state* state, vulkan_image* image);
+bool destroy_image_view(const internal_vulkan_renderer_state* state, vulkan_image* image);
+bool transition_image_layout(const internal_vulkan_renderer_state* state, VkCommandBuffer command_buffer, vulkan_image* image, VkImageLayout old_layout, VkImageLayout new_layout);
+bool copy_buffer_to_image(VkCommandBuffer command_buffer, vulkan_image* destination_image, const gpu_buffer* source_buffer);
 }

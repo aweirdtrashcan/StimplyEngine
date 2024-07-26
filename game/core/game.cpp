@@ -2,6 +2,7 @@
 
 #include <core/application.h>
 #include <core/logger.h>
+#include <cstdint>
 #include <renderer/renderer.h>
 #include <window/window.h>
 
@@ -41,6 +42,11 @@ void Game::OnBegin() {
 	DirectX::XMFLOAT4X4 model;
     DirectX::XMStoreFloat4x4(&model, DirectX::XMMatrixIdentity());
     renderer->SetRenderItemModel(m_RenderItem, &model);
+
+    const uint8_t* pixels = new uint8_t[800 * 600 * 4];
+    Texture test = renderer->CreateTexture("Test texture", false, 800, 600, 4, pixels, false);
+
+    renderer->DestroyTexture(test);
 }
 
 void Game::OnUpdate(float deltaTime) {

@@ -77,7 +77,7 @@ bool create_uploader_buffer(const internal_vulkan_renderer_state* state, size_t 
     return true;
 }
 
-bool copy_to_upload_buffer(const internal_vulkan_renderer_state* state, void* source, size_t size, gpu_buffer* buffer) {
+bool copy_to_upload_buffer(const internal_vulkan_renderer_state* state, const void* source, size_t size, gpu_buffer* buffer) {
     if (!(buffer->memory_property_flags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
         Logger::warning("copy_to_upload_buffer can't be called on a buffer that's not host visible");
         return false;

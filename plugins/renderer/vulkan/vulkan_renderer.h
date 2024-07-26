@@ -18,5 +18,7 @@ DYNAMIC_RENDERER HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pR
 DYNAMIC_RENDERER void vulkan_destroy_render_item(HANDLE render_item);
 DYNAMIC_RENDERER void vulkan_set_view_projection(DirectX::XMMATRIX view_matrix, DirectX::CXMMATRIX projection_matrix);
 DYNAMIC_RENDERER void vulkan_set_render_item_model(HANDLE render_item, const DirectX::XMFLOAT4X4* model_matrix);
-DYNAMIC_RENDERER HANDLE vulkan_create_texture(HANDLE state, uint32_t width, uint32_t height);
+DYNAMIC_RENDERER HANDLE vulkan_create_texture(const char* name, bool auto_release, uint32_t width, uint32_t height, 
+                                     		  uint32_t channel_count, const uint8_t* pixels, bool has_transparency);
+DYNAMIC_RENDERER void vulkan_destroy_texture(HANDLE texture);
 }

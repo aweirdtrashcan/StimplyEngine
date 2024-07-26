@@ -7,12 +7,15 @@
 #include <containers/list.h>
 
 struct vulkan_image {
+    const char* name;
     VkImage image;
     VkImageView view;
     VkDeviceMemory memory;
     VkFormat format;
     uint32_t width;
     uint32_t height;
+    uint32_t mip_levels;
+    VkImageAspectFlags image_aspect;
 };
 
 struct gpu_buffer {

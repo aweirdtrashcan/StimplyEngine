@@ -1,10 +1,7 @@
 #pragma once
 
 #include "defines.h"
-#include "platform/platform.h"
-#include "containers/list.h"
-
-#include <cstdint>
+#include <DirectXMath.h>
 
 enum PipelineStage {
     PipelineTypeMVP,
@@ -12,31 +9,9 @@ enum PipelineStage {
     PipelineTypeMAX
 };
 
-struct mat4 {
-    float x1, x2, x3, x4;
-    float y1, y2, y3, y4;
-    float z1, z2, z3, z4;
-    float w1, w2, w3, w4;
-
-    mat4() {
-        Platform::ZeroMemory(this, sizeof(*this));
-        x1 = 1.0f;
-        y2 = 1.0f;
-        z3 = 1.0f;
-        w4 = 1.0f;
-    }
-};
-
 struct GlobalUniformBuffer {
-    mat4 projection;
-    mat4 view;
-};
-
-struct ShaderBundle {
-    PipelineStage pipelineType;
-    const char* shaderPath;
-    HANDLE pData;
-    uint64_t dataSize;
+    DirectX::XMFLOAT4X4 projection;
+    DirectX::XMFLOAT4X4 view;
 };
 
 struct RenderItemCreateInfo {
@@ -46,7 +21,6 @@ struct RenderItemCreateInfo {
     uint64_t indexSize;
     HANDLE pIndices;
     uint32_t indicesCount;
-    list<ShaderBundle> shaderBundles;
     HANDLE shader;
 };
 

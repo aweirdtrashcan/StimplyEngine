@@ -406,6 +406,53 @@ void vulkan_set_render_item_model(HANDLE render_item, const DirectX::XMFLOAT4X4*
     item->model = *model_matrix;
 }
 
+HANDLE vulkan_create_texture(const char* name, bool auto_release, uint32_t width, uint32_t height, 
+                             uint32_t channel_count, const uint8_t* pixels, bool has_transparency) {
+    VkCommandBuffer command_buffer;
+
+    // TODO: Change this in the future.
+    vulkan_image* image = (vulkan_image*)Platform::UAlloc(sizeof(vulkan_image));
+    image->name = name;
+
+    VkExtent3D image_extent;
+    image_extent.width = width;
+    image_extent.height = height;
+    image_extent.depth = 1;
+
+    uint64_t image_size = width * height * channel_count;
+
+    create_one_time_command_buffer(state, &command_buffer);
+
+    create_image(state, VK_IMAGE_TYPE_2D, VK_FORMAT_B8G8R8A8_UNORM, 
+        &image_extent, state->mip_levels, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | 
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
+        VK_IMAGE_LAYOUT_UNDEFINED, image);
+
+    create_image_view(state, image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
+
+    transition_image_layout(state, command_buffer, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    gpu_buffer upload_buffer;
+    create_uploader_buffer(state, image_size, &upload_buffer);
+    copy_to_upload_buffer(state, pixels, image_size, &upload_buffer);
+
+    copy_buffer_to_image(command_buffer, image, &upload_buffer);
+
+    transition_image_layout(state, command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+    end_one_time_command_buffer(state, command_buffer, state->graphics_queue);
+
+    destroy_gpu_buffer(state, &upload_buffer);
+
+    return image;
+}
+
+void vulkan_destroy_texture(HANDLE texture) {
+    destroy_image_view(state, (vulkan_image*)texture);
+    destroy_image(state, (vulkan_image*)texture);
+    Platform::UFree(texture);
+}
+
 /****************************************** INTERNAL FUNCTIONS ********************************************* */
 VkBool32 debug_utils_callback(VkDebugUtilsMessageSeverityFlagBitsEXT           messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT                  messageTypes,

@@ -1,7 +1,5 @@
 #include "renderer.h"
 
-#include "DirectXMath.h"
-#include "DirectXMath/Extensions/DirectXMathAVX2.h"
 #include "core/event.h"
 #include "core/event_types.h"
 #include "core/logger.h"
@@ -10,6 +8,9 @@
 #include "window/window.h"
 #include "platform/platform.h"
 #include "renderer_exception.h"
+
+#include <DirectXMath.h>
+#include <DirectXMath/Extensions/DirectXMathAVX2.h>
 
 Renderer::Renderer(RendererType type, Window* window) 
     :
@@ -29,17 +30,17 @@ Renderer::Renderer(RendererType type, Window* window)
 
     m_Interface = LoadRendererFunctions(type);
 
-    if (!m_Interface.initialize) {
+    if (!m_Interface.renderer_initialize) {
         throw RendererException("Failed to load library: %s", library_name);
     }     
     
-    if (!m_Interface.initialize(&allocation_size, nullptr, "Stimply Engine", window->get_internal_handle())) {
+    if (!m_Interface.renderer_initialize(&allocation_size, nullptr, "Stimply Engine", window->get_internal_handle())) {
         throw RendererException("Failed to get renderer required size for internal state");
     }
 
     m_Renderer_Memory = Platform::UAlloc(allocation_size);
 
-    if (!m_Interface.initialize(&allocation_size, m_Renderer_Memory, "Stimply Engine", window->get_internal_handle())) {
+    if (!m_Interface.renderer_initialize(&allocation_size, m_Renderer_Memory, "Stimply Engine", window->get_internal_handle())) {
         throw RendererException("Failed to initialize renderer");
     }
 
@@ -49,7 +50,7 @@ Renderer::Renderer(RendererType type, Window* window)
 }
 
 Renderer::~Renderer() {
-    m_Interface.shutdown();
+    m_Interface.renderer_shutdown();
     m_Window->FreeCursorFromWindow();
     IEvent::UnregisterListener(this, EventType::MouseMoved);
     Platform::UFree(m_Renderer_Memory);
@@ -86,13 +87,13 @@ void Renderer::OnEvent(EventType type, const EventData* pEventData) {
 bool Renderer::Draw() {
     CalculateViewMatrix();
 
-    if (m_Interface.begin_frame() == FRAME_STATUS_SUCCESS) {       
+    if (m_Interface.renderer_begin_frame() == FRAME_STATUS_SUCCESS) {       
         if (m_Interface.renderer_draw_items() == FRAME_STATUS_FAILED) {
             Logger::warning("Failed to render draw items");
             return false;
         }
         
-        if (m_Interface.end_frame() == FRAME_STATUS_FAILED) {
+        if (m_Interface.renderer_end_frame() == FRAME_STATUS_FAILED) {
             Logger::warning("Failed to end frame");
             return false;
         }
@@ -138,27 +139,36 @@ void Renderer::OffsetCameraPosition(DirectX::XMFLOAT3 offset) {
     m_EyePosition.z += move_direction.z;
 }
 
+inline void* format_symbol_name(char* buffer, uint64_t buffer_size, void* library, const char* renderer_placeholder, const char* symbol_name) {
+    snprintf(buffer, buffer_size, "%s%s", renderer_placeholder, symbol_name);
+    return Platform::LoadLibraryFunction(library, buffer);
+}
+
+#define load_library(symbol_name) format_symbol_name(buffer, sizeof(buffer), m_Library, renderer_placeholder, symbol_name)
+
 renderer_interface Renderer::LoadRendererFunctions(RendererType type) {
     renderer_interface interface{};
 
-    std::string renderer_placeholder;
-
+    const char* renderer_placeholder = nullptr;
+    char buffer[2048];
+    
     if (type == RendererType::VULKAN) {
         renderer_placeholder = "vulkan";
     } else {
         renderer_placeholder = "d3d12";
     }
 
-    interface.initialize = (PFN_renderer_backend_initialize)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_backend_initialize");
-    interface.shutdown = (PFN_renderer_backend_shutdown)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_backend_shutdown");
-    interface.create_texture = (PFN_create_texture)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_create_texture");
-    interface.begin_frame = (PFN_renderer_begin_frame)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_begin_frame");
-    interface.end_frame = (PFN_renderer_end_frame)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_end_frame");
-    interface.renderer_create_render_item = (PFN_renderer_create_render_item)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_create_render_item");
-    interface.renderer_destroy_render_item = (PFN_renderer_destroy_render_item)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_destroy_render_item");
-    interface.renderer_draw_items = (PFN_renderer_draw_items)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_draw_items");
-    interface.renderer_set_view_projection = (PFN_renderer_set_view_projection)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_set_view_projection");
-    interface.renderer_set_render_item_model = (PFN_renderer_set_render_item_model)Platform::LoadLibraryFunction(m_Library, renderer_placeholder + "_set_render_item_model");
+    interface.renderer_initialize = (PFN_renderer_backend_initialize)load_library("_backend_initialize");
+    interface.renderer_shutdown = (PFN_renderer_backend_shutdown)load_library("_backend_shutdown");
+    interface.renderer_begin_frame = (PFN_renderer_begin_frame)load_library("_begin_frame");
+    interface.renderer_end_frame = (PFN_renderer_end_frame)load_library("_end_frame");
+    interface.renderer_create_texture = (PFN_renderer_create_texture)load_library("_create_texture");
+    interface.renderer_destroy_texture = (PFN_renderer_destroy_texture)load_library("_destroy_texture");
+    interface.renderer_create_render_item = (PFN_renderer_create_render_item)load_library("_create_render_item");
+    interface.renderer_destroy_render_item = (PFN_renderer_destroy_render_item)load_library("_destroy_render_item");
+    interface.renderer_draw_items = (PFN_renderer_draw_items)load_library("_draw_items");
+    interface.renderer_set_view_projection = (PFN_renderer_set_view_projection)load_library("_set_view_projection");
+    interface.renderer_set_render_item_model = (PFN_renderer_set_render_item_model)load_library("_set_render_item_model");
 
     return interface;
 }
