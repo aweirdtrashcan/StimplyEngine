@@ -40,15 +40,16 @@ int Application::Run() {
         float deltaTime = 0.0f;
 
         while (m_Window->ProcessMessages()) {
-            m_Game->OnUpdate(deltaTime);
 
-            static int64_t last_time = 0;
             int64_t current_time = Platform::GetTime();
+            static int64_t last_time = current_time;
             
             // nanoseconds to seconds
             deltaTime = float(current_time - last_time) / 1e+9;
-            
+
             last_time = current_time;
+
+            m_Game->OnUpdate(deltaTime);
 
             if (!m_Renderer->Draw()) {
                 Logger::fatal("Some error happened while Drawing, closing the engine...");
