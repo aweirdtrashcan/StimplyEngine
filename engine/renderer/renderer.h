@@ -25,17 +25,20 @@ public:
     inline HANDLE CreateRenderItem(const RenderItemCreateInfo* renderItem) { return m_Interface.renderer_create_render_item(renderItem); }
     inline void DestroyRenderItem(HANDLE renderItem) { m_Interface.renderer_destroy_render_item(renderItem); }
     inline void SetViewProjection(DirectX::XMMATRIX view, DirectX::CXMMATRIX projection) { m_Interface.renderer_set_view_projection(view, projection); }
-    inline void SetRenderItemModel(HANDLE renderItem, const DirectX::XMFLOAT4X4* model) { m_Interface.renderer_set_render_item_model(renderItem, model); }
+    inline void UpdateRenderItem(HANDLE renderItem, const DirectX::XMFLOAT4X4* render_data) { m_Interface.renderer_update_render_item(renderItem, render_data); }
     void OffsetCameraPosition(DirectX::XMFLOAT3 offset);
     inline Texture CreateTexture(const char* name, bool auto_release, uint32_t width, uint32_t height, 
                                 uint32_t channel_count, const uint8_t* pixels, bool has_transparency) {
         return m_Interface.renderer_create_texture(name, auto_release, width, height, channel_count, pixels, has_transparency);
     }
     inline void DestroyTexture(Texture texture) { m_Interface.renderer_destroy_texture(texture); }
+    inline void WaitDeviceIdle() { m_Interface.renderer_wait_device_idle(); }
 
 private:
     void CalculateViewMatrix();
-    [[nodiscard]] renderer_interface LoadRendererFunctions(RendererType type);
+    
+    [[nodiscard]] 
+    renderer_interface LoadRendererFunctions(RendererType type);
 
 private:
     renderer_interface m_Interface;

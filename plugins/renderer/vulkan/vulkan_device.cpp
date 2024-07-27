@@ -12,6 +12,7 @@ bool select_physical_device(internal_vulkan_renderer_state* state) {
     VkPhysicalDevice selected_device = nullptr;
     VkPhysicalDeviceProperties selected_physical_device;
     uint32_t max_push_constant_size = 0;
+    uint64_t min_ubo_alignment = 0;
 
     for (uint32_t i = 0; i < physical_device_count; i++) {
         VkPhysicalDeviceProperties device_properties{};
@@ -23,13 +24,16 @@ bool select_physical_device(internal_vulkan_renderer_state* state) {
         vkGetPhysicalDeviceFeatures(physical_devices[i], &device_features);
 
         max_push_constant_size = device_properties.limits.maxPushConstantsSize;
+        min_ubo_alignment = device_properties.limits.minUniformBufferOffsetAlignment;
 
         size_t device_vram = 0;
         for (uint32_t h = 0; h < memory_properties.memoryHeapCount; h++) {
             device_vram += memory_properties.memoryHeaps[h].size;
         }
 
-        if (device_vram > vram_count) {
+        bool supports_features = device_features.samplerAnisotropy && device_features.depthClamp;
+
+        if (device_vram > vram_count && supports_features) {
             selected_device = physical_devices[i];
             selected_physical_device = device_properties;
         }
@@ -43,6 +47,7 @@ bool select_physical_device(internal_vulkan_renderer_state* state) {
 
     state->physical_device = selected_device;
     state->max_push_constant_size = max_push_constant_size;
+    state->min_ubo_alignment = min_ubo_alignment;
 
     return true;
 }

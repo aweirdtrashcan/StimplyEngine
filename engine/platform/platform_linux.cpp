@@ -182,7 +182,7 @@ void* Platform::create_vulkan_surface(Window* window, void* instance) {
     return surface;
 }
 
-binary_info Platform::ReadBinary(const char* path) {
+binary_info Platform::OpenBinary(const char* path) {
     FILE* file = fopen(path, "rb");
 
     if (!file) {
@@ -206,6 +206,12 @@ binary_info Platform::ReadBinary(const char* path) {
     fclose(file);
 
     return info;
+}
+
+void Platform::CloseBinary(binary_info* binary_info) {
+    Platform::UFree(binary_info->binary);
+    binary_info->binary = 0;
+    binary_info->size = 0;
 }
 
 int64_t Platform::GetTime() {

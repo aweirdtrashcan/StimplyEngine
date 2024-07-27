@@ -165,6 +165,7 @@ bool create_image(const internal_vulkan_renderer_state* state, VkImageType type,
     out_image->height = extent->height;
     out_image->format = format;
     out_image->mip_levels = mip_levels;
+    out_image->image_layout = initial_layout;
 
     return true;
 
@@ -272,6 +273,8 @@ bool transition_image_layout(const internal_vulkan_renderer_state* state, VkComm
         0, nullptr,
         1, &barrier
     );
+
+    image->image_layout = new_layout;
 
     return true;
 }

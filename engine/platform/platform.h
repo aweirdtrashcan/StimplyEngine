@@ -39,7 +39,8 @@ public:
     static void* create_vulkan_surface(Window* window, void* instance);
 
     [[nodiscard("binary_info contains a dynamically allocated string")]] 
-    static binary_info ReadBinary(const char* path);
+    static binary_info OpenBinary(const char* path);
+    static void CloseBinary(binary_info* binary_info);
 
     /* Returns the current time in nanoseconds */
     static int64_t GetTime();

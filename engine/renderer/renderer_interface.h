@@ -21,7 +21,8 @@ typedef HANDLE(*PFN_renderer_create_render_item)(const struct RenderItemCreateIn
 typedef void(*PFN_renderer_destroy_render_item)(HANDLE render_item);
 typedef FrameStatus(*PFN_renderer_draw_items)();
 typedef void(*PFN_renderer_set_view_projection)(DirectX::XMMATRIX view_matrix, DirectX::CXMMATRIX projection_matrix);
-typedef void(*PFN_renderer_set_render_item_model)(HANDLE render_item, const DirectX::XMFLOAT4X4* model_matrix);
+typedef void(*PFN_renderer_update_render_item)(HANDLE render_item, const DirectX::XMFLOAT4X4* render_data);
+typedef void(*PFN_renderer_wait_device_idle)();
 
 typedef struct renderer_interface {
     PFN_renderer_backend_initialize renderer_initialize;
@@ -34,5 +35,6 @@ typedef struct renderer_interface {
     PFN_renderer_destroy_render_item renderer_destroy_render_item;
     PFN_renderer_draw_items renderer_draw_items;
     PFN_renderer_set_view_projection renderer_set_view_projection;
-    PFN_renderer_set_render_item_model renderer_set_render_item_model;
+    PFN_renderer_update_render_item renderer_update_render_item;
+    PFN_renderer_wait_device_idle renderer_wait_device_idle;
 } renderer_interface;

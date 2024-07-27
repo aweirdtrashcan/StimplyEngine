@@ -3,6 +3,7 @@
 #include "platform/platform.h"
 #include "vulkan_defines.h"
 #include "vulkan_internals.h"
+#include "../render_utils.inl"
 
 #include <core/logger.h>
 #include <cstdint>
@@ -14,11 +15,11 @@
 // Don't change the order of the includes, because global_uniform_object.h
 // includes DirectXMath, and DirectXMath on Unix systems *HAS* to be included
 // after all the STL headers.
-// NOTE: Update -> I've removed the SAL code from the headers i'm actually using
+
+// UPDATE: I've removed the SAL code from the headers i'm actually using
 // so it seems that the order doesn't matter anymore.
-#include <renderer/global_uniform_object.h>
-#include <DirectXMath/Extensions/DirectXMathAVX2.h>
 #include <DirectXColors.h>
+#include <DirectXMath/Extensions/DirectXMathAVX2.h>
 
 extern "C" {
 
@@ -63,6 +64,7 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
 
     VkPhysicalDeviceFeatures features{};
     features.depthClamp = VK_TRUE;
+    features.samplerAnisotropy = VK_TRUE;
 
     if (!create_logical_device(state, &features)) {
         throw RendererException("Failed to create logical device");
@@ -133,15 +135,11 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
 
     if (!create_gpu_buffer(
         state, 
-        sizeof(*state->global_ubo) * state->num_frames, 
+        align_uniform_buffer_size(uint64_t(sizeof(*state->global_ubo) * state->num_frames), state->min_ubo_alignment), 
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         &state->global_uniform_buffer)) {
         throw RendererException("Failed to create global uniform buffer");
-    }
-
-    if (!create_vulkan_shader(state, &state->object_shader)) {
-        throw RendererException("Failed to load light shader");
     }
 
     VkClearValue color_clear_value = *(VkClearValue*)&DirectX::Colors::BlueViolet;
@@ -161,7 +159,6 @@ void vulkan_backend_shutdown() {
     vkDeviceWaitIdle(state->logical_device);
     Logger::info("Shutting Down Vulkan Renderer");
 
-    destroy_vulkan_shader(state, &state->object_shader);
     destroy_gpu_buffer(state, &state->global_uniform_buffer);
     Platform::AFree(state->global_ubo);
     destroy_gpu_buffer(state, &state->index_buffer);
@@ -262,14 +259,15 @@ FrameStatus vulkan_draw_items() {
         
         vkCmdBindIndexBuffer(command_buffer, state->index_buffer.buffer, item->index_buffer_offset, VK_INDEX_TYPE_UINT32);
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &state->vertex_buffer.buffer, &item->vertex_buffer_offset);
-        if (item->shader_object != state->current_shader) {
-            vulkan_shader_use(state, command_buffer, item->shader_object);
-            state->current_shader = item->shader_object;
+        vulkan_shader_bundle* shader = &item->shader_bundle;
+        if (shader != state->current_shader) {
+            vulkan_shader_use(state, command_buffer, shader);
+            state->current_shader = shader;
         }    
 
         vkCmdPushConstants(
             command_buffer, 
-            item->shader_object->pipeline.layout, 
+            shader->pipeline.layout, 
             VK_SHADER_STAGE_VERTEX_BIT, 
             0, 
             sizeof(item->model), 
@@ -336,10 +334,6 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
         Logger::warning("vulkan_create_render_item: RenderItemCreateInfo->pIndices and/or RenderItemCreateInfo->pMeshes can't be nullptr");
         return nullptr;
     }
-    // if (pRenderItemCreateInfo->shader == nullptr) {
-    //     Logger::debug("vulkan_create_render_item: Invalid shader.");
-    //     return nullptr;
-    // }
 
     VkCommandBuffer command_buffer;
     create_one_time_command_buffer(state, &command_buffer);
@@ -350,16 +344,12 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
     // push an empty render item to the list, and the get the index of it.
     state->render_items.push_back(render_item());
     render_item* r_item = &state->render_items[state->render_items.size() - 1];
-    r_item->shader_object = (vulkan_shader*)pRenderItemCreateInfo->shader;
     
-    if (pRenderItemCreateInfo->shader == nullptr) {
-        r_item->shader_object = &state->object_shader;        
-    }
-
     r_item->index_count = pRenderItemCreateInfo->indicesCount;
     r_item->vertices_count = pRenderItemCreateInfo->verticesCount;
     r_item->vertex_buffer_offset = state->geometry_vertex_offset;
     r_item->index_buffer_offset = state->geometry_index_offset;
+    r_item->texture = (vulkan_texture*)pRenderItemCreateInfo->texture;
 
     state->geometry_vertex_offset += pRenderItemCreateInfo->vertexSize;
     state->geometry_index_offset += pRenderItemCreateInfo->indexSize;
@@ -371,7 +361,63 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
     
     if (!create_uploader_buffer(state, pRenderItemCreateInfo->indexSize, &index_uploader)) {
         Logger::warning("vulkan_create_render_item: Failed to create vertex buffer");
+        vulkan_destroy_render_item(r_item);
         return nullptr;
+    }
+
+    VkShaderStageFlagBits stages[2] = {
+        VK_SHADER_STAGE_VERTEX_BIT,
+        VK_SHADER_STAGE_FRAGMENT_BIT
+    };
+
+    list<const char*> paths;
+    paths.push_back("mvp_vert.spv");
+
+    list<vulkan_shader_binding_create_info> bindings;
+
+    if (pRenderItemCreateInfo->texture) {
+        paths.push_back("tex_frag.spv");
+        uint64_t index = bindings.size();
+        bindings.push_back(vulkan_shader_binding_create_info());
+        bindings[index].binding = 1;
+        bindings[index].descriptor_count = 1;
+        bindings[index].descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        bindings[index].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    } else {
+        paths.push_back("static_frag.spv");
+    }
+
+    vulkan_shader_bundle_create_info shader_create_info;
+    shader_create_info.shader_count = 2;
+    shader_create_info.stages = stages;
+    shader_create_info.entry_point = "main";
+    shader_create_info.paths = paths.data();
+    shader_create_info.binding_count = bindings.size_u32();
+    shader_create_info.bindings = bindings.data();
+
+    if (!create_vulkan_shader_bundle(state, &shader_create_info, &r_item->shader_bundle)) {
+        Logger::warning("vulkan_create_render_item: Failed to create render item shader");
+        vulkan_destroy_render_item(r_item);
+        return nullptr;
+    }
+
+    for (uint32_t i = 0; i < state->num_frames; i++) {
+        // TODO: Move this to shader
+        update_descriptor_set_for_buffer(
+            state, 
+            state->global_uniform_buffer.buffer, 
+            0, 
+            state->global_uniform_buffer.size, 
+            &r_item->shader_bundle.shader_descriptor_sets[i], 
+            0
+        );
+
+        update_descriptor_set_for_texture(
+            state, 
+            r_item->texture, 
+            &r_item->shader_bundle.shader_descriptor_sets[i], 
+            1
+        );
     }
 
     copy_to_upload_buffer(state, pRenderItemCreateInfo->pVertices, pRenderItemCreateInfo->vertexSize, &vertex_uploader);
@@ -389,7 +435,11 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
 }
 
 void vulkan_destroy_render_item(HANDLE item_handle) {
+    vkDeviceWaitIdle(state->logical_device);
     render_item* r_item = (render_item*)item_handle;
+
+    destroy_vulkan_shader_bundle(state, &r_item->shader_bundle);
+
     Platform::ZeroMemory(r_item, sizeof(*r_item));
 
     r_item->index_buffer_offset = -1;
@@ -401,9 +451,9 @@ void vulkan_set_view_projection(DirectX::XMMATRIX view_matrix, DirectX::CXMMATRI
     state->global_ubo->projection = projection_matrix;
 }
 
-void vulkan_set_render_item_model(HANDLE render_item, const DirectX::XMFLOAT4X4* model_matrix) {
+void vulkan_update_render_item(HANDLE render_item, const DirectX::XMFLOAT4X4* render_data) {
     struct render_item* item = (struct render_item*)render_item;
-    item->model = *model_matrix;
+    item->model = *render_data;
 }
 
 HANDLE vulkan_create_texture(const char* name, bool auto_release, uint32_t width, uint32_t height, 
@@ -411,8 +461,8 @@ HANDLE vulkan_create_texture(const char* name, bool auto_release, uint32_t width
     VkCommandBuffer command_buffer;
 
     // TODO: Change this in the future.
-    vulkan_image* image = (vulkan_image*)Platform::UAlloc(sizeof(vulkan_image));
-    image->name = name;
+    vulkan_texture* texture = (vulkan_texture*)Platform::UAlloc(sizeof(vulkan_texture));
+    texture->image.name = name;
 
     VkExtent3D image_extent;
     image_extent.width = width;
@@ -426,31 +476,67 @@ HANDLE vulkan_create_texture(const char* name, bool auto_release, uint32_t width
     create_image(state, VK_IMAGE_TYPE_2D, VK_FORMAT_B8G8R8A8_UNORM, 
         &image_extent, state->mip_levels, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | 
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 
-        VK_IMAGE_LAYOUT_UNDEFINED, image);
+        VK_IMAGE_LAYOUT_UNDEFINED, &texture->image);
 
-    create_image_view(state, image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
+    create_image_view(state, &texture->image, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
 
-    transition_image_layout(state, command_buffer, image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    transition_image_layout(state, command_buffer, &texture->image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     gpu_buffer upload_buffer;
     create_uploader_buffer(state, image_size, &upload_buffer);
     copy_to_upload_buffer(state, pixels, image_size, &upload_buffer);
 
-    copy_buffer_to_image(command_buffer, image, &upload_buffer);
+    copy_buffer_to_image(command_buffer, &texture->image, &upload_buffer);
 
-    transition_image_layout(state, command_buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    transition_image_layout(state, command_buffer, &texture->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     end_one_time_command_buffer(state, command_buffer, state->graphics_queue);
 
     destroy_gpu_buffer(state, &upload_buffer);
 
-    return image;
+    VkSamplerCreateInfo create_info;
+    create_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    create_info.pNext = nullptr;
+    create_info.flags = 0;
+    create_info.magFilter = VK_FILTER_LINEAR;
+    create_info.minFilter = VK_FILTER_LINEAR;
+    create_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    create_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    create_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    create_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    create_info.mipLodBias = 0.0f;
+    create_info.anisotropyEnable = VK_TRUE;
+    create_info.maxAnisotropy = 16.0f;
+    create_info.compareEnable = VK_FALSE;
+    create_info.compareOp = VK_COMPARE_OP_LESS;
+    create_info.minLod = 1.0f;
+    create_info.maxLod = 16.0f;
+    create_info.borderColor = VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+    create_info.unnormalizedCoordinates = VK_FALSE;
+
+    VkResult res = vkCreateSampler(state->logical_device, &create_info, state->allocator, &texture->sampler);
+
+    if (res != VK_SUCCESS) {
+        vulkan_destroy_texture(texture);
+        Logger::warning("vulkan_create_texture: Failed to create texture sampler!");
+        return nullptr;
+    }
+
+    return texture;
 }
 
-void vulkan_destroy_texture(HANDLE texture) {
-    destroy_image_view(state, (vulkan_image*)texture);
-    destroy_image(state, (vulkan_image*)texture);
+void vulkan_destroy_texture(HANDLE _texture) {
+    vulkan_texture* texture = (vulkan_texture*)_texture;
+    vulkan_image* image = &texture->image;
+
+    destroy_image_view(state, image);
+    destroy_image(state, image);
+    vkDestroySampler(state->logical_device, texture->sampler, state->allocator);
     Platform::UFree(texture);
+}
+
+void vulkan_wait_device_idle() {
+    vkDeviceWaitIdle(state->logical_device);
 }
 
 /****************************************** INTERNAL FUNCTIONS ********************************************* */

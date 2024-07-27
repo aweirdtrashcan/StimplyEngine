@@ -1,8 +1,12 @@
 #include "game.h"
+#include "DirectXMath.h"
+#include "renderer/renderer_interface.h"
+#include "renderer/renderer_types.h"
 
 #include <core/application.h>
 #include <core/logger.h>
 #include <cstdint>
+#include <cstring>
 #include <renderer/renderer.h>
 #include <window/window.h>
 
@@ -19,11 +23,16 @@ void Game::OnBegin() {
 
 	Renderer* renderer = m_Application->GetRenderer();
 	// TODO: Test
-    DirectX::XMFLOAT3 vertices[] = {
-        { -0.5f, -0.5f, 0.0f },
-        { -0.5f,  0.5f, 0.0f },
-        {  0.5f, -0.5f, 0.0f },
-        {  0.5f,  0.5f, 0.0f },
+    struct Vertex {
+        DirectX::XMFLOAT3 pos;
+        DirectX::XMFLOAT2 texCoord;
+    };
+
+    Vertex vertices[] = {
+        { { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f } },
+        { { -0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f } },
+        { {  0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f } },
+        { {  0.5f,  0.5f, 0.0f }, { 0.0f, 0.0f } }
     };
 
     uint32_t indices[] = { 0, 1, 2, 2, 1, 3 };
@@ -35,18 +44,23 @@ void Game::OnBegin() {
     create_info.indexSize = sizeof(indices);
     create_info.indicesCount = std::size(indices);
     create_info.pIndices = &indices;
-    create_info.shader = nullptr;
+
+    constexpr uint64_t texSize = 800 * 600 * 4;
+    uint8_t* pixels = new uint8_t[texSize];
+
+    memset(pixels, 0, texSize);
+
+    for (uint32_t i = 0; i < texSize; i += 4) {
+        int& px = (int&)pixels[i];
+        // setting all pixels to green.
+        px = px | (0xff00ff00);
+    }
+
+    m_Texture = renderer->CreateTexture("Test texture", false, 800, 600, 4, pixels, false);
+
+    create_info.texture = m_Texture;
 
     m_RenderItem = renderer->CreateRenderItem(&create_info);
-
-	DirectX::XMFLOAT4X4 model;
-    DirectX::XMStoreFloat4x4(&model, DirectX::XMMatrixIdentity());
-    renderer->SetRenderItemModel(m_RenderItem, &model);
-
-    const uint8_t* pixels = new uint8_t[800 * 600 * 4];
-    Texture test = renderer->CreateTexture("Test texture", false, 800, 600, 4, pixels, false);
-
-    renderer->DestroyTexture(test);
 }
 
 void Game::OnUpdate(float deltaTime) {
@@ -71,6 +85,15 @@ void Game::OnUpdate(float deltaTime) {
             m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, -move_factor, 0.0f));
         }
     }
+
+    DirectX::XMFLOAT4X4 model;
+
+    static float time = 0.0f;
+    time += deltaTime;
+
+    DirectX::XMStoreFloat4x4(&model, DirectX::XMMatrixRotationRollPitchYaw(0.0f, 0.0f, time));
+
+    m_Application->GetRenderer()->UpdateRenderItem(m_RenderItem, &model);
 }
 
 void Game::OnShutdown() {
@@ -78,6 +101,7 @@ void Game::OnShutdown() {
 
 	Renderer* renderer = m_Application->GetRenderer();
 
+    renderer->DestroyTexture(m_Texture);
 	renderer->DestroyRenderItem(m_RenderItem);
 
 }

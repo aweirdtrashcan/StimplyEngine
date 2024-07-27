@@ -7,7 +7,7 @@
 
 #include <DirectXMath.h>
 
-bool create_pipeline_layout(internal_vulkan_renderer_state* state, VkDescriptorSetLayout* set_layouts, uint32_t set_layout_count, VkPipelineLayout* out_pipeline_layout) {
+bool create_pipeline_layout(const internal_vulkan_renderer_state* state, VkDescriptorSetLayout* set_layouts, uint32_t set_layout_count, VkPipelineLayout* out_pipeline_layout) {
     VkPushConstantRange push_constant_range;
     push_constant_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     push_constant_range.offset = 0;
@@ -41,7 +41,7 @@ bool create_pipeline(vulkan_pipeline_create_info* create_info, vulkan_pipeline* 
 
     VkVertexInputBindingDescription vertex_input_bindings[1];
     vertex_input_bindings[0].binding = 0;
-    vertex_input_bindings[0].stride = sizeof(DirectX::XMFLOAT3);
+    vertex_input_bindings[0].stride = sizeof(DirectX::XMFLOAT3) + sizeof(DirectX::XMFLOAT2);
     vertex_input_bindings[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkPipelineVertexInputStateCreateInfo vertex_input;
@@ -150,8 +150,18 @@ bool create_pipeline(vulkan_pipeline_create_info* create_info, vulkan_pipeline* 
     dynamic_state.dynamicStateCount = (uint32_t)std::size(states);
     dynamic_state.pDynamicStates = states;
 
-    if (!create_pipeline_layout(state, create_info->descriptor_set_layouts, create_info->descriptor_set_layout_count, &out_pipeline->layout)) {
+    VkDescriptorSetLayout set_layouts[10];
+    for (uint32_t i = 0; i < create_info->descriptor_set_layout_count; i++) {
+        set_layouts[i] = create_info->descriptor_set_layouts[i].set_layout;
+    }
+
+    if (!create_pipeline_layout(state, set_layouts, create_info->descriptor_set_layout_count, &out_pipeline->layout)) {
         return false;
+    }
+
+    VkPipelineShaderStageCreateInfo stages[10];
+    for (uint32_t i = 0; i < create_info->stage_count; i++) {
+        stages[i] = create_info->stages[i].pipeline_stage_create_info;
     }
 
     VkGraphicsPipelineCreateInfo pipeline_create_info;
@@ -159,7 +169,7 @@ bool create_pipeline(vulkan_pipeline_create_info* create_info, vulkan_pipeline* 
     pipeline_create_info.pNext = nullptr;
     pipeline_create_info.flags = 0;
     pipeline_create_info.stageCount = create_info->stage_count;
-    pipeline_create_info.pStages = create_info->stages;
+    pipeline_create_info.pStages = stages;
     pipeline_create_info.pVertexInputState = &vertex_input;
     pipeline_create_info.pInputAssemblyState = &input_assembly;
     pipeline_create_info.pTessellationState = &tesselation;
@@ -194,13 +204,13 @@ bool create_pipeline(vulkan_pipeline_create_info* create_info, vulkan_pipeline* 
     return true;
 }
 
-bool destroy_pipeline_layout(internal_vulkan_renderer_state* state, VkPipelineLayout pipeline_layout) {
+bool destroy_pipeline_layout(const internal_vulkan_renderer_state* state, VkPipelineLayout pipeline_layout) {
     vkDestroyPipelineLayout(state->logical_device, pipeline_layout, state->allocator);
 
     return true;
 }
 
-bool destroy_pipeline(internal_vulkan_renderer_state* state, vulkan_pipeline* pipeline) {
+bool destroy_pipeline(const internal_vulkan_renderer_state* state, vulkan_pipeline* pipeline) {
     vkDestroyPipeline(state->logical_device, pipeline->pipeline, state->allocator);
     destroy_pipeline_layout(state, pipeline->layout);
 
@@ -212,5 +222,23 @@ bool destroy_pipeline(internal_vulkan_renderer_state* state, vulkan_pipeline* pi
 
 bool pipeline_bind(VkCommandBuffer command_buffer, VkPipelineBindPoint bind_point, vulkan_pipeline* pipeline) {
     vkCmdBindPipeline(command_buffer, bind_point, pipeline->pipeline);
+    return true;
+}
+
+bool create_default_vertex_input_attributes_layout(list<VkVertexInputAttributeDescription>& states) {
+    VkVertexInputAttributeDescription desc;
+    // pos
+    desc.binding = 0;
+    desc.location = 0;
+    desc.format = VK_FORMAT_R32G32B32_SFLOAT;
+    desc.offset = 0;
+    states.push_back(desc);
+    // texcoord
+    desc.binding = 0;
+    desc.location = 1;
+    desc.format = VK_FORMAT_R32G32_SFLOAT;
+    desc.offset = 12;
+    states.push_back(desc);
+
     return true;
 }

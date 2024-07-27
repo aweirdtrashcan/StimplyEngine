@@ -17,4 +17,5 @@ public:
 private:
 	const Application* m_Application;
 	HANDLE m_RenderItem = nullptr;
+	HANDLE m_Texture;
 };

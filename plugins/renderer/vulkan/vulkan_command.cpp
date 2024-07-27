@@ -73,7 +73,7 @@ bool end_one_time_command_buffer(const internal_vulkan_renderer_state* state, Vk
     VkFence fence;
     create_fence(state, &fence, false);
 
-    submit_command_queue(nullptr, nullptr, fence, queue, command_buffer);
+    vk_result(submit_command_queue(nullptr, nullptr, fence, queue, command_buffer));
     
     vk_result(vkWaitForFences(state->logical_device, 1, &fence, VK_TRUE, UINT64_MAX));
 

@@ -58,6 +58,7 @@ int Application::Run() {
             }
         }
 
+        m_Renderer->WaitDeviceIdle();
         m_Game->OnShutdown();
         
         Logger::ShutdownLogging();

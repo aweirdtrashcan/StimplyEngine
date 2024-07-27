@@ -21,11 +21,20 @@ struct RenderItemCreateInfo {
     uint64_t indexSize;
     HANDLE pIndices;
     uint32_t indicesCount;
-    HANDLE shader;
+    HANDLE texture;
 };
 
 enum FrameStatus {
     FRAME_STATUS_FAILED,
     FRAME_STATUS_SUCCESS,
     FRAME_STATUS_SKIP
+};
+
+struct GlobalUniformObject {
+    DirectX::XMMATRIX projection;
+    DirectX::XMMATRIX view;
+};
+
+struct LocalUniformObject {
+    DirectX::XMFLOAT4 diffuseColor;
 };

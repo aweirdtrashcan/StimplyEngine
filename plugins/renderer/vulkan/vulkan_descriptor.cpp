@@ -2,28 +2,34 @@
 #include "platform/platform.h"
 #include "vulkan_defines.h"
 #include "vulkan_internals.h"
+#include <cstdint>
 #include <vulkan/vulkan_core.h>
 
-bool create_descriptor_pool(const internal_vulkan_renderer_state* state, VkDescriptorType type, VkDescriptorPoolCreateFlags flags, vulkan_descriptor_pool* out_descriptor_pool, uint32_t max_sets) {
+bool create_descriptor_pool(const internal_vulkan_renderer_state* state, VkDescriptorType* types, uint32_t type_count, VkDescriptorPoolCreateFlags flags, vulkan_descriptor_pool* out_descriptor_pool, uint32_t max_sets) {
     if (out_descriptor_pool == nullptr) {
         Logger::fatal("create_descriptor_pool: out_descriptor_pool can't be nullptr");
         return false;
     }
 
-    VkDescriptorPoolSize pool_size;
-    pool_size.type = type;
-    pool_size.descriptorCount = max_sets;
+    list<VkDescriptorPoolSize> pool_sizes;
+    pool_sizes.resize(type_count);
+
+    for (uint32_t i = 0; i < type_count; i++) {
+        pool_sizes[i].type = types[i];
+        pool_sizes[i].descriptorCount = max_sets;
+        out_descriptor_pool->type_bits = VkDescriptorType(out_descriptor_pool->type_bits | types[i]);
+    }
 
     VkDescriptorPoolCreateInfo create_info;
     create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     create_info.pNext = nullptr;
     create_info.flags = flags;
     create_info.maxSets = max_sets;
-    create_info.poolSizeCount = 1;
-    create_info.pPoolSizes = &pool_size;
+    create_info.poolSizeCount = type_count;
+    create_info.pPoolSizes = pool_sizes.data();
 
-    out_descriptor_pool->type = type;
     out_descriptor_pool->flags = flags;
+
     vk_result(vkCreateDescriptorPool(state->logical_device, &create_info, state->allocator, &out_descriptor_pool->pool));
 
     return true;
@@ -47,7 +53,7 @@ bool allocate_descriptor_set(const internal_vulkan_renderer_state* state, vulkan
     allocate_info.descriptorSetCount = 1;
     allocate_info.pSetLayouts = &set_layout;
     
-    out_descriptor_set->type = descriptor_pool->type;
+    out_descriptor_set->type_bits = descriptor_pool->type_bits;
     out_descriptor_set->set = nullptr;
     out_descriptor_set->set_layout = set_layout;
     vk_result(vkAllocateDescriptorSets(state->logical_device, &allocate_info, &out_descriptor_set->set));
@@ -86,7 +92,7 @@ bool destroy_descriptor_set_layout(const internal_vulkan_renderer_state* state, 
     return true;
 }
 
-bool update_descriptor_set(const internal_vulkan_renderer_state* state, VkBuffer buffer, uint64_t offset, uint64_t size, vulkan_descriptor_set* destination_set, uint32_t binding) {
+bool update_descriptor_set_for_buffer(const internal_vulkan_renderer_state* state, VkBuffer buffer, uint64_t offset, uint64_t size, vulkan_descriptor_set* destination_set, uint32_t binding) {
     VkDescriptorBufferInfo buffer_info;
     buffer_info.buffer = buffer;
     buffer_info.offset = offset;
@@ -99,9 +105,34 @@ bool update_descriptor_set(const internal_vulkan_renderer_state* state, VkBuffer
     writes.dstBinding = binding;
     writes.dstArrayElement = 0;
     writes.descriptorCount = 1;
-    writes.descriptorType = destination_set->type;
+    writes.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     writes.pImageInfo = nullptr;
     writes.pBufferInfo = &buffer_info;
+    writes.pTexelBufferView = nullptr;
+
+    vkUpdateDescriptorSets(state->logical_device, 1, &writes, 0, nullptr);
+
+    return true;    
+}
+
+bool update_descriptor_set_for_texture(const internal_vulkan_renderer_state* state, const vulkan_texture* texture,
+    vulkan_descriptor_set* destination_set, uint32_t binding) {
+    
+    VkDescriptorImageInfo image_info;
+    image_info.sampler = texture->sampler;
+    image_info.imageView = texture->image.view;
+    image_info.imageLayout = texture->image.image_layout;
+
+    VkWriteDescriptorSet writes;
+    writes.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writes.pNext = nullptr;
+    writes.dstSet = destination_set->set;
+    writes.dstBinding = binding;
+    writes.dstArrayElement = 0;
+    writes.descriptorCount = 1;
+    writes.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    writes.pImageInfo = &image_info;
+    writes.pBufferInfo = nullptr;
     writes.pTexelBufferView = nullptr;
 
     vkUpdateDescriptorSets(state->logical_device, 1, &writes, 0, nullptr);
