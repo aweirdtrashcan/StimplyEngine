@@ -215,10 +215,7 @@ bool recreate_swapchain(internal_vulkan_renderer_state* state) {
     destroy_depth_buffer(state);
     state->swapchain = nullptr;
 
-    vk_result(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        state->physical_device, 
-        state->surface, 
-        &state->surface_capabilities));
+    update_surface_capabilities();
 
     if (!create_swapchain(state, state->surface_capabilities)) {
         return false;

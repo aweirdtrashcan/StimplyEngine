@@ -47,12 +47,15 @@ Renderer::Renderer(RendererType type, Window* window)
     window->ConfineCursorToWindow();
     IEvent::RegisterListener(this, EventType::MouseMoved);
     IEvent::RegisterListener(this, EventType::KeyboardEvent);
+    IEvent::RegisterListener(this, EventType::WindowResized);
 }
 
 Renderer::~Renderer() {
     m_Interface.renderer_shutdown();
     m_Window->FreeCursorFromWindow();
     IEvent::UnregisterListener(this, EventType::MouseMoved);
+    IEvent::UnregisterListener(this, EventType::KeyboardEvent);
+    IEvent::UnregisterListener(this, EventType::WindowResized);
     Platform::UFree(m_Renderer_Memory);
     Platform::UnloadLibrary(m_Library);
 }
@@ -80,6 +83,11 @@ void Renderer::OnEvent(EventType type, const EventData* pEventData) {
 
             break;
         }
+        case EventType::WindowResized: {
+            WindowResizedEventData* eventData = (WindowResizedEventData*)pEventData;
+            m_Interface.renderer_resize(eventData->width, eventData->height);
+            break;
+        }
         default: break;
     }
 }
@@ -104,7 +112,7 @@ bool Renderer::Draw() {
 }
 
 void Renderer::CalculateViewMatrix() {
-    int32_t width, height;
+    uint32_t width, height;
     m_Window->GetDimensions(&width, &height);
 
     // TODO: Move this logic to somewhere else
@@ -162,6 +170,7 @@ renderer_interface Renderer::LoadRendererFunctions(RendererType type) {
     interface.renderer_shutdown = (PFN_renderer_backend_shutdown)load_library("_backend_shutdown");
     interface.renderer_begin_frame = (PFN_renderer_begin_frame)load_library("_begin_frame");
     interface.renderer_end_frame = (PFN_renderer_end_frame)load_library("_end_frame");
+    interface.renderer_resize = (PFN_renderer_resize)load_library("_resize");
     interface.renderer_create_texture = (PFN_renderer_create_texture)load_library("_create_texture");
     interface.renderer_destroy_texture = (PFN_renderer_destroy_texture)load_library("_destroy_texture");
     interface.renderer_create_render_item = (PFN_renderer_create_render_item)load_library("_create_render_item");

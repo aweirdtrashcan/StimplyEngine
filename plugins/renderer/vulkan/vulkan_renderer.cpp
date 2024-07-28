@@ -78,10 +78,7 @@ bool vulkan_backend_initialize(uint64_t* required_size, HANDLE allocated_memory,
         throw RendererException("Failed to create surface");
     }
 
-    vk_result(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        state->physical_device, 
-        state->surface, 
-        &state->surface_capabilities));
+    update_surface_capabilities();
 
     if (!create_swapchain(state, state->surface_capabilities)) {
         throw RendererException("Failed to create swapchain");
@@ -187,6 +184,15 @@ void vulkan_backend_shutdown() {
     state->~internal_vulkan_renderer_state();
 
     memset(state, 0, sizeof(*state));
+}
+
+bool update_surface_capabilities() {
+    vk_result(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+    state->physical_device, 
+    state->surface, 
+    &state->surface_capabilities));
+
+    return true;
 }
 
 FrameStatus vulkan_begin_frame() {
@@ -325,6 +331,14 @@ FrameStatus vulkan_end_frame() {
     return FRAME_STATUS_SUCCESS;
 }
 
+void vulkan_resize(uint32_t width, uint32_t height) {
+    update_surface_capabilities();
+
+    if (state->surface_capabilities.currentExtent.width != width || state->surface_capabilities.currentExtent.height != height) {
+        recreate_swapchain(state);
+    }
+}
+
 HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInfo) {
     if (pRenderItemCreateInfo == nullptr) {
         Logger::warning("vulkan_create_render_item: pRenderItemCreateInfo can't be nullptr");
@@ -435,6 +449,10 @@ HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateIn
 }
 
 void vulkan_destroy_render_item(HANDLE item_handle) {
+    if (!item_handle) {
+        Logger::warning("Trying to destroy a render item that is null, although it's not an error, should be watched!");
+        return;
+    }
     vkDeviceWaitIdle(state->logical_device);
     render_item* r_item = (render_item*)item_handle;
 

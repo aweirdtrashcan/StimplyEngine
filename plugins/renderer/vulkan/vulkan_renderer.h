@@ -14,6 +14,7 @@ DYNAMIC_RENDERER void vulkan_backend_shutdown();
 DYNAMIC_RENDERER FrameStatus vulkan_begin_frame();
 DYNAMIC_RENDERER FrameStatus vulkan_draw_items();
 DYNAMIC_RENDERER FrameStatus vulkan_end_frame();
+DYNAMIC_RENDERER void vulkan_resize(uint32_t width, uint32_t height);
 DYNAMIC_RENDERER HANDLE vulkan_create_render_item(const RenderItemCreateInfo* pRenderItemCreateInfo);
 DYNAMIC_RENDERER void vulkan_destroy_render_item(HANDLE render_item);
 DYNAMIC_RENDERER void vulkan_set_view_projection(DirectX::XMMATRIX view_matrix, DirectX::CXMMATRIX projection_matrix);

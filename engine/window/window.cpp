@@ -20,8 +20,16 @@ Window::Window(int32_t x, int32_t y, int32_t width, int32_t height, const char* 
 
     SDL_assert(m_Window != nullptr);
 
-    SDL_ShowWindow(m_Window);
+    //SDL_ShowWindow(m_Window);
     m_KeyState = SDL_GetKeyboardState(nullptr);
+
+    int32_t new_width;
+    int32_t new_height;
+
+    SDL_GetWindowSize(m_Window, &new_width, &new_height);
+
+    m_Width = new_width;
+    m_Height = new_height;
 
     m_IsRunning = true;
 }
@@ -56,8 +64,14 @@ list<const char*> Window::get_vulkan_required_instance_layers() const {
     return extensions;
 }
 
-void Window::GetDimensions(int32_t* width, int32_t* height) const {
-    SDL_GetWindowSize(m_Window, width, height);
+void Window::GetDimensions(uint32_t* width, uint32_t* height) const {
+    if (!width || !height) {
+        Logger::warning("Window::GetDimensions: width or height are nullptr");
+        return;
+    }
+
+    *width = m_Width;
+    *height = m_Height;
 }
 
 bool Window::ConfineCursorToWindow() {
@@ -103,6 +117,18 @@ void Window::process_window_messages(const void* pEvent) {
         }
         case SDL_MOUSEMOTION: {
             process_mouse_motion(&event.motion);
+            break;
+        }
+        case SDL_WINDOWEVENT: {
+            if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                SDL_GetWindowSize(m_Window, (int*)&m_Width, (int*)&m_Height);
+
+                WindowResizedEventData eventData;
+                eventData.width = m_Width;
+                eventData.height = m_Height;
+
+                IEvent::FireEvent(EventType::WindowResized, &eventData);
+            }
             break;
         }
         default: break;

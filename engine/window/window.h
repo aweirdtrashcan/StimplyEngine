@@ -6,6 +6,7 @@
 #include "window/key_defines.h"
 
 struct SDL_Window;
+union SDL_Event;
 
 class RAPI Window {
 public:
@@ -19,7 +20,7 @@ public:
     void* create_vulkan_surface(void* instance) { return Platform::create_vulkan_surface(this, instance); }
     static void MessageBox(const char* title, const char* message);
 
-    void GetDimensions(int32_t* width, int32_t* height) const;
+    void GetDimensions(uint32_t* width, uint32_t* height) const;
 
     bool ConfineCursorToWindow();
     bool FreeCursorFromWindow();
@@ -38,5 +39,6 @@ private:
     bool m_IsMouseHiddenByUser = false;
     bool m_IsMouseHidden = false;
     const uint8_t* m_KeyState = nullptr;
-
+    uint32_t m_Width = 0;
+    uint32_t m_Height = 0;
 };

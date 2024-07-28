@@ -14,6 +14,7 @@ typedef bool(*PFN_renderer_backend_initialize)(uint64_t* required_size, HANDLE a
 typedef void(*PFN_renderer_backend_shutdown)();
 typedef FrameStatus(*PFN_renderer_begin_frame)();
 typedef FrameStatus(*PFN_renderer_end_frame)();
+typedef void(*PFN_renderer_resize)(uint32_t width, uint32_t height);
 typedef Texture(*PFN_renderer_create_texture)(const char* name, bool auto_release, uint32_t width, uint32_t height, 
                                      uint32_t channel_count, const uint8_t* pixels, bool has_transparency);
 typedef Texture(*PFN_renderer_destroy_texture)(Texture texture);
@@ -29,6 +30,7 @@ typedef struct renderer_interface {
     PFN_renderer_backend_shutdown renderer_shutdown;
     PFN_renderer_begin_frame renderer_begin_frame;
     PFN_renderer_end_frame renderer_end_frame;
+    PFN_renderer_resize renderer_resize;
     PFN_renderer_create_texture renderer_create_texture;
     PFN_renderer_destroy_texture renderer_destroy_texture;
     PFN_renderer_create_render_item renderer_create_render_item;

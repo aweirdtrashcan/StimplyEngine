@@ -77,6 +77,8 @@ bool create_vulkan_instance(internal_vulkan_renderer_state* state, const char* n
 bool enumerate_required_instance_extensions(const internal_vulkan_renderer_state* state, list<const char*>& out_required_extensions);
 bool enumerate_required_instance_layers(const internal_vulkan_renderer_state* state, list<const char*>& out_required_layers);
 
+bool update_surface_capabilities();
+
 VkDebugUtilsMessengerCreateInfoEXT get_debug_utils_messenger_create_info();
 bool enable_validation_layer(internal_vulkan_renderer_state* state);
 

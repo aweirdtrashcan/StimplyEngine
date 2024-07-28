@@ -12,7 +12,7 @@ public:
 
 	inline void SetGame(IGame* game) { m_Game = game; }
 	inline Renderer* GetRenderer() const { return m_Renderer; }
-	inline Window* GetWindow() const { return m_Window; }
+	inline const Window* GetWindow() const { return m_Window; }
 
 	int Run();
 

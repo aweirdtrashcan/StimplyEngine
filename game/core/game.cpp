@@ -1,6 +1,5 @@
 #include "game.h"
 #include "DirectXMath.h"
-#include "renderer/renderer_interface.h"
 #include "renderer/renderer_types.h"
 
 #include <core/application.h>
@@ -9,6 +8,11 @@
 #include <cstring>
 #include <renderer/renderer.h>
 #include <window/window.h>
+
+struct Vertex {
+    DirectX::XMFLOAT3 pos;
+    DirectX::XMFLOAT2 texCoord;
+};
 
 Game::Game(const Application* application)
 	:
@@ -21,12 +25,55 @@ Game::~Game() {
 void Game::OnBegin() {
 	Logger::debug("OnBegin");
 
+    CreateTestPlane();
+}
+
+void Game::OnUpdate(float deltaTime) {
+	const float move_factor = 50.0f * deltaTime;
+    if (m_Application->GetWindow()->IsMouseConfined()) {
+        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_W)) {
+            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, 0.0f, move_factor));
+        }
+        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_S)) {
+            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, 0.0f, -move_factor));
+        }
+        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_A)) {
+            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(-move_factor, 0.0f, 0.0f));
+        }
+        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_D)) {
+            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(move_factor, 0.0f, 0.0f));
+        }
+        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_SPACE)) {
+            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, move_factor, 0.0f));
+        }
+        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_LCTRL)) {
+            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, -move_factor, 0.0f));
+        }
+    }
+
+    DirectX::XMFLOAT4X4 model;
+
+    static float time = 0.0f;
+    time += deltaTime;
+
+    DirectX::XMStoreFloat4x4(&model, DirectX::XMMatrixRotationRollPitchYaw(0.0f, 0.0f, time));
+
+    m_Application->GetRenderer()->UpdateRenderItem(m_RenderItem[0], &model);
+}
+
+void Game::OnShutdown() {
+	Logger::debug("OnShutdown");
+
 	Renderer* renderer = m_Application->GetRenderer();
-	// TODO: Test
-    struct Vertex {
-        DirectX::XMFLOAT3 pos;
-        DirectX::XMFLOAT2 texCoord;
-    };
+
+    renderer->DestroyTexture(m_Texture);
+	renderer->DestroyRenderItem(m_RenderItem[0]);
+	renderer->DestroyRenderItem(m_RenderItem[1]);
+
+}
+
+void Game::CreateTestPlane() {
+	Renderer* renderer = m_Application->GetRenderer();
 
     Vertex vertices[] = {
         { { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f } },
@@ -60,48 +107,6 @@ void Game::OnBegin() {
 
     create_info.texture = m_Texture;
 
-    m_RenderItem = renderer->CreateRenderItem(&create_info);
-}
-
-void Game::OnUpdate(float deltaTime) {
-	const float move_factor = 50.0f * deltaTime;
-    if (m_Application->GetWindow()->IsMouseConfined()) {
-        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_W)) {
-            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, 0.0f, move_factor));
-        }
-        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_S)) {
-            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, 0.0f, -move_factor));
-        }
-        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_A)) {
-            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(-move_factor, 0.0f, 0.0f));
-        }
-        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_D)) {
-            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(move_factor, 0.0f, 0.0f));
-        }
-        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_SPACE)) {
-            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, move_factor, 0.0f));
-        }
-        if (m_Application->GetWindow()->IsKeyPressed(Key::Key_LCTRL)) {
-            m_Application->GetRenderer()->OffsetCameraPosition(DirectX::XMFLOAT3(0.0f, -move_factor, 0.0f));
-        }
-    }
-
-    DirectX::XMFLOAT4X4 model;
-
-    static float time = 0.0f;
-    time += deltaTime;
-
-    DirectX::XMStoreFloat4x4(&model, DirectX::XMMatrixRotationRollPitchYaw(0.0f, 0.0f, time));
-
-    m_Application->GetRenderer()->UpdateRenderItem(m_RenderItem, &model);
-}
-
-void Game::OnShutdown() {
-	Logger::debug("OnShutdown");
-
-	Renderer* renderer = m_Application->GetRenderer();
-
-    renderer->DestroyTexture(m_Texture);
-	renderer->DestroyRenderItem(m_RenderItem);
-
+    HANDLE render_item = renderer->CreateRenderItem(&create_info);
+    m_RenderItem.push_back(render_item);
 }
