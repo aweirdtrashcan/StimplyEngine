@@ -1,4 +1,7 @@
 #include "vulkan_internals.h"
+
+#include <core/logger.h>
+
 #include <vulkan/vulkan_core.h>
 
 bool create_depth_buffer(internal_vulkan_renderer_state* state, const VkSurfaceCapabilitiesKHR& surface_capabilities) {

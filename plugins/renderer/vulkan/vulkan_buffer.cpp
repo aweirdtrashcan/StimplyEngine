@@ -1,7 +1,10 @@
-#include "core/logger.h"
 #include "vulkan_internals.h"
-#include <cstdint>
+
+#include <core/logger.h>
+#include <platform/platform.h>
+
 #include <vulkan/vulkan_core.h>
+#include <cstdint>
 
 bool find_memory_type_index(const internal_vulkan_renderer_state* state, uint32_t supported_memory_type, VkMemoryPropertyFlags property_flags, uint32_t* out_memory_type_index) {
     if (out_memory_type_index == nullptr) {

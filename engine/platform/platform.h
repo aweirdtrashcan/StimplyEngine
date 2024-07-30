@@ -1,9 +1,10 @@
 #pragma once
 
 #include "core/logger.h"
+#include "core/string.h"
+
 #include <cstddef>
 #include <cstdint>
-#include <string>
 
 class Window;
 
@@ -34,7 +35,7 @@ public:
 
     static void* LoadLibrary(const char* libraryPath);
     static void UnloadLibrary(void* library);
-    static void* LoadLibraryFunction(void* library, const std::string& functionName);
+    static void* LoadLibraryFunction(void* library, const char* functionName);
 
     static void* create_vulkan_surface(Window* window, void* instance);
 
@@ -44,6 +45,8 @@ public:
 
     /* Returns the current time in nanoseconds */
     static int64_t GetTime();
+
+    static String GetCurrentWorkingDirectory();
 
 private:
     static inline Platform* platform_ptr = nullptr;

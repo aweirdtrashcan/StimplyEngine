@@ -1,13 +1,18 @@
 #include "game.h"
-#include "DirectXMath.h"
-#include "renderer/renderer_types.h"
 
 #include <core/application.h>
 #include <core/logger.h>
-#include <cstdint>
-#include <cstring>
+#include <core/string.h>
+#include <platform/platform.h>
 #include <renderer/renderer.h>
 #include <window/window.h>
+#include <core/image_loader.h>
+#include <core/image.h>
+
+#include <cstdint>
+#include <cstring>
+#include <iterator>
+#include <DirectXMath.h>
 
 struct Vertex {
     DirectX::XMFLOAT3 pos;
@@ -92,18 +97,20 @@ void Game::CreateTestPlane() {
     create_info.indicesCount = std::size(indices);
     create_info.pIndices = &indices;
 
-    constexpr uint64_t texSize = 800 * 600 * 4;
-    uint8_t* pixels = new uint8_t[texSize];
+    // lion.tga
+    String image_path = Platform::GetCurrentWorkingDirectory() + "/../../assets/models/sponza/vase_ddn.tga";
+    ImageLoader loader;
+    Image* image = loader.LoadTga(image_path);
 
-    memset(pixels, 0, texSize);
+    // for (uint32_t i = 0; i < texSize; i += 4) {
+    //     int& px = (int&)pixels[i];
+    //     // setting all pixels to green.
+    //     px = px | (0xff00ff00);
+    // }
 
-    for (uint32_t i = 0; i < texSize; i += 4) {
-        int& px = (int&)pixels[i];
-        // setting all pixels to green.
-        px = px | (0xff00ff00);
-    }
+    m_Texture = renderer->CreateTexture("Test texture", false, image->width, image->height, image->channelCount, (uint8_t*)image->pImage, false);
 
-    m_Texture = renderer->CreateTexture("Test texture", false, 800, 600, 4, pixels, false);
+    loader.FreeTga(image);
 
     create_info.texture = m_Texture;
 

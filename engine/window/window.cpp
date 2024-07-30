@@ -64,6 +64,10 @@ list<const char*> Window::get_vulkan_required_instance_layers() const {
     return extensions;
 }
 
+void* Window::create_vulkan_surface(void* instance) {
+    return Platform::create_vulkan_surface(this, instance);
+}
+
 void Window::GetDimensions(uint32_t* width, uint32_t* height) const {
     if (!width || !height) {
         Logger::warning("Window::GetDimensions: width or height are nullptr");

@@ -1,5 +1,7 @@
 #include "vulkan_internals.h"
 
+#include <platform/platform.h>
+
 bool create_command_pool(const internal_vulkan_renderer_state* state, VkCommandPool* out_command_pool, uint32_t queueIndex) {
     if (out_command_pool == nullptr) {
         Logger::fatal("create_command_pool: out_command_pool can't be nullptr");

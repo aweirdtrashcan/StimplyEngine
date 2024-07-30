@@ -13,11 +13,13 @@ public:
 
 	static String Format(const char* format, ...);  
 
-	AINLINE operator const char*() {
-		return m_Buffer.data();
+	AINLINE uint64_t GetSize() const { 
+		if (m_Buffer.size() == 0) {
+			return 0;
+		} else {
+			return m_Buffer.size() - 1; 
+		}
 	}
-
-	AINLINE uint64_t GetSize() const { return m_Buffer.size(); }
 
 	static bool StringEqual(const char* string0, const char* string1);
 	static bool StringEqualI(const char* string0, const char* string1);
@@ -30,12 +32,25 @@ public:
 		return !String::StringEqualI(string0, string1); 
 	}
 
-	friend bool operator==(const String& string0, const String& string1) {
+	AINLINE friend bool operator==(const String& string0, const String& string1) {
 		return String::StringEqual(string0.CStr(), string1.CStr());
 	}
 
-	friend bool operator!=(const String& string0, const String& string1) {
+	AINLINE friend bool operator!=(const String& string0, const String& string1) {
 		return String::StringNotEqual(string0.CStr(), string1.CStr());
+	}
+
+	AINLINE String operator+(const String& string) {
+		Append(string);
+		return *this;
+	}
+
+	AINLINE char operator[](uint64_t index) const {
+		return m_Buffer[index];
+	}
+
+	AINLINE char& operator[](uint64_t index) {
+		return m_Buffer[index];
 	}
 
 	AINLINE const char* CStr() const { return m_Buffer.data(); }
@@ -64,6 +79,9 @@ public:
 	void Append(float floatingPoint);
 	void Append(bool boolean);
 	void Append(char character);
+
+	/* if this is an file, will get the extension */
+	String GetFileExtension() const;
 
 	void Clear();
 

@@ -1,5 +1,7 @@
 #include "vulkan_internals.h"
 
+#include <iterator>
+
 bool create_render_pass(internal_vulkan_renderer_state* state) {
     VkAttachmentDescription color_attachment;
     color_attachment.flags = 0;

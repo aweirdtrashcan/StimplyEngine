@@ -17,7 +17,7 @@ public:
     void* get_internal_handle() const { return m_Window; }
     
     list<const char*> get_vulkan_required_instance_layers() const;
-    void* create_vulkan_surface(void* instance) { return Platform::create_vulkan_surface(this, instance); }
+    void* create_vulkan_surface(void* instance);
     static void MessageBox(const char* title, const char* message);
 
     void GetDimensions(uint32_t* width, uint32_t* height) const;

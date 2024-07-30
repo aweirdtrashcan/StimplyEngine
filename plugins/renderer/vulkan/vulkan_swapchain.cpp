@@ -1,4 +1,6 @@
 #include "vulkan_internals.h"
+
+#include <iterator>
 #include <vulkan/vulkan_core.h>
 
 bool query_optimal_back_buffer_format(const internal_vulkan_renderer_state* state, VkSurfaceFormatKHR* format) {

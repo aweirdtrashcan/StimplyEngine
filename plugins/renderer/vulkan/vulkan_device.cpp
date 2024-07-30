@@ -1,4 +1,7 @@
 #include "vulkan_internals.h"
+
+#include <core/logger.h>
+
 #include <vulkan/vulkan_core.h>
 
 bool select_physical_device(internal_vulkan_renderer_state* state) {

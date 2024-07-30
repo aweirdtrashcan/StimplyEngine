@@ -1,5 +1,7 @@
 #include "vulkan_internals.h"
 
+#include <core/logger.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 

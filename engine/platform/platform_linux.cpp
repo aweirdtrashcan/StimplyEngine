@@ -1,6 +1,4 @@
 
-#include <cstdint>
-#include <ctime>
 #if defined (PLATFORM_LINUX)
 #include "platform.h"
 #include "window/window.h"
@@ -9,12 +7,14 @@
 #include <SDL2/SDL_messagebox.h>
 #include <SDL2/SDL_vulkan.h>
 
+#include <cstdint>
+#include <cstdio>
+#include <ctime>
 #include <dlfcn.h>
 #include <unistd.h>
 #include <linux/limits.h> // NOTE: I think you must have linux-headers installed, but i still need to look for that up.
 #include <cerrno>
 #include <cstdlib>
-#include <time.h>
 
 void Window::MessageBox(const char* title, const char* message) {
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, title, message, nullptr);
@@ -53,8 +53,8 @@ void* Platform::UAlloc(size_t size) {
     if (!platform_ptr) {
         Logger::warning("Allocating %zu bytes before initializing platform", size);
     } else {
-        Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);    
         platform_ptr->m_TotalAllocation += size;
+        Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);    
     }
     
     return from_header_to_memory(header);    
@@ -66,8 +66,8 @@ void Platform::UFree(void* memory) {
     if (!platform_ptr) {
         Logger::warning("Freeing %zu bytes before initializing platform", header->allocation_size);
     } else {
-        Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
         platform_ptr->m_TotalAllocation -= header->allocation_size;
+        Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
     }
 
     memset(header, 0, sizeof(alloc_header) + header->allocation_size);
@@ -98,8 +98,8 @@ void* Platform::AAlloc(size_t alignment, size_t size) {
     if (!platform_ptr) {
         Logger::warning("Allocating %zu bytes before initializing platform", size);
     } else {
-        Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);
         platform_ptr->m_TotalAllocation += size;
+        Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);
     }  
 
     return from_header_to_memory(header);    
@@ -117,8 +117,8 @@ void Platform::AFree(void* memory) {
     if (!platform_ptr) {
         Logger::warning("Freeing %zu bytes before initializing platform", header->allocation_size);
     } else {
-        Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
         platform_ptr->m_TotalAllocation -= header->allocation_size;
+        Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
     }
 
     memset(header, 0, sizeof(alloc_header) + header->allocation_size);
@@ -158,8 +158,8 @@ void Platform::UnloadLibrary(void* library) {
     dlclose(library);
 }
 
-void* Platform::LoadLibraryFunction(void* library, const std::string& functionName) {
-    void* function_ptr = dlsym(library, functionName.c_str());
+void* Platform::LoadLibraryFunction(void* library, const char* functionName) {
+    void* function_ptr = dlsym(library, functionName);
 
     const char* error_message = dlerror();
     
@@ -219,6 +219,13 @@ int64_t Platform::GetTime() {
     clock_gettime(CLOCK_MONOTONIC, &now);
 
     return int64_t(now.tv_sec) * int64_t(1000000000) + int64_t(now.tv_nsec);
+}
+
+String Platform::GetCurrentWorkingDirectory() {
+    char buffer[PATH_MAX]{};
+    getcwd(buffer, sizeof(buffer));
+
+    return buffer;
 }
 
 #endif

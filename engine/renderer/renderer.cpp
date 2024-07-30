@@ -11,6 +11,7 @@
 
 #include <DirectXMath.h>
 #include <DirectXMath/Extensions/DirectXMathAVX2.h>
+#include <cstdio>
 
 Renderer::Renderer(RendererType type, Window* window) 
     :

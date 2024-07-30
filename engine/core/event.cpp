@@ -1,5 +1,7 @@
 #include "event.h"
 
+#include "core/logger.h"
+
 bool IEvent::RegisterListener(IEvent* pEvent, EventType type) {
 	// -1 means there's no entry in this event type list.
 	bool isAlreadyRegistered = s_EventListeners[type].find_index(pEvent) != -1;

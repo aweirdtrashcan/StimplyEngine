@@ -1,10 +1,12 @@
-#include "core/logger.h"
-#include "vulkan_defines.h"
 #include "vulkan_internals.h"
+
+#include <core/logger.h>
+#include "vulkan_defines.h"
+
+#include <iterator>
+#include <vulkan/vulkan_core.h>
 #include <cstdint>
 #include <cstring>
-#include <vulkan/vulkan_core.h>
-
 #include <DirectXMath.h>
 
 bool create_pipeline_layout(const internal_vulkan_renderer_state* state, VkDescriptorSetLayout* set_layouts, uint32_t set_layout_count, VkPipelineLayout* out_pipeline_layout) {

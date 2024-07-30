@@ -8,6 +8,7 @@
 #include <core/logger.h>
 #include <cstdint>
 #include <cstring>
+#include <iterator>
 #include <renderer/renderer_exception.h>
 #include <renderer/renderer_types.h>
 #include <vulkan/vulkan_core.h>

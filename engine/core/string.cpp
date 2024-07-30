@@ -1,6 +1,10 @@
 #include "string.h"
 
+#include "core/logger.h"
+#include "platform/platform.h"
+
 #include <cstdarg>
+#include <cstdio>
 #include <exception>
 
 class StringException : public std::exception {
@@ -31,15 +35,17 @@ String::String(const char* string) {
 	uint64_t stringSize = strlen(string);
 
 	if (stringSize > 0) {
-		m_Buffer.resize(stringSize);
+		m_Buffer.resize(stringSize + 1);
 		memcpy(m_Buffer.data(), string, stringSize);
+		m_Buffer[stringSize] = 0;
 	}
 }
 
 String::String(const char* string, uint64_t stringSize) {
 	if (stringSize > 0) {
-		m_Buffer.resize(stringSize);
+		m_Buffer.resize(stringSize + 1);
 		memcpy(m_Buffer.data(), string, stringSize);
+		m_Buffer[stringSize] = 0;
 	}
 }
 
@@ -58,7 +64,8 @@ String String::Format(const char* format, ...) {
 	va_end(va);
 
 	string.m_Buffer.resize(written + 1);
-	memcpy(string.m_Buffer.data(), buffer, written + 1);
+	memcpy(string.m_Buffer.data(), buffer, written);
+	string[written] = 0;
 
 	return string;
 }
@@ -237,38 +244,104 @@ int64_t String::Toi64(const char* source) {
 }
 
 void String::Append(const String& string) {
-	for (uint64_t i = 0; i < string.GetSize(); i++) {
-		m_Buffer.push_back(string.m_Buffer[i]);
-	}
+	uint64_t old_size = GetSize();
+	uint64_t new_size = GetSize() + string.GetSize();
+
+	m_Buffer.resize(new_size + 1);	
+	memcpy((m_Buffer.data() + old_size), string.CStr(), string.GetSize());
+	m_Buffer[new_size] = 0;
 }
 
 void String::Append(const char* string) {
-	for (uint64_t i = 0; i < strlen(string); i++) {
-		m_Buffer.push_back(string[i]);
-	}
+	uint64_t old_size = GetSize();
+	uint64_t new_size = GetSize() + strlen(string);
+
+	m_Buffer.resize(new_size + 1);	
+	memcpy((m_Buffer.data() + old_size), string, strlen(string));
+	m_Buffer[new_size] = 0;
 }
 
 void String::Append(float floatingPoint) {
 	char buffer[100]{};
 	snprintf(buffer, sizeof(buffer), "%f", floatingPoint);
 
-	for (uint64_t i = 0; i < strlen(buffer); i++) {
-		m_Buffer.push_back(buffer[i]);
-	}
+	uint64_t old_size = GetSize();
+	uint64_t new_size = GetSize() + strlen(buffer);
 
-	String t = "Hello World";
+	m_Buffer.resize(new_size + 1);	
+	memcpy((m_Buffer.data() + old_size), buffer, strlen(buffer));
+	m_Buffer[new_size] = 0;
 }
 
 void String::Append(bool boolean) {
 	const char* buffer = boolean ? "true" : "false";
 
-	for (uint64_t i = 0; i < strlen(buffer); i++) {
-		m_Buffer.push_back(buffer[i]);
-	}
+	uint64_t old_size = GetSize();
+	uint64_t new_size = GetSize() + strlen(buffer);
+
+	m_Buffer.resize(new_size + 1);	
+	memcpy((m_Buffer.data() + old_size), buffer, strlen(buffer));
+	m_Buffer[new_size] = 0;
 }
 
 void String::Append(char character) {
-	m_Buffer.push_back(character);
+	uint64_t old_size = GetSize();
+
+	m_Buffer.resize(GetSize() + 2);
+	
+	m_Buffer[old_size - 1] = character;
+	m_Buffer[old_size] = 0;
+}
+
+String String::GetFileExtension() const {
+	// uint8_t header[18]{};
+	// list<uint8_t> image_bytes;
+	// static constexpr uint8_t DeCompressed[12] = {0x0, 0x0, 0x2, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+    // static constexpr uint8_t IsCompressed[12] = {0x0, 0x0, 0xA, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+
+	uint64_t stringSize = GetSize();
+
+	char* buffer = (char*)Platform::UAlloc(stringSize + 1);
+	uint64_t bufferSize = 0;
+
+	memset(buffer, 0, stringSize + 1);
+
+	bool found = false;
+
+	if (stringSize >= 2) {
+		for (uint64_t i = stringSize - 1; i >= 0; i--) {
+			buffer[bufferSize++] = m_Buffer[i];
+
+			if (m_Buffer[i] == '.' && (bufferSize > 1)) {
+				// found something.
+				found = true;
+				break;
+			}
+		}
+	} else {
+		Platform::UFree(buffer);
+		return "";
+	}
+
+	if (!found) {
+		Platform::UFree(buffer);
+		return "";
+	}
+
+	// buffer will be backwards, so reverse it.
+	char* reversedBuffer = (char*)Platform::UAlloc(bufferSize + 1);
+	uint64_t reversedBufferIndex = bufferSize;
+	
+	for (uint64_t i = 0; i < bufferSize; i++) {
+		reversedBuffer[reversedBufferIndex - i - 1] = buffer[i];
+	}
+
+	String formatString = reversedBuffer;
+
+	Platform::UFree(reversedBuffer);
+	Platform::UFree(buffer);
+
+	return formatString;
 }
 
 void String::Clear() {
