@@ -205,20 +205,22 @@ void DecodeUncompressedTrueColor(TGAHeader* header, uint64_t imageDataOffset, BG
 	
 	if (header->bitsPerPixel == 32) {
 		ARGB* sourcePixelArray = (ARGB*)INC_POINTER(header, imageDataOffset);
-		for (uint64_t i = header->width * header->height; i > 0; i--) {
-			unsigned char* sPixel = (unsigned char*)&sourcePixelArray[i];
-			BGRA& dPixel = (*outPixels)[i];
 
-			dPixel.a = 255;
-			dPixel.r = sPixel[2];
-			dPixel.g = sPixel[1];
-			dPixel.b = sPixel[0];
+		memcpy(*outPixels, sourcePixelArray, outPixelsSize);
+		// for (uint64_t i = header->width * header->height; i > 0; i--) {
+		// 	unsigned char* sPixel = (unsigned char*)&sourcePixelArray[i];
+		// 	BGRA& dPixel = (*outPixels)[i];
 
-			(*outPixels)[i].a = sPixel[3];
-			(*outPixels)[i].r = sPixel[2];
-			(*outPixels)[i].g = sPixel[1];
-			(*outPixels)[i].b = sPixel[0];
-		}
+		// 	dPixel.a = 255;
+		// 	dPixel.r = sPixel[2];
+		// 	dPixel.g = sPixel[1];
+		// 	dPixel.b = sPixel[0];
+
+		// 	(*outPixels)[i].a = sPixel[3];
+		// 	(*outPixels)[i].r = sPixel[2];
+		// 	(*outPixels)[i].g = sPixel[1];
+		// 	(*outPixels)[i].b = sPixel[0];
+		// }
 	} else if (header->bitsPerPixel == 24) {
 		RGB* sourcePixelArray = (RGB*)INC_POINTER(header, imageDataOffset);
 		uint64_t iDest = 0;
