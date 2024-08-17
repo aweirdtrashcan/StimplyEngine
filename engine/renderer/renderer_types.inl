@@ -3,6 +3,12 @@
 #include "defines.h"
 #include <DirectXMath.h>
 
+enum class RendererType : char {
+    D3D12,
+    VULKAN
+};
+
+
 enum PipelineStage {
     PipelineTypeMVP,
 
@@ -37,4 +43,14 @@ struct GlobalUniformObject {
 
 struct LocalUniformObject {
     DirectX::XMFLOAT4 diffuseColor;
+};
+
+struct GeometryRenderData {
+    uint32_t id;
+    DirectX::XMFLOAT4X4 model;
+    HANDLE textures[16];
+};
+
+struct RenderPacket {
+    float deltaTime;
 };

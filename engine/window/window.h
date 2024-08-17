@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#include "defines.h"
 #include "containers/list.h"
 #include "window/key_defines.h"
 
@@ -14,10 +15,7 @@ public:
     ~Window();
 
     int ProcessMessages();
-    void* get_internal_handle() const { return m_Window; }
     
-    list<const char*> get_vulkan_required_instance_layers() const;
-    void* create_vulkan_surface(void* instance);
     static void MessageBox(const char* title, const char* message);
 
     void GetDimensions(uint32_t* width, uint32_t* height) const;
@@ -25,7 +23,8 @@ public:
     bool ConfineCursorToWindow();
     bool FreeCursorFromWindow();
     bool IsMouseConfined() const;
-    inline bool IsKeyPressed(Key key) const { return m_KeyState[(int)key]; }
+    AINLINE bool IsKeyPressed(Key key) const { return m_KeyState[(int)key]; }
+    AINLINE void* GetWindowInternalHandle() const { return m_Window; }
 
 private:
     void process_window_messages(const void* pEvent);

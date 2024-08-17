@@ -99,28 +99,29 @@ local function execute()
       end
     end
     for cfgKey,cmds in pairs(cfgCmds) do
-      local outfile = string.format('compile_commands.json', cfgKey)
-      p.generate(wks, outfile, function(wks)
-        p.w('[')
-        for i = 1, #cmds do
-          local item = cmds[i]
-          local command = string.format([[
-          {
-            "directory": "%s",
-            "file": "%s",
-            "command": "%s"
-          }]],
-          item.directory,
-          item.file,
-          item.command:gsub('\\', '\\\\'):gsub('"', '\\"'))
-          if i > 1 then
-            p.w(',')
+      if cfgKey == 'debug' then
+        local outfile = string.format('compile_commands.json', cfgKey)
+        p.generate(wks, outfile, function(wks)
+          p.w('[')
+          for i = 1, #cmds do
+            local item = cmds[i]
+            local command = string.format([[
+            {
+              "directory": "%s",
+              "file": "%s",
+              "command": "%s"
+            }]],
+            item.directory,
+            item.file,
+            item.command:gsub('\\', '\\\\'):gsub('"', '\\"'))
+            if i > 1 then
+              p.w(',')
+            end
+            p.w(command)
           end
-          p.w(command)
-        end
-        p.w(']')
-      end)
-      break
+          p.w(']')
+        end)
+      end
     end
   end
 end

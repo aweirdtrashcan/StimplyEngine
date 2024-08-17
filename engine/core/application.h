@@ -1,7 +1,8 @@
 #pragma once
 
 class IGame;
-class Renderer;
+class RendererFrontend;
+class RendererBackend;
 class Window;
 class Platform;
 
@@ -11,7 +12,7 @@ public:
 	~Application();
 
 	inline void SetGame(IGame* game) { m_Game = game; }
-	inline Renderer* GetRenderer() const { return m_Renderer; }
+	inline RendererFrontend* GetRenderer() const { return m_Renderer; }
 	inline const Window* GetWindow() const { return m_Window; }
 
 	int Run();
@@ -19,6 +20,8 @@ public:
 private:
 	IGame* m_Game = nullptr;
 	Platform* m_Platform = nullptr;
-	Renderer* m_Renderer = nullptr;
+	RendererFrontend* m_Renderer = nullptr;
 	Window* m_Window = nullptr;
+	float m_DeltaTime = 0.0f;
+	RendererBackend* m_RendererBackend = nullptr;
 };

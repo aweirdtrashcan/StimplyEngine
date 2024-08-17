@@ -47,7 +47,7 @@ Platform::Platform() {
 }
 
 Platform::~Platform() {
-    Logger::warning("Shutting down platform with %zu allocated!", platform_ptr->m_TotalAllocation);
+    Logger::Warning("Shutting down platform with %zu allocated!", platform_ptr->m_TotalAllocation);
     platform_ptr = nullptr;
 }
 
@@ -57,10 +57,10 @@ void* Platform::UAlloc(size_t size) {
     header->allocation_size = size;
 
     if (!platform_ptr) {
-        Logger::warning("Allocating %zu bytes before initializing platform", size);
+        Logger::Warning("Allocating %zu bytes before initializing platform", size);
     } else {
         platform_ptr->m_TotalAllocation += size;
-        Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);
+        Logger::Warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);
     }
 
     return from_header_to_memory(header);
@@ -70,10 +70,10 @@ void Platform::UFree(void* memory) {
     alloc_header* header = from_memory_to_header(memory);
 
     if (!platform_ptr) {
-        Logger::warning("Freeing %zu bytes before initializing platform", header->allocation_size);
+        Logger::Warning("Freeing %zu bytes before initializing platform", header->allocation_size);
     } else {
         platform_ptr->m_TotalAllocation -= header->allocation_size;
-        Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
+        Logger::Warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
     }
 
     free(header);
@@ -81,7 +81,7 @@ void Platform::UFree(void* memory) {
 
 void* Platform::AAlloc(size_t alignment, size_t size) {
     if (alignment < MINIMUM_ALIGNMENT_SIZE) {
-        Logger::warning("Platform::aalloc: alignment size should be greater or equal to %zu bytes", MINIMUM_ALIGNMENT_SIZE);
+        Logger::Warning("Platform::aalloc: alignment size should be greater or equal to %zu bytes", MINIMUM_ALIGNMENT_SIZE);
         return nullptr;
     }
 
@@ -92,7 +92,7 @@ void* Platform::AAlloc(size_t alignment, size_t size) {
         _get_errno(&error_number);
 
         if (error_number == EINVAL) {
-            Logger::warning("The alignment argument was not a power of two, or was not a multiple of sizeof(void *).");
+            Logger::Warning("The alignment argument was not a power of two, or was not a multiple of sizeof(void *).");
         }
         return nullptr;
     }
@@ -102,10 +102,10 @@ void* Platform::AAlloc(size_t alignment, size_t size) {
     header->alignment = alignment;
 
     if (!platform_ptr) {
-        Logger::warning("Allocating %zu bytes before initializing platform", size);
+        Logger::Warning("Allocating %zu bytes before initializing platform", size);
     } else {
         platform_ptr->m_TotalAllocation += size;
-        Logger::warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);
+        Logger::Warning("Allocating %zu bytes, total: %zu", size, platform_ptr->m_TotalAllocation);
     }
 
     return from_header_to_memory(header);
@@ -115,10 +115,10 @@ void Platform::AFree(void* memory) {
     alloc_header* header = from_memory_to_header(memory);
 
     if (!platform_ptr) {
-        Logger::warning("Freeing %zu bytes before initializing platform", header->allocation_size);
+        Logger::Warning("Freeing %zu bytes before initializing platform", header->allocation_size);
     } else {
         platform_ptr->m_TotalAllocation -= header->allocation_size;
-        Logger::warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
+        Logger::Warning("Freeing %zu bytes, total: %zu", header->allocation_size, platform_ptr->m_TotalAllocation);
     }
 
     memset(header, 0, sizeof(alloc_header) + header->allocation_size);
@@ -129,7 +129,7 @@ void* Platform::ZeroMemory(void* memory, size_t size) {
     return memset(memory, 0, size);
 }
 
-void Platform::log(log_level level, const char* message) {
+void Platform::Log(log_level level, const char* message) {
     static constexpr WORD colors[] = { 207, 14, 10, 8 };
 
     HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -147,14 +147,14 @@ void* Platform::LoadLibrary(const char* libraryPath) {
     path_size = GetCurrentDirectoryA(path_size, nullptr);
 
     if (path_size == 0) {
-        Logger::warning("Failed to get current directory while trying to read binary in %s", libraryPath);
+        Logger::Warning("Failed to get current directory while trying to read binary in %s", libraryPath);
         return false;
     }
 
     list<char> path(path_size);
 
     if (GetCurrentDirectoryA(path_size, path.data()) == 0) {
-        Logger::warning("Failed to get current directory while trying to read binary in %s", libraryPath);
+        Logger::Warning("Failed to get current directory while trying to read binary in %s", libraryPath);
         return false;
     }
 
@@ -162,7 +162,7 @@ void* Platform::LoadLibrary(const char* libraryPath) {
 
     void* library = LoadLibraryA(library_name);
     
-    Logger::warning("Failed to load library %s", library_name);
+    Logger::Warning("Failed to load library %s", library_name);
 
     return library;
 }
@@ -179,7 +179,7 @@ void* Platform::create_vulkan_surface(Window* window, void* instance) {
     VkSurfaceKHR surface = 0;
 
     if (SDL_Vulkan_CreateSurface((SDL_Window*)window->get_internal_handle(), (VkInstance)instance, &surface) != SDL_TRUE) {
-        Logger::fatal("Failed to create vulkan surface");
+        Logger::Fatal("Failed to create vulkan surface");
         return nullptr;
     }
 
@@ -198,13 +198,13 @@ binary_info Platform::ReadBinary(const char* path) {
     );
 
     if (!file) {
-        Logger::warning("Failed to open file %s", path);
+        Logger::Warning("Failed to open file %s", path);
         return {};
     }
 
     int64_t size = 0;
     if (!GetFileSizeEx(file, (PLARGE_INTEGER)&size)) {
-        Logger::warning("Failed to get file size of %s", path);
+        Logger::Warning("Failed to get file size of %s", path);
         CloseHandle(file);
         return {};
     }
@@ -220,7 +220,7 @@ binary_info Platform::ReadBinary(const char* path) {
         &bytes_read,
         nullptr
     )) {
-        Logger::warning("Failed to read file %s");
+        Logger::Warning("Failed to read file %s");
         CloseHandle(file);
         return {};
     }

@@ -125,7 +125,7 @@ bool String::IsBool(const char* source) {
 
 float String::ToFloat(const char* source) {
 	if (!source) {
-		Logger::warning("String::ToFloat called with a null source string");
+		Logger::Warning("String::ToFloat called with a null source string");
 		return MAX_FLOAT;
 	}
 
@@ -137,7 +137,7 @@ float String::ToFloat(const char* source) {
 
 double String::ToDouble(const char* source) {
 	if (!source) {
-		Logger::warning("String::ToDouble called with a null source string");
+		Logger::Warning("String::ToDouble called with a null source string");
 		return MAX_DOUBLE;
 	}
 
@@ -149,7 +149,7 @@ double String::ToDouble(const char* source) {
 
 uint8_t String::Tou8(const char* source) {
 	if (!source) {
-		Logger::warning("String::Tou8 called with a null source string");
+		Logger::Warning("String::Tou8 called with a null source string");
 		return MAX_U8;
 	}
 
@@ -161,7 +161,7 @@ uint8_t String::Tou8(const char* source) {
 
 uint16_t String::Tou16(const char* source) {
 	if (!source) {
-		Logger::warning("String::Tou16 called with a null source string");
+		Logger::Warning("String::Tou16 called with a null source string");
 		return MAX_U16;
 	}
 
@@ -173,7 +173,7 @@ uint16_t String::Tou16(const char* source) {
 
 uint32_t String::Tou32(const char* source) {
 	if (!source) {
-		Logger::warning("String::Tou32 called with a null source string");
+		Logger::Warning("String::Tou32 called with a null source string");
 		return MAX_U32;
 	}
 
@@ -185,7 +185,7 @@ uint32_t String::Tou32(const char* source) {
 
 uint64_t String::Tou64(const char* source) {
 	if (!source) {
-		Logger::warning("String::Tou64 called with a null source string");
+		Logger::Warning("String::Tou64 called with a null source string");
 		return MAX_U64;
 	}
 
@@ -197,7 +197,7 @@ uint64_t String::Tou64(const char* source) {
 
 int8_t String::Toi8(const char* source) {
 	if (!source) {
-		Logger::warning("String::Toi8 called with a null source string");
+		Logger::Warning("String::Toi8 called with a null source string");
 		return MAX_I8;
 	}
 
@@ -209,7 +209,7 @@ int8_t String::Toi8(const char* source) {
 
 int16_t String::Toi16(const char* source) {
 	if (!source) {
-		Logger::warning("String::Toi16 called with a null source string");
+		Logger::Warning("String::Toi16 called with a null source string");
 		return MAX_I16;
 	}
 
@@ -221,7 +221,7 @@ int16_t String::Toi16(const char* source) {
 
 int32_t String::Toi32(const char* source) {
 	if (!source) {
-		Logger::warning("String::Toi32 called with a null source string");
+		Logger::Warning("String::Toi32 called with a null source string");
 		return MAX_I32;
 	}
 
@@ -233,7 +233,7 @@ int32_t String::Toi32(const char* source) {
 
 int64_t String::Toi64(const char* source) {
 	if (!source) {
-		Logger::warning("String::Toi64 called with a null source string");
+		Logger::Warning("String::Toi64 called with a null source string");
 		return MAX_I64;
 	}
 

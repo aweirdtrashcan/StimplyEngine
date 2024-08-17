@@ -157,7 +157,7 @@ Image* ImageLoader::LoadTga(const String& path) const {
 			break;
 		}
 		default: {
-			Logger::debug("Invalid TGA Format");
+			Logger::Debug("Invalid TGA Format");
 			return nullptr;
 		}
 	}
@@ -170,7 +170,7 @@ Image* ImageLoader::LoadTga(const String& path) const {
 
 	Platform::CloseBinary(&imageBinary);
 
-	Logger::debug("");
+	Logger::Debug("");
 
 	return image;
 }
@@ -207,6 +207,8 @@ void DecodeUncompressedTrueColor(TGAHeader* header, uint64_t imageDataOffset, BG
 		ARGB* sourcePixelArray = (ARGB*)INC_POINTER(header, imageDataOffset);
 
 		memcpy(*outPixels, sourcePixelArray, outPixelsSize);
+
+		
 		// for (uint64_t i = header->width * header->height; i > 0; i--) {
 		// 	unsigned char* sPixel = (unsigned char*)&sourcePixelArray[i];
 		// 	BGRA& dPixel = (*outPixels)[i];
@@ -220,7 +222,6 @@ void DecodeUncompressedTrueColor(TGAHeader* header, uint64_t imageDataOffset, BG
 		// 	(*outPixels)[i].r = sPixel[2];
 		// 	(*outPixels)[i].g = sPixel[1];
 		// 	(*outPixels)[i].b = sPixel[0];
-		// }
 	} else if (header->bitsPerPixel == 24) {
 		RGB* sourcePixelArray = (RGB*)INC_POINTER(header, imageDataOffset);
 		uint64_t iDest = 0;

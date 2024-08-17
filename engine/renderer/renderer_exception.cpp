@@ -14,7 +14,7 @@ RendererException::RendererException(const char* error, ...) {
     vsprintf(m_What, error, va);                                                  
     va_end(va);
 
-    Logger::fatal("%s", m_What);
+    Logger::Fatal("%s", m_What);
 }
 
 RendererException::~RendererException() {

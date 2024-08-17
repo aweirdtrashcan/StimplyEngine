@@ -112,16 +112,18 @@ public:
 
 	~list() {
 		delete[] m_Elements;
+		m_Elements = 0;
 		m_Size = 0;
 		m_Capacity = 0;
 	}
 
 	void push_back(ConstElementRef element) {
 		if (m_Capacity == 0) {
-			reserve(2);
+			m_Elements = allocate(2);
+			m_Capacity = 2;
 		}
 		if (m_Size >= m_Capacity) {
-			reserve(size() * s_ResizeFactor);
+			reallocate(size() * s_ResizeFactor);
 			m_Elements[m_Size++] = element;
 			return;
 		}
@@ -131,18 +133,18 @@ public:
 	}
 
 	void push_back(ElementRValue element) {
+		if (m_Capacity == 0) {
+			m_Elements = allocate(2);
+			m_Capacity = 2;
+		}
+
 		if (m_Size >= m_Capacity) {
-			if (m_Capacity == 0) {
-				reserve(2);
-			} else {
-				reserve(m_Capacity * s_ResizeFactor);
-			}
+			reallocate(m_Capacity * s_ResizeFactor);
 		}
 		
-		if (m_Capacity != 0 && m_Size < m_Capacity) {
-			ElementPtr ptr = &m_Elements[m_Size++];
-			new (static_cast<void*>(ptr)) Element(std::forward<Element>(element));
-		}
+		ElementPtr ptr = &m_Elements[m_Size++];
+		new (static_cast<void*>(ptr)) Element(std::forward<Element>(element));
+
 	}
 
 	size_t find_index(ConstElementRef element) const {
@@ -195,15 +197,21 @@ public:
 	}
 
 	void resize(size_t new_size) {
-        reserve(new_size);
+		size_t oldSize = m_Size;
         m_Size = new_size;
+		if (oldSize > 0) {
+        	reallocate(new_size);
+		} else {
+			m_Elements = allocate(new_size);
+			m_Capacity = new_size;
+		}
 	}
 
-	bool is_empty() {
-		return m_Capacity == 0;
+	bool is_empty() const {
+		return m_Size == 0;
 	}
 
-    void reserve(size_t new_size) {
+    void reallocate(size_t new_size) {
         ElementPtr new_elements = allocate(new_size);
 
 		for (size_t i = 0; i < size(); i++) {
@@ -250,8 +258,8 @@ public:
 
 private:
 	ElementPtr allocate(size_t element_count) {
-		ElementPtr elements = new Element[element_count];
-		memset(elements, 0, sizeof(Element) * element_count);
+		if (element_count == 0) return nullptr;
+		ElementPtr elements = new Element[element_count]();
 		return elements;
 	}
 

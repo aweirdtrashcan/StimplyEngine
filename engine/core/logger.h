@@ -11,8 +11,8 @@ class RAPI Logger {
 public:
     static void InitializeLogging();
     static void ShutdownLogging();
-    static void fatal(const char* format, ...);
-    static void warning(const char* format, ...);
-    static void debug(const char* format, ...);
-    static void info(const char* format, ...);
+    static void Fatal(const char* format, ...);
+    static void Warning(const char* format, ...);
+    static void Debug(const char* format, ...);
+    static void Info(const char* format, ...);
 };

@@ -53,24 +53,9 @@ int Window::ProcessMessages() {
     return m_IsRunning;
 }
 
-list<const char*> Window::get_vulkan_required_instance_layers() const {
-    list<const char*> extensions;
-    uint32_t extension_count = 0;
-
-    SDL_Vulkan_GetInstanceExtensions(m_Window, &extension_count, nullptr);
-    extensions.resize(extension_count);
-    SDL_Vulkan_GetInstanceExtensions(m_Window, &extension_count, extensions.data());
-
-    return extensions;
-}
-
-void* Window::create_vulkan_surface(void* instance) {
-    return Platform::create_vulkan_surface(this, instance);
-}
-
 void Window::GetDimensions(uint32_t* width, uint32_t* height) const {
     if (!width || !height) {
-        Logger::warning("Window::GetDimensions: width or height are nullptr");
+        Logger::Warning("Window::GetDimensions: width or height are nullptr");
         return;
     }
 
@@ -82,7 +67,7 @@ bool Window::ConfineCursorToWindow() {
     int result = SDL_SetRelativeMouseMode(SDL_TRUE);
 
     if (result) {
-        Logger::warning("Failed to confine cursor to Window: %s", SDL_GetError());
+        Logger::Warning("Failed to confine cursor to Window: %s", SDL_GetError());
         return false;
     }
 
@@ -95,7 +80,7 @@ bool Window::FreeCursorFromWindow() {
     int result = SDL_SetRelativeMouseMode(SDL_FALSE);
 
     if (result) {
-        Logger::warning("Failed to free cursor from Window: %s", SDL_GetError());
+        Logger::Warning("Failed to free cursor from Window: %s", SDL_GetError());
         return false;
     }
 
@@ -153,8 +138,8 @@ void Window::process_key_event(const void* pKey, bool pressed) {
 void Window::process_mouse_motion(const void* pMotion) {
     const SDL_MouseMotionEvent& event = *(SDL_MouseMotionEvent*)pMotion;
 
-    // Logger::warning("Mouse coordinates | Mouse Relative");
-    // Logger::warning("%i %i             | %i %i", event.x, event.y, event.xrel, event.yrel);
+    // Logger::Warning("Mouse coordinates | Mouse Relative");
+    // Logger::Warning("%i %i             | %i %i", event.x, event.y, event.xrel, event.yrel);
 
     MouseEventData eventData;
     eventData.MouseXMotion = event.xrel;
